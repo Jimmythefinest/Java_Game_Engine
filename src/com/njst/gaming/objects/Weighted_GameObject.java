@@ -12,14 +12,26 @@ import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
 import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL15.glBufferData;
 import static org.lwjgl.opengl.GL30.*;
+import com.njst.gaming.Animations.SkeletalAnimationController;
+import com.njst.gaming.Animations.Animation;
 
 
 public class Weighted_GameObject extends GameObject{
     public  WeightedGeometry geo;
     ShaderProgram program1;
+    private SkeletalAnimationController animationController;
+
     public Weighted_GameObject(WeightedGeometry geo,int t){
         super(geo, t);
         this.geo=geo;
+    }
+
+    public void setAnimationController(SkeletalAnimationController controller) {
+        this.animationController = controller;
+    }
+
+    public SkeletalAnimationController getAnimationController() {
+        return animationController;
     }
     public void generateBuffers() {
 
@@ -53,6 +65,9 @@ public class Weighted_GameObject extends GameObject{
        
     }
      public void render(ShaderProgram shaderprogram, int textureHandle) {
+        if (animationController != null) {
+            animationController.bind();
+        }
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         // Bind the VAO
