@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.njst.gaming.ai.NeuralNetwork;
 import com.njst.gaming.Scene;
 import com.njst.gaming.Scene.SceneLoader;
+import com.njst.gaming.data;
 import com.njst.gaming.Natives.ComputeShader;
 import com.njst.gaming.Utils.GeneralUtil;
 
@@ -21,7 +22,7 @@ public class ComputeShader_runner implements SceneLoader {
     // ssbo.setData(new float[]{4,3,3,1,9,2}, GL30.GL_STATIC_READ);
     // ssbo.bindToShader(3);
     // ComputeShader shader = new
-    // ComputeShader(GeneralUtil.readFile("/jimmy/GPU_NeuralNetwork.glsl"));
+    // ComputeShader(GeneralUtil.readFile(data.rootDirectory+"/GPU_NeuralNetwork.glsl"));
     // float[] input = new float[10];
     // System.err.println(shader.err);
     // int i = 0;
@@ -30,7 +31,7 @@ public class ComputeShader_runner implements SceneLoader {
     // }
 
     // // // ComputeShader tester=new
-    // ComputeShader(GeneralUtil.readFile("/jimmy/GPU_NeuralNetwork.glsl"));
+    // ComputeShader(GeneralUtil.readFile(data.rootDirectory+"/GPU_NeuralNetwork.glsl"));
     // shader.bindBufferToShader(3,new float[]{3,1,3,3,3});
     // float[] biases={
     // 1,2,3,
@@ -64,7 +65,7 @@ public class ComputeShader_runner implements SceneLoader {
     int[] layersg = { 3, 4, 5 };
     NeuralNetwork nn = new NeuralNetwork(layersg, 0.01f, true);
 
-    String forwardShaderCode = GeneralUtil.readFile("/jimmy/GPU_NeuralNetwork.glsl");
+    String forwardShaderCode = GeneralUtil.readFile(data.rootDirectory + "/GPU_NeuralNetwork.glsl");
 
     ComputeShader cc = new ComputeShader(forwardShaderCode);
     int meta_data_length = 2;
@@ -99,9 +100,10 @@ public class ComputeShader_runner implements SceneLoader {
     System.out.println(Arrays.toString(out));
     nn.feedForward(input);
     System.out.println(Arrays.toString(nn.feedForward(input)));
-//     // Add to ComputeShader_runner
-// System.out.println("CPU weights: " + Arrays.deepToString(nn.getWeights()));
-// System.out.println("GPU weights: " + Arrays.toString(GeneralUtil.flatten3D(nn.getWeights())));
+    // // Add to ComputeShader_runner
+    // System.out.println("CPU weights: " + Arrays.deepToString(nn.getWeights()));
+    // System.out.println("GPU weights: " +
+    // Arrays.toString(GeneralUtil.flatten3D(nn.getWeights())));
 
     System.out.println((GeneralUtil.flatten3D(nn.getWeights())).length);
 

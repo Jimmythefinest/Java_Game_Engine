@@ -1,5 +1,6 @@
 package com.njst.gaming.objects;
 
+import com.njst.gaming.data;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.GlUtils;
@@ -13,14 +14,15 @@ import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL15.glBufferData;
 import static org.lwjgl.opengl.GL30.*;
 
-
-public class Weighted_GameObject extends GameObject{
-    public  WeightedGeometry geo;
+public class Weighted_GameObject extends GameObject {
+    public WeightedGeometry geo;
     ShaderProgram program1;
-    public Weighted_GameObject(WeightedGeometry geo,int t){
+
+    public Weighted_GameObject(WeightedGeometry geo, int t) {
         super(geo, t);
-        this.geo=geo;
+        this.geo = geo;
     }
+
     public void generateBuffers() {
 
         int vaoId = GlUtils.generateVAO(new int[1], 0, 0)[0];
@@ -33,8 +35,8 @@ public class Weighted_GameObject extends GameObject{
         GlUtils.set_VBO_Float(vbos[2], geo.getTextureCoordinates());
         GlUtils.set_VBO_Float(vbos[3], geo.getWeightss(), geo.getWeightss().length);
         GlUtils.set_VBO_Int(vbos[4], geo.getBoness());
-        System.out.println("Number of Weights"+geo.getWeightss().length/4);
-        System.out.println("Number of Vertices"+(geo.getVertices().length/3));
+        System.out.println("Number of Weights" + geo.getWeightss().length / 4);
+        System.out.println("Number of Vertices" + (geo.getVertices().length / 3));
 
         GlUtils.set_VBO_attrib_pointer(vboId, 0, 3);
         GlUtils.set_VBO_attrib_pointer(vboId1, 1, 3);
@@ -49,10 +51,12 @@ public class Weighted_GameObject extends GameObject{
         glBindVertexArray(0);
         vaoIds[0] = vaoId;
         program1 = new ShaderProgram(
-                ShaderProgram.loadShader("/jimmy/vert111.glsl"), ShaderProgram.loadShader("/jimmy/frag111.glsl"));
-       
+                ShaderProgram.loadShader(data.rootDirectory + "/vert111.glsl"),
+                ShaderProgram.loadShader(data.rootDirectory + "/frag111.glsl"));
+
     }
-     public void render(ShaderProgram shaderprogram, int textureHandle) {
+
+    public void render(ShaderProgram shaderprogram, int textureHandle) {
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         // Bind the VAO

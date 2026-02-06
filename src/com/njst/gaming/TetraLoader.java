@@ -16,9 +16,9 @@ public class TetraLoader implements SceneLoader {
 
     @Override
     public void load(Scene scene) {
-        int texture1 = ShaderProgram.loadTexture("/jimmy/images (2).jpeg");
+        int texture1 = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
         System.out.println("tetra");
-        int skybox = ShaderProgram.loadTexture("/jimmy/desertstorm.jpg");
+        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(new SphereGeometry(1, 20, 20), skybox);
         scene.renderer.skybox = (skyboxo);
         skyboxo.ambientlight_multiplier = 5;
@@ -34,7 +34,7 @@ public class TetraLoader implements SceneLoader {
         t.v4 = new Vector3(0, 1, 0);
         Tetrahedron t1 = new Tetrahedron();
         GameObject tetra = new GameObject(t, texture1);
-        scene.temp=t;
+        scene.temp = t;
         scene.addGameObject(tetra);
         GameObject terrain = new GameObject(new TerrainGeometry(128, 128), texture1);
         terrain.translate(new Vector3(-64, 0, -64));
@@ -42,31 +42,31 @@ public class TetraLoader implements SceneLoader {
         Tetrahedron[] tera = new Tetrahedron[terrain.geometry.getIndices().length / 3];
         float[] vertices = terrain.geometry.getVertices();
         int[] indices = terrain.geometry.getIndices();
-        ShaderProgram shader= new ShaderProgram(
-            ShaderProgram.loadShader("/resources/shaders/vert11.glsl"), ShaderProgram.loadShader("/resources/shaders/solid_color.glsl"));
-    
-        
+        ShaderProgram shader = new ShaderProgram(
+                ShaderProgram.loadShader("/resources/shaders/vert11.glsl"),
+                ShaderProgram.loadShader("/resources/shaders/solid_color.glsl"));
+
         for (int i = 0; i < 1; i++) {
             tera[i] = new Tetrahedron();
             int index_location = i * 3;
             tera[i].v4 = retrieve_Vertice(indices[index_location], vertices);
             index_location++;
-            tera[i].v2 =retrieve_Vertice(indices[index_location], vertices);
+            tera[i].v2 = retrieve_Vertice(indices[index_location], vertices);
             index_location++;
-            tera[i].v3 =retrieve_Vertice(indices[index_location], vertices);
+            tera[i].v3 = retrieve_Vertice(indices[index_location], vertices);
             tera[i].v1 = tera[i].v4.clone().add(new Vector3(0, -10f, 0));
-            
+
             GameObject obj = new GameObject(tera[i], texture1);
             scene.addGameObject(obj);
             // System.out.println(tera[i].v1);
             // System.out.println(tera[i].v2);
             // System.out.println(tera[i].v3);
-            obj.translate(new Vector3(-64,0,-64));
-            obj.shaderprogram=shader;
-            if(obj.shaderprogram==null){
+            obj.translate(new Vector3(-64, 0, -64));
+            obj.shaderprogram = shader;
+            if (obj.shaderprogram == null) {
                 System.out.println("still null");
             }
-            
+
         }
         // System.exit(1);
 
@@ -115,12 +115,12 @@ public class TetraLoader implements SceneLoader {
         System.out.println("tetra");
 
     }
-    public Vector3 retrieve_Vertice(int index,float[] data){
+
+    public Vector3 retrieve_Vertice(int index, float[] data) {
         return new Vector3(
-            data[index*3],
-            data[(index*3)+1],
-            data[(index*3)+2]
-            );
+                data[index * 3],
+                data[(index * 3) + 1],
+                data[(index * 3) + 2]);
     }
 
 }

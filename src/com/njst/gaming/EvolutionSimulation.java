@@ -20,13 +20,13 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
     public void load(Scene scene) {
         s = scene;
 
-        int skybox = ShaderProgram.loadTexture( "/jimmy/desertstorm.jpg");
+        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(new SphereGeometry(1, 20, 20), skybox);
-        skyboxo.scale = new float[]{500, 500, 500};
+        skyboxo.scale = new float[] { 500, 500, 500 };
         scene.addGameObject(skyboxo);
 
-        texture = ShaderProgram.loadTexture( "/jimmy/j.jpg");
-        foodTexture = ShaderProgram.loadTexture( "/jimmy/images (2).jpeg");
+        texture = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
+        foodTexture = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
 
         bodies = new ArrayList<>();
         creatures = new ArrayList<>();
@@ -35,9 +35,8 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
         scene.animations.add(this);
 
         GameObject plane = new GameObject(
-            new TerrainGeometry(128, 128, new float[128][128]),
-            ShaderProgram.loadTexture( "/jimmy/images (2).jpeg")
-        );
+                new TerrainGeometry(128, 128, new float[128][128]),
+                ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg"));
         scene.addGameObject(plane);
 
         // Spawn food
@@ -70,7 +69,7 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
             average += c.life;
 
             // Feed current state to the brain
-            float[] input = new float[]{c.position.x, c.position.z};
+            float[] input = new float[] { c.position.x, c.position.z };
             float[] output = c.brain.feedForward(input);
 
             // Movement and energy drain
@@ -117,16 +116,17 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
             }
         }
 
-        s.dat = "Population: " + survivors.size() + "\nAverage age: " + (survivors.size() > 0 ? (average / survivors.size()) : 0);
+        s.dat = "Population: " + survivors.size() + "\nAverage age: "
+                + (survivors.size() > 0 ? (average / survivors.size()) : 0);
 
         // Replenish food
-         if(foods.size()<30){
-        while (foods.size() < 100) {
-            Vector3 foodPos = new Vector3(-10 + random.nextFloat() * 20, 0, -10 + random.nextFloat() * 20);
-            Food food = new Food(foodPos, foodTexture);
-            foods.add(food);
-            s.addGameObject(food.body);
-        }
+        if (foods.size() < 30) {
+            while (foods.size() < 100) {
+                Vector3 foodPos = new Vector3(-10 + random.nextFloat() * 20, 0, -10 + random.nextFloat() * 20);
+                Food food = new Food(foodPos, foodTexture);
+                foods.add(food);
+                s.addGameObject(food.body);
+            }
         }
 
         // Evolve
@@ -163,7 +163,7 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
 
         public Creature(Vector3 position) {
             this.position = position;
-            this.brain = new NeuralNetwork(new int[]{2, 5, 2}, 0.01f, true);
+            this.brain = new NeuralNetwork(new int[] { 2, 5, 2 }, 0.01f, true);
         }
 
         public Creature clone() {
@@ -180,7 +180,7 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
         public Food(Vector3 position, int texture) {
             this.position = position;
             this.body = new GameObject(new CubeGeometry(), texture);
-            this.body.scale = new float[]{0.2f, 0.2f, 0.2f};
+            this.body.scale = new float[] { 0.2f, 0.2f, 0.2f };
             this.body.position = position.clone();
         }
     }

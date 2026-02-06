@@ -15,8 +15,8 @@ public class SimpleLoader implements SceneLoader {
     @Override
     public void load(Scene scene) {
         // Load textures
-        int cubeTexture = ShaderProgram.loadTexture("/jimmy/images (2).jpeg");
-        int skyboxTexture = ShaderProgram.loadTexture("/jimmy/desertstorm.jpg");
+        int cubeTexture = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int skyboxTexture = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
 
         // Create skybox (large sphere)
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);

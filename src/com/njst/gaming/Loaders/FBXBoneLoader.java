@@ -121,7 +121,7 @@ public class FBXBoneLoader {
         // map.put("indices", indices);
         // map.put("bones", Bones);
         // Gson g=new Gson();
-        //  GeneralUtil.save_to_file("/jimmy/ch.json", g.toJson(map));
+        // GeneralUtil.save_to_file(data.rootDirectory+"/ch.json", g.toJson(map));
         for (String name : Bones) {
             Bones_int.add(hash.get(name));
             // for(int i=0;i<bone_array.size();i++){
@@ -156,8 +156,8 @@ public class FBXBoneLoader {
 
         PointerBuffer textures = scene.mTextures();
         int numTextures = scene.mNumTextures();
-        int[] texture_array=new int [numTextures];
-        System.out.println("Num Textures"+numTextures);
+        int[] texture_array = new int[numTextures];
+        System.out.println("Num Textures" + numTextures);
         for (int i = 0; i < numTextures; i++) {
             AITexture texture = AITexture.create(textures.get(i));
 
@@ -179,16 +179,15 @@ public class FBXBoneLoader {
                         System.err.println("STB failed: " + STBImage.stbi_failure_reason());
                         continue;
                     }
-                    int textureID=glGenTextures();
-                    glBindTexture(GL_TEXTURE_2D,textureID);
+                    int textureID = glGenTextures();
+                    glBindTexture(GL_TEXTURE_2D, textureID);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w.get(),h.get(),0,GL_RGBA,GL_UNSIGNED_BYTE,image);
-                    texture_array[i]=textureID;
-                    System.out.println("loaded Texture"+texture.mFilename().dataString());
-                    
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w.get(), h.get(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+                    texture_array[i] = textureID;
+                    System.out.println("loaded Texture" + texture.mFilename().dataString());
 
                     // Use `image`, `width`, and `height` with OpenGL texture upload
                     // e.g., glTexImage2D...
@@ -200,7 +199,7 @@ public class FBXBoneLoader {
                 AITexel.Buffer texels = texture.pcData();
                 int width = texture.mWidth();
                 int height = texture.mHeight();
-                texture_array[i]=uploadTexelsToOpenGL(texels, width, height);
+                texture_array[i] = uploadTexelsToOpenGL(texels, width, height);
                 System.out.println("found texture");
                 // Convert texels to OpenGL texture (as in previous message)
             }
@@ -360,7 +359,6 @@ public class FBXBoneLoader {
         // boneMap.put(bone.name, bone);
 
         // Process any mesh data attached to this node.
-        
 
         // Recursively process all children nodes.
         int numChildren = node.mNumChildren();
@@ -369,12 +367,11 @@ public class FBXBoneLoader {
             AINode childNode = AINode.create(children.get(i));
             processNode(childNode, scene, bone, anims, scale);
         }
-        Vector3 rot=getEulerAnglesFromMatrix(transform);
-        if(rot.y==-180){
-            rot=new Vector3(180,0,0);
+        Vector3 rot = getEulerAnglesFromMatrix(transform);
+        if (rot.y == -180) {
+            rot = new Vector3(180, 0, 0);
         }
         bone.rotate(rot);
-
 
         return bone;
     }
@@ -534,7 +531,7 @@ public class FBXBoneLoader {
 
         // Print Euler angles (in radians)
 
-        return new Vector3(pitch,roll, yaw);
+        return new Vector3(pitch, roll, yaw);
     }
 
     public static int uploadTexelsToOpenGL(AITexel.Buffer texels, int width, int height) {

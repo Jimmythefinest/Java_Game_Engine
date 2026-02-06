@@ -5,7 +5,8 @@ import com.njst.gaming.Bone;
 public class AssimpLoaderTest {
     public static void main(String[] args) {
         // Replace with the actual path to your FBX file
-        // String filePath = "/jimmy/test.fbx"; // Update this path accordingly
+        // String filePath = data.rootDirectory+"/test.fbx"; // Update this path
+        // accordingly
 
         // Load the FBX file
         // Bone rootBone =FBXBoneLoader.loadBones(filePath);

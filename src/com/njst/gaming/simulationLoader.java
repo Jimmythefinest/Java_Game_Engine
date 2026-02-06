@@ -14,7 +14,7 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
 
     public void load(Scene scene) {
 
-        int skybox = ShaderProgram.loadTexture("/jimmy/desertstorm.jpg");
+        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(
                 new SphereGeometry(1, 20, 20), skybox);
         skyboxo.scale = new float[] { 500, 500, 500 };
@@ -24,31 +24,33 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
         Quarks = new ArrayList<>();
         skins = new ArrayList<>();
         scene.animations.add(this);
-        int text = ShaderProgram.loadTexture("/jimmy/images (2).jpeg");
+        int text = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
         for (int i2 = 0; i2 < 1; i2++) {
             for (int i1 = 0; i1 < 1; i1++) {
                 for (int i = 0; i < 4; i++) {
 
-                    quark q = new quark(-.1f, 0.001f, new Vector3(i*5,0 +(int) (Math.random()* 20), 0 +(int) (Math.random()* 20)), new Vector3());
+                    quark q = new quark(-.1f, 0.001f,
+                            new Vector3(i * 5, 0 + (int) (Math.random() * 20), 0 + (int) (Math.random() * 20)),
+                            new Vector3());
                     add_Quark(q);
                     q.skin = 0;
-                    
+
                     // if (Math.random() < 0.1 && i == 0) {
-                    //     q.charge *= 2;
-                        
+                    // q.charge *= 2;
+
                     // }
                     q.skin = skins.size();
 
                     GameObject c1 = new GameObject(
-                                new SphereGeometry(1, 4, 4), text);
+                            new SphereGeometry(1, 4, 4), text);
                     skins.add(c1);
                     if (i % 2 == 0) {
-                        q.charge *=-1;
-                       // q.mass = 15f;
-                        c1.texture=skybox;
+                        q.charge *= -1;
+                        // q.mass = 15f;
+                        c1.texture = skybox;
                     }
-                    if(i==3||i==2){
-                        q.charge*=-1;
+                    if (i == 3 || i == 2) {
+                        q.charge *= -1;
                     }
                 }
             }
@@ -65,7 +67,7 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
         float k = 0.2f; // String tension (linear term)
         for (int i = 0; i < Quarks.size(); i++) {
             Vector3 force = new Vector3();
-        // System.err.println("Quark"+i);
+            // System.err.println("Quark"+i);
 
             for (int j = 0; j < Quarks.size(); j++) {
                 if (i == j)
@@ -78,10 +80,10 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
                 if (dist > 309f)
                     continue;
                 // if (dist <0.1f)
-                //     dir=new Vector3().sub(dir);
+                // dir=new Vector3().sub(dir);
                 dir.normalize();
 
-                float magnitude = (a / (dist * dist)+k) * q1.charge * q2.charge;
+                float magnitude = (a / (dist * dist) + k) * q1.charge * q2.charge;
                 Vector3 f = dir.mul(magnitude);
                 force.add(f);
             }
@@ -90,22 +92,25 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
             Quarks.get(i).velocity.add(force);
         }
         for (int i = 0; i < Quarks.size(); i++) {
-            Quarks.get(i).velocity.add(new Vector3(0,-9.81f,0));
-            if(Quarks.get(i).position.length()>30)Quarks.get(i).velocity=new Vector3().sub(Quarks.get(i).velocity);
+            Quarks.get(i).velocity.add(new Vector3(0, -9.81f, 0));
+            if (Quarks.get(i).position.length() > 30)
+                Quarks.get(i).velocity = new Vector3().sub(Quarks.get(i).velocity);
             Quarks.get(i).position.add(Quarks.get(i).velocity.clone().mul(1.0f / 90.0f));
             skins.get(Quarks.get(i).skin).position = Quarks.get(i).position;
             skins.get(i).updateModelMatrix();
         }
         // System.err.println("Total energy"+total);
         steps++;
-        if(steps<1){
+        if (steps < 1) {
             animate();
-        }else{
-            steps=0;
+        } else {
+            steps = 0;
             return;
         }
     }
-    int steps=0;
+
+    int steps = 0;
+
     public void add_Quark(quark newQuark) {
         int insertIndex = 0;
         for (; insertIndex < Quarks.size(); insertIndex++) {

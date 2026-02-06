@@ -3,6 +3,7 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
+import com.njst.gaming.data;
 import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
@@ -54,23 +55,21 @@ public class GameObjectTest {
 
     private void loop() {
         // Create a basic shader program
-        ShaderProgram shader =  new ShaderProgram(
-            ShaderProgram.loadShader("/resources/shaders/vert.glsl"),
-            ShaderProgram.loadShader("/resources/shaders/frag.glsl")
-    );
+        ShaderProgram shader = new ShaderProgram(
+                ShaderProgram.loadShader("/resources/shaders/vert.glsl"),
+                ShaderProgram.loadShader("/resources/shaders/frag.glsl"));
 
         // Create a dummy cube geometry and a GameObject from it.
         CubeGeometry cubeGeometry = new CubeGeometry();
         // Assume texture id 0 (no texture)#
-        int texture1=ShaderProgram.loadTexture("/jimmy/j.jpg");
+        int texture1 = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
         System.out.println(texture1);
         System.err.println("Shader log: " + shader.log);
-         System.out.println("Shader compile status: " + shader.compiled());
-         System.out.println("Matrix Location: " + shader.getUniformLocation("uMMatrix"));
+        System.out.println("Shader compile status: " + shader.compiled());
+        System.out.println("Matrix Location: " + shader.getUniformLocation("uMMatrix"));
 
         GameObject cube = new GameObject(cubeGeometry, texture1);
         cube.generateBuffers();
-
 
         // Main render loop
         while (!glfwWindowShouldClose(window)) {

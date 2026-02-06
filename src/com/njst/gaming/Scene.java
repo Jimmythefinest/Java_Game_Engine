@@ -17,8 +17,8 @@ public class Scene {
     public ArrayList<Animation> animations;
     public Tetrahedron temp = new Tetrahedron();
     public HashMap<String, Map<String, KeyframeAnimation>> animation_groups;
-    public HashMap<Integer,Runnable> actions=new HashMap<>();
-    public HashMap<String,Runnable> commands=new HashMap<>();
+    public HashMap<Integer, Runnable> actions = new HashMap<>();
+    public HashMap<String, Runnable> commands = new HashMap<>();
     public ArrayList<KeyframeAnimation> KEY_ANIMATIONS;
 
     public ArrayList<ArrayList<KeyframeAnimation>> MOTION_ANIMATIONS;
@@ -47,7 +47,7 @@ public class Scene {
         KEY_ANIMATIONS = new ArrayList<>();
         // renderer = new Renderer();
         // renderer.scene = this;
-        log = new RootLogger("/home/nj/Scene.log");
+        log = new RootLogger(data.rootDirectory + "/Scene.log");
         log.logToRootDirectory("hiisis");
         physics = new PhysicsEngine(this);
 
@@ -59,7 +59,7 @@ public class Scene {
 
     public void onDrawFrame() {
         if (camera_should_move) {
-             renderer.camera.moveForward(0.1f*speed);
+            renderer.camera.moveForward(0.1f * speed);
         }
         if (camera_should_move_up) {
             renderer.camera.cameraPosition.add(new Vector3(0, 0.05f, 0));
@@ -87,6 +87,7 @@ public class Scene {
 
     /**
      * Removes a GameObject from the scene.
+     * 
      * @param obj The GameObject to remove.
      * @return true if the object was found and removed, false otherwise.
      */
@@ -111,7 +112,7 @@ public class Scene {
             n.v2 = lis.get(1);
             n.v3 = lis.get(2);
             n.v4 = renderer.camera.cameraPosition.clone().sub(n.v1).mul(0.6f).add(n.v1);
-            GameObject obj = new GameObject(n, ShaderProgram.loadTexture("/jimmy/images (2).jpeg"));
+            GameObject obj = new GameObject(n, ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg"));
             obj.generateBuffers();
             addGameObject(obj);
 
