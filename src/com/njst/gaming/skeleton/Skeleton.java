@@ -2,7 +2,6 @@ package com.njst.gaming.skeleton;
 
 import com.njst.gaming.*;
 import com.njst.gaming.Animations.Animation;
-import com.njst.gaming.Animations.Skeletal_Animation;
 import java.util.*;
 
 public class Skeleton{
@@ -15,22 +14,6 @@ public class Skeleton{
 	}
     public ArrayList<Bone> get_Bone_List(){
         return bones;
-    }
-
-    public List<Bone> getBoneList() {
-        return bones;
-    }
-
-    public int getBoneCount() {
-        return bones.size();
-    }
-
-    public List<float[]> getBoneMatrices() {
-        List<float[]> matrices = new ArrayList<>();
-        for (Bone bone : bones) {
-            matrices.add(bone.getAnimationMatrix().r);
-        }
-        return matrices;
     }
 
 	public static ArrayList<Bone> get_array(Bone root) {
@@ -74,7 +57,30 @@ public class Skeleton{
       // System.out.println("faileed to map" + bone.name);
     }
   }
-  public void map(com.njst.gaming.Animations.Skeletal_Animation s){
-    mapBone(bones, s.getAnimationMap());
+  public void map(Skeletal_Animation s){
+    mapBone(bones, s.get_Animation_map());
   }
+  public static class Skeletal_Animation{
+    public String NAme;
+    Map<String, ? extends Animation> animation_list;
+    public Skeletal_Animation(){
+
+    }
+    public  void setTarget(Skeleton s){
+        s.map(this);
+    }
+    public Map<String, ? extends Animation> get_Animation_map(){
+        return animation_list;
+    }
+    public void set_Animation_map(Map<String,? extends Animation> s){
+        this.animation_list=s;
+    }
+    public void start(){
+        animation_list.forEach((name,value)->{
+            value.start();
+        });
+    }
+}
+
+
 }

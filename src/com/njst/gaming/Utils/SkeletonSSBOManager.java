@@ -1,6 +1,6 @@
 package com.njst.gaming.Utils;
 
-import com.njst.gaming.skeleton.Skeleton;
+import com.njst.gaming.Animations.Skeleton;
 import com.njst.gaming.Natives.SSBO;
 import org.lwjgl.opengl.GL15;
 
