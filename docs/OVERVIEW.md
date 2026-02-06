@@ -23,5 +23,11 @@ This documentation provides a technical reference for the NJST Game Engine.
 ## Documentation Index
 
 - [Core Engine Components](CORE_ENGINE.md): Detailed breakdown of Scene, Renderer, and GameObject.
+- [Engine & Input System](ENGINE_AND_INPUT.md): Guide to the abstracted Engine lifecycle and Input management.
+- [Skeletal Animation](SKELETAL_ANIMATION.md): Reference for character skinning and animation logic.
+- [SSBO Management](SSBO.md): Comprehensive guide to Shader Storage Buffer Objects.
+- [Compute Shader Guide](COMPUTE_SHADER.md): How to perform massive visual and physical computations on the GPU.
+- [Scene Management](SCENE.md): Methods and structure of the world container.
+- [Renderer Reference](RENDERER.md): Detailed look at the drawing pipeline and matrices.
 - [AI & Simulations](AI_AND_SIMULATION.md): Guide to the neural network and reinforcement learning packages.
 - [Build & Run](BUILD_AND_RUN.md): Instructions for compiling and executing the project.

@@ -13,6 +13,9 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  * Base class for desktop-based engine applications.
  * Handles GLFW window lifecycle, input routing, and the main loop.
+ * 
+ * Subclasses should implement {@link #onInit()} for setup and 
+ * optionally override {@link #onUpdate()} and {@link #onKey(int, int)}.
  */
 public abstract class Engine {
     protected int width = 800;
@@ -24,6 +27,10 @@ public abstract class Engine {
     protected Scene scene;
     protected Input input;
 
+    /**
+     * Entry point to start the engine.
+     * Initializes window, runs main loop, and ensures cleanup.
+     */
     public void run() {
         init();
         loop();
@@ -109,6 +116,8 @@ public abstract class Engine {
 
     /**
      * Hook for subclasses to handle key events.
+     * @param key The GLFW key code (e.g., GLFW_KEY_W)
+     * @param action The GLFW action (GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT)
      */
     protected abstract void onKey(int key, int action);
 

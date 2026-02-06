@@ -34,14 +34,29 @@ public class Input {
         }
     }
 
+    /**
+     * Checks if a key is currently being held down.
+     * @param key The GLFW key code.
+     * @return true if held, false otherwise.
+     */
     public boolean isKeyDown(int key) {
         return key >= 0 && key < GLFW_KEY_LAST && keys[key];
     }
 
+    /**
+     * Checks if a key was pressed exactly this frame.
+     * @param key The GLFW key code.
+     * @return true if pressed this frame.
+     */
     public boolean isKeyPressed(int key) {
         return key >= 0 && key < GLFW_KEY_LAST && keys[key] && !prevKeys[key];
     }
 
+    /**
+     * Checks if a key was released exactly this frame.
+     * @param key The GLFW key code.
+     * @return true if released this frame.
+     */
     public boolean isKeyReleased(int key) {
         return key >= 0 && key < GLFW_KEY_LAST && !keys[key] && prevKeys[key];
     }
