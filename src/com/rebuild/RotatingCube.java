@@ -72,8 +72,8 @@ public class RotatingCube {
             }
             switch (key) {
                 case GLFW_KEY_X:
-                    if(action==GLFW_PRESS)scene.renderer.camera_should_move=true;
-                    if(action==GLFW_RELEASE)scene.renderer.camera_should_move=false;
+                    if(action==GLFW_PRESS)scene.camera_should_move=true;
+                    if(action==GLFW_RELEASE)scene.camera_should_move=false;
                     break;
                 case GLFW_KEY_Z:
                     if(action==GLFW_PRESS)scene.speed*=10;

@@ -59,7 +59,7 @@ public class Scene {
 
     public void onDrawFrame() {
         if (camera_should_move) {
-            // renderer.camera.moveForward(0.2f*speed);
+             renderer.camera.moveForward(0.1f*speed);
         }
         if (camera_should_move_up) {
             renderer.camera.cameraPosition.add(new Vector3(0, 0.05f, 0));
@@ -148,36 +148,6 @@ public class Scene {
 
     public interface SceneLoader {
         public void load(Scene s);
-    }
-
-    public static String floatatostring(float[] mm, int n) {
-        String se = "{";
-        for (int i = 0; i < mm.length / n; i++) {
-            String rows = "   {";
-            for (int i1 = 0; i1 < n; i1++) {
-                if (i1 != 0) {
-                    rows = rows + ",";
-                }
-                rows = rows + mm[(i * n) + i1];
-            }
-            se = se + rows + "}\n";
-        }
-        return se + "}";
-    }
-
-    public static String floatatostring(int[] mm, int n) {
-        String se = "{";
-        for (int i = 0; i < mm.length / n; i++) {
-            String rows = "   {";
-            for (int i1 = 0; i1 < n; i1++) {
-                if (i1 != 0) {
-                    rows = rows + ",";
-                }
-                rows = rows + mm[(i * n) + i1];
-            }
-            se = se + rows + "}\n";
-        }
-        return se + "}";
     }
 
     public void cursorMoved(double pos_x, double pos_y) {

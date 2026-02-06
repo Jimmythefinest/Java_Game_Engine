@@ -178,5 +178,10 @@ public static final float[] NORMALS1 = {
     0.0f, 1.0f, 0.0f   // Normal for Vertex 23
 };
 
+    public static final short[] boxEdges = {
+        0, 1, 1, 2, 2, 3, 3, 0, // Back face
+        4, 5, 5, 6, 6, 7, 7, 4, // Front face
+        0, 4, 1, 5, 2, 6, 3, 7 // Connecting edges
+    };
 
 }

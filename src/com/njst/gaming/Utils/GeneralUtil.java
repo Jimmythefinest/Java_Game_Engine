@@ -152,5 +152,34 @@ public class GeneralUtil {
       return sum;    
    }
 
+    public static String floatatostring(float[] mm, int n) {
+        String se = "{";
+        for (int i = 0; i < mm.length / n; i++) {
+            String rows = "   {";
+            for (int i1 = 0; i1 < n; i1++) {
+                if (i1 != 0) {
+                    rows = rows + ",";
+                }
+                rows = rows + mm[(i * n) + i1];
+            }
+            se = se + rows + "}\n";
+        }
+        return se + "}";
+    }
+
+    public static String intatostring(int[] mm, int n) {
+        String se = "{";
+        for (int i = 0; i < mm.length / n; i++) {
+            String rows = "   {";
+            for (int i1 = 0; i1 < n; i1++) {
+                if (i1 != 0) {
+                    rows = rows + ",";
+                }
+                rows = rows + mm[(i * n) + i1];
+            }
+            se = se + rows + "}\n";
+        }
+        return se + "}";
+    }
 
 }

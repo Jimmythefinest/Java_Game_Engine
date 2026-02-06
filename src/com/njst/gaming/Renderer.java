@@ -39,7 +39,6 @@ public class Renderer {
     int tex1;
 
     // Miscellaneous
-    public boolean camera_should_move = false;
     public float angle;
     public final float[] lightPos = { 0, 50f, 0 };
     public final float[] lightColor = { 1.0f, 1.0f, 1.0f };
@@ -54,12 +53,6 @@ public class Renderer {
     public float[] lightViewMatrix, lightProjectionMatrix;
 
     // Bounding box (for drawing wireframes)
-    public short[] boxEdges = {
-            0, 1, 1, 2, 2, 3, 3, 0, // Back face
-            4, 5, 5, 6, 6, 7, 7, 4, // Front face
-            0, 4, 1, 5, 2, 6, 3, 7 // Connecting edges
-    };
-
     public Renderer() {
         log = new RootLogger("home/nj/render.log");
         camera = new Camera(new Vector3(0f, 0f, -7f), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f));
@@ -107,9 +100,6 @@ public class Renderer {
         // skybox.position=camera.cameraPosition;
         // skybox.updateModelMatrix();
         scene.onDrawFrame();
-        if (camera_should_move) {
-            camera.moveForward(0.1f*scene.speed);
-        }
         for (GameObject object : scene.objects) {
             shaderProgram.use();
             object.updateModelMatrix();
