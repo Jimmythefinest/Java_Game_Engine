@@ -20,29 +20,34 @@ public class RotatingCube extends Engine {
     }
 
     @Override
+    protected void onUpdate() {
+        // Use polling for smoother flag-based movement
+        scene.camera_should_move = input.isKeyDown(GLFW_KEY_X);
+        
+        // Handle single-press events that can also be checked here
+        if (input.isKeyPressed(GLFW_KEY_O)) {
+            scene.KEY_ANIMATIONS.forEach((value) -> {
+                value.time = 0;
+                value.start();
+            });
+        }
+        
+        if (input.isKeyPressed(GLFW_KEY_Q)) {
+            scene.addTetra();
+        }
+    }
+
+    @Override
     protected void onKey(int key, int action) {
+        // Polling is preferred for continuous movement, 
+        // but we can still use onKey for discrete events or state changes
         switch (key) {
-            case GLFW_KEY_X:
-                if (action == GLFW_PRESS) scene.camera_should_move = true;
-                if (action == GLFW_RELEASE) scene.camera_should_move = false;
-                break;
             case GLFW_KEY_Z:
                 if (action == GLFW_PRESS) scene.speed *= 10;
                 if (action == GLFW_RELEASE) scene.speed /= 10;
                 break;
             case GLFW_KEY_Y:
-                scene.renderer.camera.targetPosition = new Vector3();
-                break;
-            case GLFW_KEY_O:
-                if (action == GLFW_PRESS) {
-                    scene.KEY_ANIMATIONS.forEach((value) -> {
-                        value.time = 0;
-                        value.start();
-                    });
-                }
-                break;
-            case GLFW_KEY_Q:
-                scene.addTetra();
+                if (action == GLFW_PRESS) scene.renderer.camera.targetPosition = new Vector3();
                 break;
             default:
                 if (scene.actions.containsKey(key) && action == GLFW_PRESS) {

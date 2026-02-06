@@ -22,6 +22,7 @@ public abstract class Engine {
     
     protected Renderer renderer;
     protected Scene scene;
+    protected Input input;
 
     public void run() {
         init();
@@ -55,6 +56,7 @@ public abstract class Engine {
 
         scene = new Scene();
         renderer = new Renderer();
+        input = new Input();
         renderer.scene = scene;
         scene.renderer = renderer;
 
@@ -78,6 +80,7 @@ public abstract class Engine {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(win, true);
             }
+            input.setKey(key, action);
             onKey(key, action);
         });
 
@@ -88,13 +91,19 @@ public abstract class Engine {
         });
 
         glfwSetCursorPosCallback(window, (win, x, y) -> {
+            input.setMousePosition(x, y);
             scene.cursorMoved(x, y);
         });
 
         glfwSetMouseButtonCallback(window, (win, button, action, mods) -> {
+            input.setMouseButton(button, action);
             if (button == GLFW_MOUSE_BUTTON_LEFT) {
                 scene.righmouse = action == GLFW_PRESS;
             }
+        });
+
+        glfwSetScrollCallback(window, (win, xOffset, yOffset) -> {
+            input.setScroll(xOffset, yOffset);
         });
     }
 
@@ -123,6 +132,7 @@ public abstract class Engine {
             }
             frameCount++;
 
+            input.update();
             onUpdate();
             renderer.onDrawFrame();
             
