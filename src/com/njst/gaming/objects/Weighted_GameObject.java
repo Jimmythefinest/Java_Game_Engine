@@ -61,7 +61,7 @@ public class Weighted_GameObject extends GameObject{
         glBindVertexArray(0);
         vaoIds[0] = vaoId;
         program1 = new ShaderProgram(
-                ShaderProgram.loadShader("/jimmy/vert111.glsl"), ShaderProgram.loadShader("/jimmy/frag111.glsl"));
+                ShaderProgram.loadShader("/resources/shaders/vert111.glsl"), ShaderProgram.loadShader("/resources/shaders/frag111.glsl"));
        
     }
      public void render(ShaderProgram shaderprogram, int textureHandle) {

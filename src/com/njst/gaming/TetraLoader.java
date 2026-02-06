@@ -43,7 +43,7 @@ public class TetraLoader implements SceneLoader {
         float[] vertices = terrain.geometry.getVertices();
         int[] indices = terrain.geometry.getIndices();
         ShaderProgram shader= new ShaderProgram(
-            ShaderProgram.loadShader("/jimmy/vert11.glsl"), ShaderProgram.loadShader("/jimmy/solid_color.glsl"));
+            ShaderProgram.loadShader("/resources/shaders/vert11.glsl"), ShaderProgram.loadShader("/resources/shaders/solid_color.glsl"));
     
         
         for (int i = 0; i < 1; i++) {

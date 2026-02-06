@@ -81,8 +81,8 @@ public class App {
         // Initialize OpenGL
         GL.createCapabilities();
         shaderprogram = new ShaderProgram(
-                    ShaderProgram.loadShader("/jimmy/vert1.glsl"),
-                    ShaderProgram.loadShader("/jimmy/frag1.glsl")
+                    ShaderProgram.loadShader("/resources/shaders/vert1.glsl"),
+                    ShaderProgram.loadShader("/resources/shaders/frag1.glsl")
             );
             shaderprogram.use();
             System.out.println(shaderprogram.log);

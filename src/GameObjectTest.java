@@ -55,8 +55,8 @@ public class GameObjectTest {
     private void loop() {
         // Create a basic shader program
         ShaderProgram shader =  new ShaderProgram(
-            ShaderProgram.loadShader("/jimmy/vert.glsl"),
-            ShaderProgram.loadShader("/jimmy/frag.glsl")
+            ShaderProgram.loadShader("/resources/shaders/vert.glsl"),
+            ShaderProgram.loadShader("/resources/shaders/frag.glsl")
     );
 
         // Create a dummy cube geometry and a GameObject from it.

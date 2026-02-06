@@ -67,7 +67,7 @@ public class Renderer {
             // Initialize main shader program
             // Build and compile shader program
             shaderProgram = new ShaderProgram(
-            ShaderProgram.loadShader("/jimmy/vert11.glsl"), ShaderProgram.loadShader("/jimmy/frag11.glsl"));
+            ShaderProgram.loadShader("/resources/shaders/vert11.glsl"), ShaderProgram.loadShader("/resources/shaders/frag11.glsl"));
             scene.loader.load(scene);
                 for (GameObject object : scene.objects) {
                     object.generateBuffers();

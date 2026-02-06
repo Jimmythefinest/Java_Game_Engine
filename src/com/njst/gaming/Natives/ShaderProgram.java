@@ -4,6 +4,8 @@ package com.njst.gaming.Natives;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.*;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -44,6 +46,22 @@ public class ShaderProgram {
     }
     public static String loadShader(String filePath) {
         StringBuilder shaderSource = new StringBuilder();
+        
+        // Try loading from classpath first (for JAR packaging)
+        try (InputStream is = ShaderProgram.class.getResourceAsStream(filePath);
+             BufferedReader reader = is != null ? new BufferedReader(new InputStreamReader(is)) : null) {
+            if (reader != null) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    shaderSource.append(line).append("\n");
+                }
+                return shaderSource.toString();
+            }
+        } catch (IOException e) {
+            // Fall through to file system loading
+        }
+        
+        // Fallback to file system loading
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
