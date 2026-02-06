@@ -20,6 +20,7 @@ public class Renderer {
     public Camera camera;
     public Camera lightCamera;
     private int textureHandle;
+    public boolean hasError = false;
 
 
     // Shader programs
@@ -80,6 +81,7 @@ public class Renderer {
     }
 
     public void onDrawFrame() {
+        if (hasError) return;
         try {
             long start=System.nanoTime();
             float[] consts=new float[39];
@@ -114,7 +116,9 @@ public class Renderer {
         frame++;
     
         } catch (Exception e) {
+            hasError = true;
             logException(e);
+            e.printStackTrace();
         }
     }
     int frame=0;

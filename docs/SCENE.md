@@ -15,6 +15,10 @@ The `Scene` class is the primary container for the engine's game state, acting a
 - **Purpose**: Adds an object to the scene.
 - **Automatic Sorting**: Attempts to sort objects based on their collision bounds (Z-sorting logic depends on specific implementation details).
 
+### `boolean removeGameObject(GameObject obj)`
+- **Purpose**: Removes a GameObject from the scene.
+- **Returns**: `true` if the object was found and removed, `false` otherwise.
+
 ### `void onDrawFrame()`
 - **Purpose**: Updates the scene state before rendering.
 - **Logic**: Handles camera movement (if flags are set) and iterates through all active animations to call `animate()`.

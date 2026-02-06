@@ -4,7 +4,7 @@ import com.njst.gaming.Bone;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.Weighted_GameObject;
-import com.njst.gaming.Animations.Skeleton;
+import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.Animations.KeyframeAnimation;
 
 import java.util.ArrayList;

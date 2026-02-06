@@ -141,9 +141,11 @@ public abstract class Engine {
             }
             frameCount++;
 
-            input.update();
-            onUpdate();
-            renderer.onDrawFrame();
+            if (!renderer.hasError) {
+                input.update();
+                onUpdate();
+                renderer.onDrawFrame();
+            }
             
             glfwSwapBuffers(window);
             glfwPollEvents();

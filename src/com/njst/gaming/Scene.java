@@ -85,6 +85,15 @@ public class Scene {
         objects.add(r);
     }
 
+    /**
+     * Removes a GameObject from the scene.
+     * @param obj The GameObject to remove.
+     * @return true if the object was found and removed, false otherwise.
+     */
+    public boolean removeGameObject(GameObject obj) {
+        return objects.remove(obj);
+    }
+
     public void addTetra() {
 
         if (temp.ray_intersects(renderer.camera.cameraPosition.clone(),

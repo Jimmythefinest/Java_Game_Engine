@@ -17,6 +17,22 @@ public class Skeleton{
         return bones;
     }
 
+    public List<Bone> getBoneList() {
+        return bones;
+    }
+
+    public int getBoneCount() {
+        return bones.size();
+    }
+
+    public List<float[]> getBoneMatrices() {
+        List<float[]> matrices = new ArrayList<>();
+        for (Bone bone : bones) {
+            matrices.add(bone.getAnimationMatrix().r);
+        }
+        return matrices;
+    }
+
 	public static ArrayList<Bone> get_array(Bone root) {
         ArrayList<Bone> bones = new ArrayList<>();
         addtoArrayList(bones, root);
