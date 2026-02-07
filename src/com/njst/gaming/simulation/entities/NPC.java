@@ -1,137 +1,102 @@
 package com.njst.gaming.simulation.entities;
 
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.ai.NeuralNetwork;
 import com.njst.gaming.objects.GameObject;
-import java.util.Random;
-import java.util.List;
 
 public class NPC {
-    public enum State {
-        WANDER, CHASE, RUN, HIDE
+
+    // ===== Tunables =====
+    private static final float MAX_SPEED = 5.0f;
+    private static final float ACCELERATION = 12.0f;
+    private static final float MAX_DIST_NORM = 30.0f;
+
+    // ===== State =====
+    public final GameObject skin;
+    public final NeuralNetwork brain;
+
+    public final Vector3 position;
+    private final Vector3 velocity = new Vector3();
+
+    // ===== Constructors =====
+    public NPC(GameObject skin) {
+        // 5 inputs → 2 outputs, linear output layer
+        this(skin, new NeuralNetwork(
+                new int[] { 5, 12, 12, 2 },
+                0.01f,
+                true // linear outputs (IMPORTANT)
+        ));
     }
 
-    public interface ProjectileSpawner {
-        void spawnProjectile(Vector3 pos, Vector3 vel, int team);
+    public NPC(GameObject skin, NeuralNetwork brain) {
+        this.skin = skin;
+        this.position = skin.position;
+        this.brain = brain;
     }
 
-    public GameObject obj;
-    public Vector3 velocity = new Vector3();
-    private Random rnd = new Random();
+    // ===== Evolution =====
+    public static float mutationRate = 0.1f;
+    public static float mutationStrength = 0.3f;
 
-    // NPC Stats
-    public int team;
-    public int ammo = 3;
-    public float ammoRechargeTimer = 0;
-    public State state = State.WANDER;
-
-    private static final float MAX_RADIUS = 25f;
-    private static final float WANDER_STRENGTH = 0.05f;
-    private static final float CHASE_SPEED = 0.3f;
-    private static final float SPEED_LIMIT = 0.2f;
-    private static final float RECHARGE_TIME = 10.0f;
-    private static final float DETECTION_RANGE = 15.0f;
-    private static final float SHOOT_RANGE = 10.0f;
-    private static final float SHOOT_COOLDOWN = 1.0f;
-    private float shootTimer = 0;
-
-    public NPC(GameObject obj, int team) {
-        this.obj = obj;
-        this.team = team;
+    public NPC reproduce(GameObject newSkin) {
+        NeuralNetwork child = brain.copy();
+        child.mutate(mutationRate, mutationStrength); // dynamic mutations from control panel
+        return new NPC(newSkin, child);
     }
 
-    public void update(float dt, List<NPC> allNPCs, ProjectileSpawner spawner) {
-        updateAmmo(dt);
-        think(allNPCs);
-        move(dt);
-        combat(dt, allNPCs, spawner);
+    // ===== Update =====
+    public void update(Vector3 target, float dt) {
 
-        obj.updateModelMatrix();
+        // --- Relative target vector ---
+        Vector3 toTarget = target.clone().sub(position);
+        float distance = toTarget.length();
+
+        // Normalize direction safely
+        if (distance > 0.0001f) {
+            toTarget.mul(1.0f / distance);
+        }
+
+        // --- Build inputs ---
+        float[] inputs = new float[] {
+                clamp(toTarget.x, -1f, 1f),
+                clamp(toTarget.z, -1f, 1f),
+                clamp(velocity.x / MAX_SPEED, -1f, 1f),
+                clamp(velocity.z / MAX_SPEED, -1f, 1f),
+                clamp(distance / MAX_DIST_NORM, 0f, 1f)
+        };
+
+        // --- NN forward ---
+        float[] out = brain.feedForward(inputs);
+
+        // --- Acceleration output ---
+        float ax = clamp(out[0], -1f, 1f);
+        float az = clamp(out[1], -1f, 1f);
+
+        // --- Physics integration ---
+        velocity.x += ax * ACCELERATION * dt;
+        velocity.z += az * ACCELERATION * dt;
+
+        clampVelocity();
+
+        position.x += velocity.x * dt;
+        position.z += velocity.z * dt;
+
+        skin.updateModelMatrix();
     }
 
-    private void updateAmmo(float dt) {
-        if (ammo < 3) {
-            ammoRechargeTimer += dt;
-            if (ammoRechargeTimer >= RECHARGE_TIME) {
-                ammo++;
-                ammoRechargeTimer = 0;
-            }
+    // ===== Helpers =====
+    private void clampVelocity() {
+        float speedSq = velocity.x * velocity.x + velocity.z * velocity.z;
+        float maxSq = MAX_SPEED * MAX_SPEED;
+
+        if (speedSq > maxSq) {
+            float invLen = (float) (1.0 / Math.sqrt(speedSq));
+            velocity.x *= invLen * MAX_SPEED;
+            velocity.z *= invLen * MAX_SPEED;
         }
     }
 
-    private void think(List<NPC> allNPCs) {
-        NPC nearestEnemy = findNearestEnemy(allNPCs);
-        float distToEnemy = nearestEnemy != null ? obj.position.clone().sub(nearestEnemy.obj.position).length()
-                : Float.MAX_VALUE;
-
-        if (ammo == 0) {
-            state = (distToEnemy < DETECTION_RANGE) ? State.RUN : State.HIDE;
-        } else {
-            state = (distToEnemy < DETECTION_RANGE) ? State.CHASE : State.WANDER;
-        }
-    }
-
-    private void move(float dt) {
-        switch (state) {
-            case WANDER:
-                velocity.x += (rnd.nextFloat() - 0.5f) * WANDER_STRENGTH;
-                velocity.z += (rnd.nextFloat() - 0.5f) * WANDER_STRENGTH;
-                break;
-            case CHASE:
-                // Move toward logic could be added here
-                break;
-            case RUN:
-                // Move away logic could be added here
-                break;
-            case HIDE:
-                // Stay still logic could be added here
-                break;
-        }
-
-        velocity.y = 0;
-        float speed = velocity.length();
-        if (speed > SPEED_LIMIT)
-            velocity.normalize().mul(SPEED_LIMIT);
-
-        obj.position.add(velocity.clone().mul(dt));
-
-        // Radius Constraint
-        float dist = obj.position.length();
-        if (dist > MAX_RADIUS) {
-            Vector3 push = obj.position.clone().mul(-1f);
-            push.normalize().mul(0.1f);
-            velocity.add(push);
-        }
-    }
-
-    private void combat(float dt, List<NPC> allNPCs, ProjectileSpawner spawner) {
-        shootTimer -= dt;
-        if (state == State.CHASE && ammo > 0 && shootTimer <= 0) {
-            NPC target = findNearestEnemy(allNPCs);
-            if (target != null && obj.position.clone().sub(target.obj.position).length() < SHOOT_RANGE) {
-                shoot(target, spawner);
-                shootTimer = SHOOT_COOLDOWN;
-            }
-        }
-    }
-
-    private NPC findNearestEnemy(List<NPC> allNPCs) {
-        NPC best = null;
-        float bestDist = Float.MAX_VALUE;
-        for (NPC other : allNPCs) {
-            if (other.team == this.team)
-                continue;
-            float d = obj.position.clone().sub(other.obj.position).length();
-            if (d < bestDist) {
-                bestDist = d;
-                best = other;
-            }
-        }
-        return best;
-    }
-
-    private void shoot(NPC target, ProjectileSpawner spawner) {
-        ammo--;
-        Vector3 dir = target.obj.position.clone().sub(obj.position).normalize();
-        spawner.spawnProjectile(obj.position.clone().add(dir.clone().mul(1.0f)), dir.mul(2.0f), team);
+    private static float clamp(float v, float min, float max) {
+        return Math.max(min, Math.min(max, v));
     }
 }
