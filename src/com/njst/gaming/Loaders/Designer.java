@@ -89,7 +89,8 @@ public class Designer extends Animation implements SceneLoader {
         float[] input = new float[10];
         System.err.println(shader.err);
         int i = 0;
-        for (float na : input) {
+        for (@SuppressWarnings("unused")
+        float na : input) {
             input[i] = 3 * i;
             i++;
         }

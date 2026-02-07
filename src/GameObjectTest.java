@@ -1,18 +1,13 @@
 
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.*;
-
 import com.njst.gaming.data;
 import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
 
-import java.nio.FloatBuffer;
-
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class GameObjectTest {

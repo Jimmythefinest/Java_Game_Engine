@@ -5,7 +5,6 @@ import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Loaders.FBXAnimationLoader;
 import com.njst.gaming.Loaders.FBXBoneLoader;
-import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.*;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.Weighted_GameObject;

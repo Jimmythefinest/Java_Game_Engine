@@ -9,11 +9,11 @@ public class Transformer {
     // Feed-forward layer parameters
     private int d_model = 8; // input/output dimension
     int modelDim = 8; // input/output dimension
-    private int d_ff = 16;   // hidden layer dimension
-    private double[][] W1;   // [d_model x d_ff]
-    private double[] b1;     // [d_ff]
-    private double[][] W2;   // [d_ff x d_model]
-    private double[] b2;     // [d_model]
+    private int d_ff = 16; // hidden layer dimension
+    private double[][] W1; // [d_model x d_ff]
+    private double[] b1; // [d_ff]
+    private double[][] W2; // [d_ff x d_model]
+    private double[] b2; // [d_model]
 
     public Transformer() {
         // Random initialization of weights and biases
@@ -41,10 +41,8 @@ public class Transformer {
     // Feed-forward for a single token (vector)
     public double[] feedForward(int[] x) {
         double[][] tokens = new double[x.length][modelDim];
-        double[][] token_keys = new double[x.length][modelDim];
-        double[][] token_querries = new double[x.length][modelDim];
         for (int i = 0; i < x.length; i++) {
-            tokens[i] =embeddings[x[i]];
+            tokens[i] = embeddings[x[i]];
         }
         double[] output = new double[d_model];
         return output;
