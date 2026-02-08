@@ -12,6 +12,7 @@ import java.nio.IntBuffer;
 
 public class SSBO {
     private int ssboId;
+    private FloatBuffer reusableBuffer;
 
     public SSBO() {
         ssboId = GL43.glGenBuffers();
@@ -27,18 +28,23 @@ public class SSBO {
 
     public void setData(float[] data, int usage) {
         bind();
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(data.length);
-        buffer.put(data).flip();
+        if (reusableBuffer == null || reusableBuffer.capacity() < data.length) {
+            reusableBuffer = BufferUtils.createFloatBuffer(data.length);
+        }
+        reusableBuffer.clear();
+        reusableBuffer.put(data).flip();
 
-        GL43.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, buffer, usage);
+        GL43.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, reusableBuffer, usage);
         unbind();
     }
+
     public void setData(int[] data, int usage) {
         bind();
         IntBuffer buffer = Utils.Array_to_Buffer(data);
         GL43.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, buffer, usage);
         unbind();
     }
+
     public void updateData(float[] data) {
         bind();
         FloatBuffer buffer = BufferUtils.createFloatBuffer(data.length);
@@ -59,8 +65,7 @@ public class SSBO {
                 GL43.GL_SHADER_STORAGE_BUFFER,
                 0,
                 numElements * Float.BYTES,
-                GL43.GL_MAP_READ_BIT
-        );
+                GL43.GL_MAP_READ_BIT);
 
         FloatBuffer floatBuffer = byteBuffer.order(ByteOrder.nativeOrder()).asFloatBuffer();
         float[] data = new float[numElements];

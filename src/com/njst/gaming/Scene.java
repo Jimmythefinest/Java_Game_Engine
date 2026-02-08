@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Scene {
-    public ArrayList<GameObject> objects;
-    public ArrayList<Animation> animations;
+    public CopyOnWriteArrayList<GameObject> objects;
+    public CopyOnWriteArrayList<Animation> animations;
     public Tetrahedron temp = new Tetrahedron();
     public HashMap<String, Map<String, KeyframeAnimation>> animation_groups;
     public HashMap<Integer, Runnable> actions = new HashMap<>();
@@ -40,9 +41,9 @@ public class Scene {
     public boolean camera_should_move_up = false;
 
     public Scene() {
-        objects = new ArrayList<GameObject>();
+        objects = new CopyOnWriteArrayList<GameObject>();
         animation_groups = new HashMap<>();
-        animations = new ArrayList<>();
+        animations = new CopyOnWriteArrayList<>();
         MOTION_ANIMATIONS = new ArrayList<>();
         KEY_ANIMATIONS = new ArrayList<>();
         // renderer = new Renderer();

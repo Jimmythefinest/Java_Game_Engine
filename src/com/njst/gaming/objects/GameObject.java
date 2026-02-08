@@ -20,45 +20,41 @@ import com.njst.gaming.Math.Vector3;
 
 // import static com.njst.gaming.data.*;
 
-public class GameObject{
-    //Properties
+public class GameObject {
+    // Properties
     public String name = "Default";
-    public float shininess = 32, ambientlight_multiplier = 1,mass = 10;
+    public float shininess = 32, ambientlight_multiplier = 1, mass = 10;
     public int texture;
 
-    
     public Vector3 position = new Vector3(0, 0, 0); // Initial position (x, y, z)
     public float[] scale = new float[] { 1, 1, 1 }; // Initial size (sx, sy, sz)
     private Vector3 rotation = new Vector3(); // Initial size (sx, sy, sz)
     public Matrix4 modelMatrix = new Matrix4();
 
     public float[] velocity = new float[] { 0, 0, 0 };
-    private boolean buffers_generated=false;
-    
-    public ArrayList<Animation> animations;
-    
+    private boolean buffers_generated = false;
 
-    //collision Box data
+    public ArrayList<Animation> animations;
+
+    // collision Box data
     public float[] collisionBox, collisionBounds, none_axis_aligned_CollisionBox;
     public Vector3 max = new Vector3(-0.5f, -0.5f, -0.5f), min = new Vector3(0.5f, 0.5f, 0.5f);;
-   
 
-    //Geometry data
-
+    // Geometry data
 
     public int[] vaoIds = new int[1];
-    public int[] vboIds = new int[5], vao = new int[1]; 
+    public int[] vboIds = new int[5], vao = new int[1];
     // float[] vertices, normals, texture_coordinates, colors;
     // int[] indices;
     public Geometry geometry;
-    
+
     public GameObject(Geometry geometry, int texture) {
         // vertices = geometry.getVertices();
         // normals = geometry.getNormals();
         // texture_coordinates = geometry.getTextureCoordinates();
         // indices = geometry.getIndices();
         this.texture = texture;
-        this.geometry=geometry;
+        this.geometry = geometry;
 
         // Initialize model matrix to identity
 
@@ -181,37 +177,44 @@ public class GameObject{
 
     public void generateBuffers() {
         int vaoId = GlUtils.generateVAO(new int[1], 0, 0)[0];
-        int[] vbos = GlUtils.generateVBOs(new int[6], 0, 0);
+        vboIds = GlUtils.generateVBOs(new int[6], 0, 0);
         GlUtils.bind_vertex_array(vaoId);
-        int vboId = vbos[0];
-        int vboId1 = vbos[1];
+        int vboId = vboIds[0];
+        int vboId1 = vboIds[1];
         GlUtils.set_VBO_Float(vboId, geometry.getVertices());
         GlUtils.set_VBO_Float(vboId1, geometry.getNormals());
-        GlUtils.set_VBO_Float(vbos[2], geometry.getTextureCoordinates());
+        GlUtils.set_VBO_Float(vboIds[2], geometry.getTextureCoordinates());
 
         GlUtils.set_VBO_attrib_pointer(vboId1, 1, 3);
         GlUtils.set_VBO_attrib_pointer(vboId, 0, 3);
-        GlUtils.set_VBO_attrib_pointer(vbos[2], 2, 2);
+        GlUtils.set_VBO_attrib_pointer(vboIds[2], 2, 2);
 
-        int eboId = vbos[5];
+        int eboId = vboIds[5];
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.getIndices(), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
         vaoIds[0] = vaoId;
-       
-
+        buffers_generated = true;
     }
-    public ShaderProgram  shaderprogram;
+
+    public void cleanup() {
+        if (buffers_generated) {
+            GlUtils.DeleteBuffers(vboIds);
+            GlUtils.DeleteVAO(vaoIds);
+            buffers_generated = false;
+        }
+    }
+
+    public ShaderProgram shaderprogram;
 
     public void render(ShaderProgram shader, int textureHandle) {
-        if(!buffers_generated){
+        if (!buffers_generated) {
             generateBuffers();
-            buffers_generated=true;
         }
-       
-        if(this.shaderprogram==null){
-            shaderprogram=shader;
+
+        if (this.shaderprogram == null) {
+            shaderprogram = shader;
         }
         // shaderprogram.use();
         shaderprogram.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
