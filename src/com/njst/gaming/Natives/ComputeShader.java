@@ -99,4 +99,12 @@ public class ComputeShader {
     public int getProgram() {
         return program;
     }
+
+    public boolean hasBuffer(int bindingIndex) {
+        return buffers.containsKey(bindingIndex);
+    }
+
+    public int getBufferSize(int bindingIndex) {
+        return bufferSizes.getOrDefault(bindingIndex, 0);
+    }
 }

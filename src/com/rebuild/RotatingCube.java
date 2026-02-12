@@ -3,7 +3,7 @@ package com.rebuild;
 import com.njst.gaming.*;
 import com.njst.gaming.Math.Vector3;
 import static org.lwjgl.glfw.GLFW.*;
-import com.njst.gaming.Loaders.SocietySimulationLoader;
+import com.njst.gaming.Loaders.*;
 
 /**
  * Main application class, refactored to extend Engine.
@@ -17,7 +17,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new SocietySimulationLoader();
+        scene.loader = new GraphSocietySimulationLoader();
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.njst.gaming;
 
 public class data {
-        public static String rootDirectory = "C:/jimmy/";
+        public static String rootDirectory = "/jimmy/";
         public static final float[] VERTICES1 = {
                         -1, 1, 1, // Front top left
                         1, 1, 1, // Front top right
