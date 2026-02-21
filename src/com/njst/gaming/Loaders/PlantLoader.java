@@ -10,53 +10,31 @@ import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.Geometries.ImposterGeometry;
+import com.njst.gaming.objects.ImposterGenerator;
+import com.njst.gaming.objects.LODGameObject;
 
 /**
  * Scene loader: generates a Perlin-noise terrain, then scatters procedural
- * L-System plants across it — but only where the terrain height is at or
- * above {@link #MIN_PLANT_HEIGHT}.  Low areas (water / swamp) stay bare.
- *
- * <p>Wire it in as usual:</p>
- * <pre>
- *   engine.scene.loader = new PlantLoader();
- * </pre>
- *
- * <p>Key tuneable constants at the top of the class:</p>
- * <ul>
- *   <li>{@link #MIN_PLANT_HEIGHT} — height threshold (terrain units)</li>
- *   <li>{@link #PLANT_GRID_STEP} — spacing between plant candidates</li>
- *   <li>{@link #TERRAIN_SIZE}   — resolution of the terrain grid</li>
- * </ul>
+ * L-System plants across it. Uses an Imposter system (LOD) to maintain 
+ * high performance by swapping 3D meshes for 2D sprites at a distance.
  */
 public class PlantLoader implements Scene.SceneLoader {
 
     // ---- Terrain settings ---------------------------------------------------
-
-    /** Terrain grid resolution (vertices per side). */
     private static final int TERRAIN_SIZE = 128;
-
-    /**
-     * Minimum terrain height at which a plant may spawn.
-     * TerrainGenerator scales Perlin output by 10, so the height range is
-     * roughly [-10, 10].  0.5 keeps plants off flat/low ground (water zones).
-     * Set to a negative value to allow plants everywhere.
-     */
     private static final float MIN_PLANT_HEIGHT = 0.5f;
 
+    // ---- LOD settings -------------------------------------------------------
+    private static final float LOD_SWITCH_DISTANCE = 50.0f;
+    private static final int IMPOSTER_RESOLUTION = 256;
+
     // ---- Plant scatter settings ---------------------------------------------
-
-    /** Skip this many terrain cells between each plant candidate.
-     *  Lower value = denser forest. */
     private static final int PLANT_GRID_STEP = 8;
-
-    /** Master randomness seed for plant-seed derivation and position jitter. */
     private static final long SCATTER_SEED = 0xDEADBEEFL;
 
-    // Terrain is centred at world origin
     private static final float TERRAIN_OFFSET_X = -TERRAIN_SIZE / 2f;
     private static final float TERRAIN_OFFSET_Z = -TERRAIN_SIZE / 2f;
-
-    // -------------------------------------------------------------------------
 
     @Override
     public void load(Scene scene) {
@@ -65,7 +43,6 @@ public class PlantLoader implements Scene.SceneLoader {
         int skyTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyTex);
         skybox.ambientlight_multiplier = 5;
-        skybox.shininess = 1;
         skybox.scale = new float[]{500, 500, 500};
         skybox.updateModelMatrix();
         scene.renderer.skybox = skybox;
@@ -74,45 +51,65 @@ public class PlantLoader implements Scene.SceneLoader {
         // ---- Terrain -------------------------------------------------------
         int terrainTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
         TerrainGeometry terrainGeo = new TerrainGeometry(TERRAIN_SIZE, TERRAIN_SIZE);
-
         GameObject terrain = new GameObject(terrainGeo, terrainTex);
         terrain.translate(new Vector3(TERRAIN_OFFSET_X, 0, TERRAIN_OFFSET_Z));
         terrain.name = "Terrain";
         scene.addGameObject(terrain);
 
-        // Keep a reference to the heightmap so we can sample it per-plant
         float[][] heightMap = terrainGeo.heightMap;
 
-        System.out.println("[PlantLoader] Terrain " + TERRAIN_SIZE + "x" + TERRAIN_SIZE + " generated.");
+        // ---- Setup Imposter Pool --------------------------------------------
+        // We'll bake one imposter for each of the 5 main grammars to save memory
+        System.out.println("[PlantLoader] Baking imposters...");
+        int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int[] imposterTextures = new int[5];
+        ImposterGeometry[] imposterGeos = new ImposterGeometry[5];
+        
+        for (int i = 0; i < 5; i++) {
+            System.out.println("[PlantLoader] Baking imposter " + i + "/5...");
+            // Generate a representative plant for this grammar index
+            long repSeed = i + 100;
+            PlantConfig config = new PlantSeed(repSeed).generateConfig();
+            PlantGeometry meshGeo = new PlantGeometry(config);
+            GameObject dummy = new GameObject(meshGeo, plantTex);
+            dummy.generateBuffers();
+            
+            // Bake it
+            imposterTextures[i] = ImposterGenerator.bake(dummy, scene.renderer, IMPOSTER_RESOLUTION);
+            
+            // Create a quad that fits the plant height (approx 4.0 units max)
+            imposterGeos[i] = new ImposterGeometry(2.5f, 4.0f); 
+        }
 
         // ---- Scatter plants -------------------------------------------------
-        int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/bark.jpg");
         java.util.Random rng = new java.util.Random(SCATTER_SEED);
-
         int planted = 0;
 
         for (int ix = 0; ix < TERRAIN_SIZE - 1; ix += PLANT_GRID_STEP) {
             for (int iz = 0; iz < TERRAIN_SIZE - 1; iz += PLANT_GRID_STEP) {
 
                 float h = heightMap[ix][iz];
-
-                // Only plant above the height threshold (skip water / lowland)
                 if (h < MIN_PLANT_HEIGHT) continue;
 
-                // Random sub-cell jitter so plants don't align to a grid
                 float jx = (rng.nextFloat() - 0.5f) * PLANT_GRID_STEP * 0.8f;
                 float jz = (rng.nextFloat() - 0.5f) * PLANT_GRID_STEP * 0.8f;
 
                 float worldX = ix + jx + TERRAIN_OFFSET_X;
-                float worldY = h;                      // base sits on the terrain
+                float worldY = h;
                 float worldZ = iz + jz + TERRAIN_OFFSET_Z;
 
-                // Derive a unique deterministic seed from the grid cell
                 long plantSeed = ((long) ix * 73856093L) ^ ((long) iz * 19349663L) ^ SCATTER_SEED;
-
-                PlantConfig   config = new PlantSeed(plantSeed).generateConfig();
-                PlantGeometry geo    = new PlantGeometry(config);
-                GameObject    plant  = new GameObject(geo, plantTex);
+                PlantConfig config = new PlantSeed(plantSeed).generateConfig();
+                PlantGeometry geo = new PlantGeometry(config);
+                
+                // Pick a pre-baked imposter based on something deterministic (like seed % 5)
+                int impIndex = (int)(Math.abs(plantSeed) % 5);
+                
+                LODGameObject plant = new LODGameObject(
+                    geo, plantTex, 
+                    imposterGeos[impIndex], imposterTextures[impIndex], 
+                    LOD_SWITCH_DISTANCE
+                );
 
                 plant.setPosition(worldX, worldY, worldZ);
                 plant.name = "Plant_" + ix + "_" + iz;
@@ -121,7 +118,6 @@ public class PlantLoader implements Scene.SceneLoader {
             }
         }
 
-        System.out.println("[PlantLoader] Done — " + planted
-                + " plants placed above height " + MIN_PLANT_HEIGHT + ".");
+        System.out.println("[PlantLoader] Done — " + planted + " plants with LOD system enabled.");
     }
 }
