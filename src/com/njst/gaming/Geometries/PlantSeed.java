@@ -91,12 +91,14 @@ public class PlantSeed {
         }
 
         // Derive numeric parameters
-        int   iterations  = 3 + rng.nextInt(3);                    // 3–5
+        // Capping iterations to prevent massive vertex counts (OOM)
+        int iterations = 3 + rng.nextInt(2);                       // 3–4 (was 3-5, but 5 is too much for complex rules)
+        
         float angle       = (float) Math.toRadians(18 + rng.nextInt(28)); // 18°–45°
         float stepLength  = 0.25f + rng.nextFloat() * 0.5f;        // 0.25–0.75
         float trunkRadius = 0.06f + rng.nextFloat() * 0.09f;       // 0.06–0.15
-        float branchTaper = 0.60f + rng.nextFloat() * 0.25f;       // 0.60–0.85
-        float leafSize    = 0.08f + rng.nextFloat() * 0.22f;       // 0.08–0.30
+        float branchTaper = 0.60f + rng.nextFloat() * 0.20f;       // 0.60–0.80 (slightly more taper reduces detail)
+        float leafSize    = 0.08f + rng.nextFloat() * 0.15f;       // 0.08–0.23 (smaller leaves)
 
         return new PlantConfig(axiom, rules, iterations, angle,
                                stepLength, trunkRadius, branchTaper, leafSize);

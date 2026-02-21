@@ -179,26 +179,25 @@ public class ShaderProgram {
     }
 
     public static int loadTexture(String path) {
-        int[] textureHandle = { 55 };
-
-        if (textureHandle[0] != 0) {
-            try {
-                IntBuffer w = stackMallocInt(1), h = stackMallocInt(1), comp = stackMallocInt(1);
-                ByteBuffer image = STBImage.stbi_load(path, w, h, comp, 4);
-                int textureID = glGenTextures();
-                glBindTexture(GL_TEXTURE_2D, textureID);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w.get(), h.get(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-                STBImage.stbi_image_free(image);
-                textureHandle[0] = textureID;
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            IntBuffer w = stackMallocInt(1), h = stackMallocInt(1), comp = stackMallocInt(1);
+            ByteBuffer image = STBImage.stbi_load(path, w, h, comp, 4);
+            if (image == null) {
+                System.err.println("Failed to load texture: " + path);
+                return 0;
             }
+            int textureID = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w.get(), h.get(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            STBImage.stbi_image_free(image);
+            return textureID;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
         }
-        return textureHandle[0];
     }
-
 }

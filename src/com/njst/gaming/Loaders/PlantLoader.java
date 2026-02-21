@@ -6,39 +6,57 @@ import com.njst.gaming.Geometries.PlantConfig;
 import com.njst.gaming.Geometries.PlantGeometry;
 import com.njst.gaming.Geometries.PlantSeed;
 import com.njst.gaming.Geometries.SphereGeometry;
+import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
 
 /**
- * Demo scene loader that populates the engine with procedurally generated plants.
+ * Scene loader: generates a Perlin-noise terrain, then scatters procedural
+ * L-System plants across it — but only where the terrain height is at or
+ * above {@link #MIN_PLANT_HEIGHT}.  Low areas (water / swamp) stay bare.
  *
- * <p>Each plant is grown from a different integer seed, producing unique shapes.
- * Wire this loader into your {@link com.njst.gaming.Engine} exactly as you
- * would any other {@link com.njst.gaming.Scene.SceneLoader}:</p>
- *
+ * <p>Wire it in as usual:</p>
  * <pre>
- *   Engine engine = new Engine();
  *   engine.scene.loader = new PlantLoader();
- *   engine.start();
  * </pre>
  *
- * <p>To generate a single plant from code:</p>
- * <pre>
- *   PlantConfig config = new PlantSeed(42).generateConfig();
- *   PlantGeometry geo  = new PlantGeometry(config);
- *   GameObject plant   = new GameObject(geo, textureId);
- *   plant.setPosition(x, 0, z);
- *   scene.addGameObject(plant);
- * </pre>
+ * <p>Key tuneable constants at the top of the class:</p>
+ * <ul>
+ *   <li>{@link #MIN_PLANT_HEIGHT} — height threshold (terrain units)</li>
+ *   <li>{@link #PLANT_GRID_STEP} — spacing between plant candidates</li>
+ *   <li>{@link #TERRAIN_SIZE}   — resolution of the terrain grid</li>
+ * </ul>
  */
 public class PlantLoader implements Scene.SceneLoader {
 
-    // Seeds for the demo plants — each produces a visually distinct result
-    private static final long[] DEMO_SEEDS = { 42L, 1337L, 99999L, 7L, 314159L, 271828L };
+    // ---- Terrain settings ---------------------------------------------------
 
-    // Grid spacing between plants
-    private static final float SPACING = 3.5f;
+    /** Terrain grid resolution (vertices per side). */
+    private static final int TERRAIN_SIZE = 128;
+
+    /**
+     * Minimum terrain height at which a plant may spawn.
+     * TerrainGenerator scales Perlin output by 10, so the height range is
+     * roughly [-10, 10].  0.5 keeps plants off flat/low ground (water zones).
+     * Set to a negative value to allow plants everywhere.
+     */
+    private static final float MIN_PLANT_HEIGHT = 0.5f;
+
+    // ---- Plant scatter settings ---------------------------------------------
+
+    /** Skip this many terrain cells between each plant candidate.
+     *  Lower value = denser forest. */
+    private static final int PLANT_GRID_STEP = 8;
+
+    /** Master randomness seed for plant-seed derivation and position jitter. */
+    private static final long SCATTER_SEED = 0xDEADBEEFL;
+
+    // Terrain is centred at world origin
+    private static final float TERRAIN_OFFSET_X = -TERRAIN_SIZE / 2f;
+    private static final float TERRAIN_OFFSET_Z = -TERRAIN_SIZE / 2f;
+
+    // -------------------------------------------------------------------------
 
     @Override
     public void load(Scene scene) {
@@ -53,40 +71,57 @@ public class PlantLoader implements Scene.SceneLoader {
         scene.renderer.skybox = skybox;
         scene.addGameObject(skybox);
 
-        // ---- Shared plant texture (bark/leaf) -------------------------------
-        // Re-use whatever texture is available in the project root.
-        // Swap the path for a dedicated bark / leaf atlas if you have one.
-        int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        // ---- Terrain -------------------------------------------------------
+        int terrainTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        TerrainGeometry terrainGeo = new TerrainGeometry(TERRAIN_SIZE, TERRAIN_SIZE);
 
-        // ---- Generate one plant per seed ------------------------------------
-        int count = DEMO_SEEDS.length;
-        int cols  = (int) Math.ceil(Math.sqrt(count));
+        GameObject terrain = new GameObject(terrainGeo, terrainTex);
+        terrain.translate(new Vector3(TERRAIN_OFFSET_X, 0, TERRAIN_OFFSET_Z));
+        terrain.name = "Terrain";
+        scene.addGameObject(terrain);
 
-        for (int i = 0; i < count; i++) {
-            long seed = DEMO_SEEDS[i];
+        // Keep a reference to the heightmap so we can sample it per-plant
+        float[][] heightMap = terrainGeo.heightMap;
 
-            System.out.println("[PlantLoader] Generating plant from seed " + seed + " ...");
-            long t0 = System.currentTimeMillis();
+        System.out.println("[PlantLoader] Terrain " + TERRAIN_SIZE + "x" + TERRAIN_SIZE + " generated.");
 
-            PlantConfig  config = new PlantSeed(seed).generateConfig();
-            PlantGeometry  geo  = new PlantGeometry(config);
+        // ---- Scatter plants -------------------------------------------------
+        int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/bark.jpg");
+        java.util.Random rng = new java.util.Random(SCATTER_SEED);
 
-            System.out.println("[PlantLoader] seed=" + seed
-                    + "  vertices=" + geo.getVertices().length / 3
-                    + "  indices="  + geo.getIndices().length
-                    + "  (" + (System.currentTimeMillis() - t0) + " ms)");
+        int planted = 0;
 
-            GameObject plant = new GameObject(geo, plantTex);
+        for (int ix = 0; ix < TERRAIN_SIZE - 1; ix += PLANT_GRID_STEP) {
+            for (int iz = 0; iz < TERRAIN_SIZE - 1; iz += PLANT_GRID_STEP) {
 
-            // Arrange in a grid
-            float px = (i % cols) * SPACING - (cols * SPACING / 2f);
-            float pz = (i / cols) * SPACING - (cols * SPACING / 2f);
-            plant.setPosition(px, 0, pz);
-            plant.name = "Plant_seed_" + seed;
+                float h = heightMap[ix][iz];
 
-            scene.addGameObject(plant);
+                // Only plant above the height threshold (skip water / lowland)
+                if (h < MIN_PLANT_HEIGHT) continue;
+
+                // Random sub-cell jitter so plants don't align to a grid
+                float jx = (rng.nextFloat() - 0.5f) * PLANT_GRID_STEP * 0.8f;
+                float jz = (rng.nextFloat() - 0.5f) * PLANT_GRID_STEP * 0.8f;
+
+                float worldX = ix + jx + TERRAIN_OFFSET_X;
+                float worldY = h;                      // base sits on the terrain
+                float worldZ = iz + jz + TERRAIN_OFFSET_Z;
+
+                // Derive a unique deterministic seed from the grid cell
+                long plantSeed = ((long) ix * 73856093L) ^ ((long) iz * 19349663L) ^ SCATTER_SEED;
+
+                PlantConfig   config = new PlantSeed(plantSeed).generateConfig();
+                PlantGeometry geo    = new PlantGeometry(config);
+                GameObject    plant  = new GameObject(geo, plantTex);
+
+                plant.setPosition(worldX, worldY, worldZ);
+                plant.name = "Plant_" + ix + "_" + iz;
+                scene.addGameObject(plant);
+                planted++;
+            }
         }
 
-        System.out.println("[PlantLoader] Done — " + count + " plants in scene.");
+        System.out.println("[PlantLoader] Done — " + planted
+                + " plants placed above height " + MIN_PLANT_HEIGHT + ".");
     }
 }
