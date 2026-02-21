@@ -105,6 +105,13 @@ public class GameObject {
         updateModelMatrix();
     }
 
+    public void setRotation(float x, float y, float z) {
+        rotation.x = x;
+        rotation.y = y;
+        rotation.z = z;
+        updateModelMatrix();
+    }
+
     public void translate(Vector3 position) {
         this.position.add(position);
         updateModelMatrix();

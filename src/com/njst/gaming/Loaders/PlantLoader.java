@@ -75,10 +75,12 @@ public class PlantLoader implements Scene.SceneLoader {
             dummy.generateBuffers();
             
             // Bake it
-            imposterTextures[i] = ImposterGenerator.bake(dummy, scene.renderer, IMPOSTER_RESOLUTION);
+            float[] impScale = new float[1];
+            imposterTextures[i] = ImposterGenerator.bake(dummy, scene.renderer, IMPOSTER_RESOLUTION, impScale);
+            float scale = impScale[0];
             
-            // Create a quad that fits the plant height (approx 4.0 units max)
-            imposterGeos[i] = new ImposterGeometry(2.5f, 4.0f); 
+            // Create a quad that fits the plant scale
+            imposterGeos[i] = new ImposterGeometry(scale, scale); 
         }
 
         // ---- Scatter plants -------------------------------------------------

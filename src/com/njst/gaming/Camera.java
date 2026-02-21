@@ -49,14 +49,19 @@ public class Camera {
     }
     public void moveForward(float distance) {
         Vector3 direction = new Vector3(targetPosition).sub(cameraPosition);
-        // direction.x = (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
-        // direction.y = (float) (Math.sin(Math.toRadians(pitch)));
-        // direction.z = (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
         direction.normalize();
         direction.mul(distance);
         cameraPosition.add(direction);
         targetPosition.add(direction);
-       // upDirection.add(direction);
+    }
+
+    public void moveStrafe(float distance) {
+        Vector3 forward = new Vector3(targetPosition).sub(cameraPosition);
+        forward.normalize();
+        Vector3 right = forward.cross(upDirection).normalize();
+        right.mul(distance);
+        cameraPosition.add(right);
+        targetPosition.add(right);
     }
     
     public Matrix4 getViewMatrix() {

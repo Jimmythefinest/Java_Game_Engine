@@ -17,12 +17,36 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new PlantLoader();
+        scene.loader = new LODTestLoader();
     }
 
     @Override
     protected void onUpdate() {
-        // Use polling for smoother flag-based movement
+        // Smooth WASD movement relative to camera direction
+        float moveStep = 0.1f * scene.speed;
+
+        if (input.isKeyDown(GLFW_KEY_W)) {
+            renderer.camera.moveForward(moveStep);
+        }
+        if (input.isKeyDown(GLFW_KEY_S)) {
+            renderer.camera.moveForward(-moveStep);
+        }
+        if (input.isKeyDown(GLFW_KEY_A)) {
+            renderer.camera.moveStrafe(-moveStep);
+        }
+        if (input.isKeyDown(GLFW_KEY_D)) {
+            renderer.camera.moveStrafe(moveStep);
+        }
+        if (input.isKeyDown(GLFW_KEY_E)) {
+            renderer.camera.cameraPosition.add(new Vector3(0, moveStep, 0));
+            renderer.camera.targetPosition.add(new Vector3(0, moveStep, 0));
+        }
+        if (input.isKeyDown(GLFW_KEY_Q)) {
+            renderer.camera.cameraPosition.add(new Vector3(0, -moveStep, 0));
+            renderer.camera.targetPosition.add(new Vector3(0, -moveStep, 0));
+        }
+
+        // Legacy movement check
         scene.camera_should_move = input.isKeyDown(GLFW_KEY_X);
 
         // Handle single-press events that can also be checked here

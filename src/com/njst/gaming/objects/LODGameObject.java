@@ -63,5 +63,19 @@ public class LODGameObject extends GameObject {
     public void updateLOD(com.njst.gaming.Math.Vector3 cameraPos) {
         float dist = position.distance(cameraPos);
         isFar = (dist > lodDistance);
+
+        if (isFar) {
+            // Billboard: rotate to face camera on Y axis
+            // Calculate direction from object to camera
+            float dx = cameraPos.x - position.x;
+            float dz = cameraPos.z - position.z;
+            
+            // Calculate angle in radians
+            float angle = (float) Math.atan2(dx, dz);
+            
+            // Set rotation (Rotating around Y axis)
+            // Note: Now using the public setRotation in the base GameObject class.
+            this.setRotation(0, (float) Math.toDegrees(angle), 0);
+        }
     }
 }
