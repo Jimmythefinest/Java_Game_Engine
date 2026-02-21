@@ -190,7 +190,7 @@ public class SurvivalBrain implements NPCBrain {
      */
     @Override
     public SurvivalBrain reproduce() {
-        NeuralNetwork newMain = mainBrain.copy();
+`        NeuralNetwork newMain = mainBrain.copy();
         newMain.mutate(0.1f, 0.2f); // 10% mutation rate, 20% strength
         NeuralNetwork newBox = boxBrain.copy();
         newBox.mutate(0.1f, 0.2f);

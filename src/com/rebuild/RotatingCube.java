@@ -17,7 +17,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new GraphSocietySimulationLoader();
+        scene.loader = new PlantLoader();
     }
 
     @Override
