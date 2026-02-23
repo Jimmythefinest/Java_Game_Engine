@@ -10,7 +10,6 @@ import org.lwjgl.opengl.GL15;
 import com.njst.gaming.Math.*;
 import com.njst.gaming.Natives.*;
 import com.njst.gaming.objects.GameObject;
-import com.njst.gaming.objects.LODGameObject;
 
 public class Renderer {
 
@@ -75,7 +74,7 @@ public class Renderer {
                 object.generateBuffers();
             }
 
-            // Enable blending for transparent imposters/leaves
+            // Enable blending for transparent objects (leaves, glass, etc.)
             GL30.glEnable(GL30.GL_BLEND);
             GL30.glBlendFunc(GL30.GL_SRC_ALPHA, GL30.GL_ONE_MINUS_SRC_ALPHA);
             GL30.glEnable(GL30.GL_DEPTH_TEST);
@@ -110,9 +109,6 @@ public class Renderer {
             // skybox.updateModelMatrix();
             scene.onDrawFrame();
             for (GameObject object : scene.objects) {
-                if (object instanceof LODGameObject) {
-                    ((LODGameObject) object).updateLOD(camera.cameraPosition);
-                }
                 shaderProgram.use();
                 object.updateModelMatrix();
                 object.render(shaderProgram, textureHandle);

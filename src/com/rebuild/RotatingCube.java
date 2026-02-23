@@ -18,7 +18,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new PineImposterAtlasLoader();
+        scene.loader = new DefaultLoader();
     }
 
     @Override
@@ -81,14 +81,6 @@ public class RotatingCube extends Engine {
             default:
                 if (scene.actions.containsKey(key) && action == GLFW_PRESS) {
                     scene.actions.get(key).run();
-                }
-                break;
-            case GLFW_KEY_I:
-                if (action == GLFW_PRESS) {
-                    com.njst.gaming.objects.LODGameObject.forceImposter =
-                        !com.njst.gaming.objects.LODGameObject.forceImposter;
-                    System.out.println("[LOD] forceImposter=" +
-                        com.njst.gaming.objects.LODGameObject.forceImposter);
                 }
                 break;
             case GLFW_KEY_P:

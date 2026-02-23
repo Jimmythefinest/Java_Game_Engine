@@ -10,24 +10,16 @@ import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
-import com.njst.gaming.Geometries.ImposterGeometry;
-import com.njst.gaming.objects.ImposterGenerator;
-import com.njst.gaming.objects.LODGameObject;
 
 /**
  * Scene loader: generates a Perlin-noise terrain, then scatters procedural
- * L-System plants across it. Uses an Imposter system (LOD) to maintain 
- * high performance by swapping 3D meshes for 2D sprites at a distance.
+ * L-System plants across it.
  */
 public class PlantLoader implements Scene.SceneLoader {
 
     // ---- Terrain settings ---------------------------------------------------
     private static final int TERRAIN_SIZE = 128;
     private static final float MIN_PLANT_HEIGHT = 0.5f;
-
-    // ---- LOD settings -------------------------------------------------------
-    private static final float LOD_SWITCH_DISTANCE = 50.0f;
-    private static final int IMPOSTER_RESOLUTION = 256;
 
     // ---- Plant scatter settings ---------------------------------------------
     private static final int PLANT_GRID_STEP = 8;
@@ -58,30 +50,7 @@ public class PlantLoader implements Scene.SceneLoader {
 
         float[][] heightMap = terrainGeo.heightMap;
 
-        // ---- Setup Imposter Pool --------------------------------------------
-        // We'll bake one imposter for each of the 5 main grammars to save memory
-        System.out.println("[PlantLoader] Baking imposters...");
         int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
-        int[] imposterTextures = new int[5];
-        ImposterGeometry[] imposterGeos = new ImposterGeometry[5];
-        
-        for (int i = 0; i < 5; i++) {
-            System.out.println("[PlantLoader] Baking imposter " + i + "/5...");
-            // Generate a representative plant for this grammar index
-            long repSeed = i + 100;
-            PlantConfig config = new PlantSeed(repSeed).generateConfig();
-            PlantGeometry meshGeo = new PlantGeometry(config);
-            GameObject dummy = new GameObject(meshGeo, plantTex);
-            dummy.generateBuffers();
-            
-            // Bake it
-            float[] impScale = new float[1];
-            imposterTextures[i] = ImposterGenerator.bake(dummy, scene.renderer, IMPOSTER_RESOLUTION, impScale);
-            float scale = impScale[0];
-            
-            // Create a quad that fits the plant scale
-            imposterGeos[i] = new ImposterGeometry(scale, scale); 
-        }
 
         // ---- Scatter plants -------------------------------------------------
         java.util.Random rng = new java.util.Random(SCATTER_SEED);
@@ -104,14 +73,7 @@ public class PlantLoader implements Scene.SceneLoader {
                 PlantConfig config = new PlantSeed(plantSeed).generateConfig();
                 PlantGeometry geo = new PlantGeometry(config);
                 
-                // Pick a pre-baked imposter based on something deterministic (like seed % 5)
-                int impIndex = (int)(Math.abs(plantSeed) % 5);
-                
-                LODGameObject plant = new LODGameObject(
-                    geo, plantTex, 
-                    imposterGeos[impIndex], imposterTextures[impIndex], 
-                    LOD_SWITCH_DISTANCE
-                );
+                GameObject plant = new GameObject(geo, plantTex);
 
                 plant.setPosition(worldX, worldY, worldZ);
                 plant.name = "Plant_" + ix + "_" + iz;
@@ -120,6 +82,6 @@ public class PlantLoader implements Scene.SceneLoader {
             }
         }
 
-        System.out.println("[PlantLoader] Done — " + planted + " plants with LOD system enabled.");
+        System.out.println("[PlantLoader] Done — " + planted + " plants.");
     }
 }
