@@ -1,7 +1,13 @@
 package com.njst.gaming;
 
+import com.njst.gaming.Math.Vector3;
+
 public class data {
         public static String rootDirectory = "/jimmy/";
+        public static Camera imposterCamera = new Camera(
+                        new Vector3(0f, 1f, 3f),
+                        new Vector3(0f, 1f, 0f),
+                        new Vector3(0f, 1f, 0f));
         public static final float[] VERTICES1 = {
                         -1, 1, 1, // Front top left
                         1, 1, 1, // Front top right

@@ -4,6 +4,7 @@ import com.njst.gaming.*;
 import com.njst.gaming.Math.Vector3;
 import static org.lwjgl.glfw.GLFW.*;
 import com.njst.gaming.Loaders.*;
+import com.njst.gaming.Utils.ScreenshotUtil;
 
 /**
  * Main application class, refactored to extend Engine.
@@ -17,7 +18,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new LODTestLoader();
+        scene.loader = new PineImposterAtlasLoader();
     }
 
     @Override
@@ -80,6 +81,19 @@ public class RotatingCube extends Engine {
             default:
                 if (scene.actions.containsKey(key) && action == GLFW_PRESS) {
                     scene.actions.get(key).run();
+                }
+                break;
+            case GLFW_KEY_I:
+                if (action == GLFW_PRESS) {
+                    com.njst.gaming.objects.LODGameObject.forceImposter =
+                        !com.njst.gaming.objects.LODGameObject.forceImposter;
+                    System.out.println("[LOD] forceImposter=" +
+                        com.njst.gaming.objects.LODGameObject.forceImposter);
+                }
+                break;
+            case GLFW_KEY_P:
+                if (action == GLFW_PRESS) {
+                    ScreenshotUtil.takeScreenshot(width, height);
                 }
                 break;
         }

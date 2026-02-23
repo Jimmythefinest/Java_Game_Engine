@@ -132,6 +132,24 @@ public class Renderer {
         }
     }
 
+    public void renderObjectLikeMainPass(GameObject object) {
+        if (hasError || object == null) {
+            return;
+        }
+        float[] consts = new float[39];
+        System.arraycopy(camera.getProjectionMatrix().r, 0, consts, 0, 16);
+        System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
+        System.arraycopy(camera.cameraPosition.toArray(), 0, consts, 32, 3);
+        System.arraycopy(new float[] { 0, 0, 100, 0 }, 0, consts, 35, 4);
+        ssbo.setData(consts, GL15.GL_DYNAMIC_DRAW);
+        ssbo.bind();
+        ssbo.bindToShader(0);
+        shaderProgram.use();
+        shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+        object.updateModelMatrix();
+        object.render(shaderProgram, textureHandle);
+    }
+
     int frame = 0;
     long time = 0;
 
