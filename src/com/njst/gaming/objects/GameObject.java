@@ -39,6 +39,8 @@ public class GameObject {
     // collision Box data
     public float[] collisionBox, collisionBounds, none_axis_aligned_CollisionBox;
     public Vector3 max = new Vector3(-0.5f, -0.5f, -0.5f), min = new Vector3(0.5f, 0.5f, 0.5f);;
+    public Vector3 localMin = new Vector3(-0.5f, -0.5f, -0.5f);
+    public Vector3 localMax = new Vector3(0.5f, 0.5f, 0.5f);
 
     // Geometry data
 
@@ -60,21 +62,7 @@ public class GameObject {
 
         modelMatrix.identity();
         animations = new ArrayList<Animation>();
-        collisionBox = new float[] {
-                -0.5f, -0.5f, -0.5f, 1,
-                0.5f, -0.5f, -0.5f, 1,
-                0.5f, 0.5f, -0.5f, 1,
-                -0.5f, 0.5f, -0.5f, 1,
-
-                -0.5f, -0.5f, 0.5f, 1,
-                0.5f, -0.5f, 0.5f, 1,
-                0.5f, 0.5f, 0.5f, 1,
-                -0.5f, 0.5f, 0.5f, 1
-        };
-        collisionBounds = new float[] {
-                -0.5f, -0.5f, -0.5f,
-                0.5f, 0.5f, 0.5f
-        };
+        initCollisionBoxFromGeometry();
     }
 
     public void addAnimation(Animation a) {
@@ -144,7 +132,65 @@ public class GameObject {
 
     }
 
+    private void initCollisionBoxFromGeometry() {
+        Vector3 minBound = new Vector3(-0.5f, -0.5f, -0.5f);
+        Vector3 maxBound = new Vector3(0.5f, 0.5f, 0.5f);
+
+        float[] verts = geometry != null ? geometry.getVertices() : null;
+        if (verts != null && verts.length >= 3) {
+            float minX = verts[0], minY = verts[1], minZ = verts[2];
+            float maxX = verts[0], maxY = verts[1], maxZ = verts[2];
+            for (int i = 0; i < verts.length; i += 3) {
+                float x = verts[i];
+                float y = verts[i + 1];
+                float z = verts[i + 2];
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (z < minZ) minZ = z;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+                if (z > maxZ) maxZ = z;
+            }
+            minBound = new Vector3(minX, minY, minZ);
+            maxBound = new Vector3(maxX, maxY, maxZ);
+        } else if (geometry != null && isValidBounds(geometry.min, geometry.max)) {
+            minBound = new Vector3(geometry.min);
+            maxBound = new Vector3(geometry.max);
+        }
+
+        localMin = minBound;
+        localMax = maxBound;
+        collisionBox = new float[] {
+                localMin.x, localMin.y, localMin.z, 1,
+                localMax.x, localMin.y, localMin.z, 1,
+                localMax.x, localMax.y, localMin.z, 1,
+                localMin.x, localMax.y, localMin.z, 1,
+
+                localMin.x, localMin.y, localMax.z, 1,
+                localMax.x, localMin.y, localMax.z, 1,
+                localMax.x, localMax.y, localMax.z, 1,
+                localMin.x, localMax.y, localMax.z, 1
+        };
+        collisionBounds = new float[] {
+                localMin.x, localMin.y, localMin.z,
+                localMax.x, localMax.y, localMax.z
+        };
+        updateCollisionBox();
+    }
+
+    private boolean isValidBounds(Vector3 min, Vector3 max) {
+        if (min == null || max == null) return false;
+        return min.x <= max.x && min.y <= max.y && min.z <= max.z;
+    }
+
+    public void refreshBoundsFromGeometry() {
+        initCollisionBoxFromGeometry();
+    }
+
     public void updateCollisionBox() {
+        if (collisionBox == null) {
+            initCollisionBoxFromGeometry();
+        }
         float[] collision1Box = GeneralUtil.from4to3(8,
                 Matrice_Math.MatrixMultiplication(collisionBox, modelMatrix.get(new float[16]), 4));
         float[] x = new float[8], y = new float[8], z = new float[8];
