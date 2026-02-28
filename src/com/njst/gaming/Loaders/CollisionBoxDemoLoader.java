@@ -6,8 +6,9 @@ import com.njst.gaming.Geometries.CubeGeometry;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.ShaderProgram;
-import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.CollisionBoxGameObject;
+import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.objects.LODGameObject;
 
 public class CollisionBoxDemoLoader implements Scene.SceneLoader {
 
@@ -24,6 +25,7 @@ public class CollisionBoxDemoLoader implements Scene.SceneLoader {
         scene.renderer.skybox = skybox;
         scene.addGameObject(skybox);
 
+        // Real cube (rendered up close)
         GameObject cube = new GameObject(new CubeGeometry(), cubeTexture);
         cube.setPosition(0, 0, 0);
         scene.animations.add(new com.njst.gaming.Animations.Animation() {
@@ -35,9 +37,15 @@ public class CollisionBoxDemoLoader implements Scene.SceneLoader {
                 cube.setRotation(0, angle, 0);
             }
         });
-        scene.addGameObject(cube);
+
+        // Wrap cube in LODGameObject — switches to baked billboard beyond 8 units
+        LODGameObject lodCube = new LODGameObject(cube, cubeTexture, 8f);
+        lodCube.renderer = scene.renderer;  // gives the standard render loop LOD awareness
+        lodCube.acceptanceConeDegrees = 25f; // rebake when camera rotates more than 25°
+        scene.addGameObject(lodCube);
 
         CollisionBoxGameObject box = new CollisionBoxGameObject(cube, cubeTexture);
         scene.addGameObject(box);
     }
 }
+
