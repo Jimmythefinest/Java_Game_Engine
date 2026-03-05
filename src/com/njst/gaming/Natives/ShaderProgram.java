@@ -1,13 +1,15 @@
 package com.njst.gaming.Natives;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.stb.STBImage;
@@ -47,33 +49,61 @@ public class ShaderProgram {
     }
 
     public static String loadShader(String filePath) {
-        StringBuilder shaderSource = new StringBuilder();
+        String normalized = filePath.replace('\\', '/');
 
-        // Try loading from classpath first (for JAR packaging)
-        try (InputStream is = ShaderProgram.class.getResourceAsStream(filePath);
-                BufferedReader reader = is != null ? new BufferedReader(new InputStreamReader(is)) : null) {
-            if (reader != null) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    shaderSource.append(line).append("\n");
+        String[] classpathCandidates;
+        if (normalized.startsWith("/")) {
+            classpathCandidates = new String[] { normalized };
+        } else if (normalized.startsWith("resources/")) {
+            classpathCandidates = new String[] {
+                    "/" + normalized,
+                    "/" + normalized.substring("resources/".length())
+            };
+        } else {
+            classpathCandidates = new String[] {
+                    "/" + normalized,
+                    "/resources/" + normalized
+            };
+        }
+
+        // Prefer classpath resources so Gradle/JAR layouts work reliably.
+        for (String candidate : classpathCandidates) {
+            try (InputStream is = ShaderProgram.class.getResourceAsStream(candidate)) {
+                if (is == null) {
+                    continue;
                 }
-                return shaderSource.toString();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    StringBuilder shaderSource = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        shaderSource.append(line).append('\n');
+                    }
+                    return shaderSource.toString();
+                }
+            } catch (IOException e) {
+                // Try next candidate.
             }
-        } catch (IOException e) {
-            // Fall through to file system loading
         }
 
-        // Fallback to file system loading
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                shaderSource.append(line).append("\n");
+        // Fallback for legacy file-based execution.
+        Path[] fileCandidates = new Path[] {
+                Paths.get(normalized),
+                Paths.get("src", normalized),
+                Paths.get("src", "resources", normalized.startsWith("resources/") ? normalized.substring("resources/".length()) : normalized),
+                Paths.get("build", "resources", "main", normalized.startsWith("resources/") ? normalized.substring("resources/".length()) : normalized)
+        };
+        for (Path candidate : fileCandidates) {
+            if (!Files.exists(candidate)) {
+                continue;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to load shader: " + filePath);
+            try {
+                return Files.readString(candidate, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                // Try next candidate.
+            }
         }
-        return shaderSource.toString();
+
+        throw new RuntimeException("Failed to load shader: " + filePath);
     }
 
     private int compileShader(int type, String source) {

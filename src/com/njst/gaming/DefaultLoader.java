@@ -3,6 +3,7 @@ package com.njst.gaming;
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Geometries.*;
+import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Loaders.FBXAnimationLoader;
 import com.njst.gaming.Loaders.FBXBoneLoader;
 import com.njst.gaming.Natives.*;
@@ -14,9 +15,13 @@ import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import org.lwjgl.opengl.GL15;
 
 public class DefaultLoader implements Scene.SceneLoader {
+  private static final int NPC_COUNT = 3;
+  private static final float NPC_SPACING = 3.0f;
+
   public ArrayList<Animation> anims;
   public Bone[] bones;
 
@@ -76,10 +81,20 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       skeleton.root_bone.update();
 
-      Weighted_GameObject test = new Weighted_GameObject(
-          FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f),
-          modelTex);
-      scene.addGameObject(test);
+      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f);
+      Random rnd = new Random();
+      int side = (int) Math.ceil(Math.sqrt(NPC_COUNT));
+
+      for (int i = 0; i < NPC_COUNT; i++) {
+        Weighted_GameObject npc = new Weighted_GameObject(npcGeometry, modelTex);
+        int row = i / side;
+        int col = i % side;
+        float x = (col - (side - 1) * 0.5f) * NPC_SPACING + (rnd.nextFloat() - 0.5f) * 0.4f;
+        float z = (row - (side - 1) * 0.5f) * NPC_SPACING + (rnd.nextFloat() - 0.5f) * 0.4f;
+        npc.setPosition(x, 0, z);
+        npc.name = "NPC_" + i;
+        scene.addGameObject(npc);
+      }
 
       fbxanims.forEach((na, value) -> {
         if (value.bone != null) {

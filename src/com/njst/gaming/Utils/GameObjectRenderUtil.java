@@ -15,7 +15,7 @@ import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30.*;
 
 public class GameObjectRenderUtil {
-    private static final int CROP_PADDING_PX = 4;
+    private static final int CROP_PADDING_PX = 0;
 
     private GameObjectRenderUtil() {}
 
@@ -134,26 +134,30 @@ public class GameObjectRenderUtil {
     }
 
     private static int[] computeScreenBounds(Renderer renderer, GameObject object, int width, int height) {
-        Vector3 min = object.min;
-        Vector3 max = object.max;
-        if (min == null || max == null) {
+        // Use LOCAL-space bounds + model matrix (full MVP) to match computeImposterWorldSize exactly.
+        // Using the world-space AABB (min/max) without the model matrix gives an inflated crop
+        // for rotated objects, leaving blank borders on the baked texture.
+        Vector3 mn = object.localMin;
+        Vector3 mx = object.localMax;
+        if (mn == null || mx == null) {
             return null;
         }
 
         Vector3[] corners = new Vector3[] {
-                new Vector3(min.x, min.y, min.z),
-                new Vector3(min.x, min.y, max.z),
-                new Vector3(min.x, max.y, min.z),
-                new Vector3(min.x, max.y, max.z),
-                new Vector3(max.x, min.y, min.z),
-                new Vector3(max.x, min.y, max.z),
-                new Vector3(max.x, max.y, min.z),
-                new Vector3(max.x, max.y, max.z)
+                new Vector3(mn.x, mn.y, mn.z),
+                new Vector3(mn.x, mn.y, mx.z),
+                new Vector3(mn.x, mx.y, mn.z),
+                new Vector3(mn.x, mx.y, mx.z),
+                new Vector3(mx.x, mn.y, mn.z),
+                new Vector3(mx.x, mn.y, mx.z),
+                new Vector3(mx.x, mx.y, mn.z),
+                new Vector3(mx.x, mx.y, mx.z)
         };
 
         Matrix4 view = renderer.camera.getViewMatrix();
         Matrix4 proj = renderer.camera.getProjectionMatrix();
-        Matrix4 viewProj = new Matrix4().set(proj.r).multiply(view);
+        // Full MVP: proj * view * model — same as computeImposterWorldSize
+        Matrix4 viewProj = new Matrix4().set(proj.r).multiply(view).multiply(object.modelMatrix);
 
         float minX = Float.POSITIVE_INFINITY;
         float minY = Float.POSITIVE_INFINITY;

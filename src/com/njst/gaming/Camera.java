@@ -8,9 +8,9 @@ public class Camera {
     public Vector3 targetPosition; // The point around which the camera rotates
     public Vector3 upDirection; // The up direction of the camera
     public float distanceFromTarget; // Distance from the target point
-    float FOV=60;
-    float aspect;
-    float near=0.1f,far=100;
+    public float FOV=60;
+    public float aspect;
+    public float near=0.1f,far=100;
 
     public Camera(Vector3 cameraPosition, Vector3 targetPosition, Vector3 upDirection) {
         this.cameraPosition = cameraPosition;
