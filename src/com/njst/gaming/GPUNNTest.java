@@ -1,5 +1,6 @@
 package com.njst.gaming;
 
+import com.njst.gaming.Natives.DesktopComputeBackend;
 import com.njst.gaming.Natives.HeadlessContext;
 import com.njst.gaming.ai.NeuralNetwork;
 import com.njst.gaming.ai.GPUNeuralNetwork;
@@ -20,7 +21,7 @@ public class GPUNNTest {
 
             // 1. Create a single GPUNeuralNetwork (Testing inheritance)
             // It should expose both standard NeuralNetwork methods and GPUNN methods
-            GPUNeuralNetwork mainGpuNet = new GPUNeuralNetwork(layers, 0.01f, true);
+            GPUNeuralNetwork mainGpuNet = new GPUNeuralNetwork(layers, 0.01f, true, new DesktopComputeBackend());
             
             // Verify polymorphism
             NeuralNetwork polymorphicNet = mainGpuNet;
@@ -37,7 +38,7 @@ public class GPUNNTest {
             float[] flatInputs = new float[numInstances * layers[0]];
 
             for (int i = 0; i < numInstances; i++) {
-                batchNets[i] = new GPUNeuralNetwork(layers, 0.01f, true);
+                batchNets[i] = new GPUNeuralNetwork(layers, 0.01f, true, new DesktopComputeBackend());
                 
                 // Collect weights for GPU batch
                 float[][][] w = batchNets[i].getWeights();

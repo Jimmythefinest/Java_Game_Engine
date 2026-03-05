@@ -59,6 +59,7 @@ sourceSets {
             include 'com/njst/gaming/Simulations/Creature.java'
             include 'com/njst/gaming/ai/Character.java'
             include 'com/njst/gaming/ai/Entity.java'
+            include 'com/njst/gaming/ai/GPUNeuralNetwork.java'
             include 'com/njst/gaming/ai/NeuralNetwork.java'
             include 'com/njst/gaming/ai/QLearningNeuralNetwork.java'
             include 'com/njst/gaming/ai/RLNeuralNetwork.java'

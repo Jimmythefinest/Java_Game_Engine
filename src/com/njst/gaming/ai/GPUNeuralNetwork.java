@@ -1,8 +1,6 @@
 package com.njst.gaming.ai;
 
-import com.njst.gaming.Natives.ComputeShader;
-import com.njst.gaming.Natives.GPUShaders;
-import org.lwjgl.opengl.GL43;
+import com.njst.gaming.graphics.ComputeBackend;
 
 import java.util.Arrays;
 
@@ -19,7 +17,7 @@ public class GPUNeuralNetwork extends NeuralNetwork {
     private final int inputSize;
     private final int outputSize;
 
-    private ComputeShader computeShader;
+    private final ComputeBackend computeBackend;
     
     // Binding configurations
     public int bindingInput = 0;
@@ -31,8 +29,11 @@ public class GPUNeuralNetwork extends NeuralNetwork {
     private final int[] weightLayerOffsets;
     private final int[] biasLayerOffsets;
 
-    public GPUNeuralNetwork(int[] layerSizes, float learningRate, boolean useLinearOutput) {
+    public GPUNeuralNetwork(int[] layerSizes, float learningRate, boolean useLinearOutput, ComputeBackend backend) {
         super(layerSizes, learningRate, useLinearOutput);
+        if (backend == null) {
+            throw new IllegalArgumentException("ComputeBackend is required for GPUNeuralNetwork.");
+        }
         this.layerSizes = Arrays.copyOf(layerSizes, layerSizes.length);
         this.numLayers = layerSizes.length;
         this.inputSize = layerSizes[0];
@@ -56,15 +57,11 @@ public class GPUNeuralNetwork extends NeuralNetwork {
         weightLayerOffsets[numLayers - 1] = totalWeights;
         biasLayerOffsets[numLayers - 1] = totalBiases;
 
-        initShader();
-        syncWithCPU();
-    }
-
-    private void initShader() {
-        computeShader = new ComputeShader(GPUShaders.NN_COMPUTE_SHADER);
-        if (!computeShader.err.isEmpty()) {
-            throw new RuntimeException("GPU Neural Network Shader Error: " + computeShader.err);
+        this.computeBackend = backend;
+        if (this.computeBackend.hasError()) {
+            throw new RuntimeException("GPU Neural Network Backend Error: " + this.computeBackend.getError());
         }
+        syncWithCPU();
     }
 
     /**
@@ -140,26 +137,26 @@ public class GPUNeuralNetwork extends NeuralNetwork {
         ensureBuffer(bindingOutput, dummyOutput);
 
         int groupsX = (numInstances + 63) / 64;
-        computeShader.dispatch(groupsX, 1, 1);
+        computeBackend.dispatch(groupsX, 1, 1);
 
-        return computeShader.getBufferData(bindingOutput);
+        return computeBackend.readBuffer(bindingOutput);
     }
 
     private void ensureBuffer(int binding, float[] data) {
-        if (!computeShader.hasBuffer(binding) || 
-            computeShader.getBufferSize(binding) != data.length) {
-            computeShader.bindBufferToShader(binding, data);
+        if (!computeBackend.hasBuffer(binding) || 
+            computeBackend.getBufferSize(binding) != data.length) {
+            computeBackend.bindBuffer(binding, data);
         } else {
-            computeShader.updateBuffer(binding, data);
+            computeBackend.updateBuffer(binding, data);
         }
     }
 
     private void ensureBuffer(int binding, int[] data) {
-        computeShader.bindBufferToShader(binding, data);
+        computeBackend.bindBuffer(binding, data);
     }
 
     public void release() {
-        computeShader.release();
+        computeBackend.release();
     }
 
     public int getWeightBatchSize() {

@@ -60,6 +60,7 @@ sourceSets {
             exclude 'com/njst/gaming/Simulations/Creature.java'
             exclude 'com/njst/gaming/ai/Character.java'
             exclude 'com/njst/gaming/ai/Entity.java'
+            exclude 'com/njst/gaming/ai/GPUNeuralNetwork.java'
             exclude 'com/njst/gaming/ai/NeuralNetwork.java'
             exclude 'com/njst/gaming/ai/QLearningNeuralNetwork.java'
             exclude 'com/njst/gaming/ai/RLNeuralNetwork.java'
