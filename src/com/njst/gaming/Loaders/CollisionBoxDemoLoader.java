@@ -8,7 +8,6 @@ import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.CollisionBoxGameObject;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.LODGameObject;
@@ -17,8 +16,8 @@ public class CollisionBoxDemoLoader implements Scene.SceneLoader {
 
     @Override
     public void load(Scene scene) {
-        int cubeTexture = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
-        int skyboxTexture = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int cubeTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5;

@@ -3,7 +3,6 @@ package com.njst.gaming;
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.*;
 import com.njst.gaming.ai.*;
 import com.njst.gaming.objects.GameObject;
 import java.util.ArrayList;
@@ -20,13 +19,13 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
     public void load(Scene scene) {
         s = scene;
 
-        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int skybox = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(new SphereGeometry(1, 20, 20), skybox);
         skyboxo.scale = new float[] { 500, 500, 500 };
         scene.addGameObject(skyboxo);
 
-        texture = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
-        foodTexture = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        texture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg");
+        foodTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
 
         bodies = new ArrayList<>();
         creatures = new ArrayList<>();
@@ -36,7 +35,7 @@ public class EvolutionSimulation extends Animation implements Scene.SceneLoader 
 
         GameObject plane = new GameObject(
                 new TerrainGeometry(128, 128, new float[128][128]),
-                ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg"));
+                scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg"));
         scene.addGameObject(plane);
 
         // Spawn food

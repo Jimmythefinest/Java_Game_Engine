@@ -4,7 +4,6 @@ import com.njst.gaming.Geometries.CubeGeometry;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.Scene.SceneLoader;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.instancedGameObject;
@@ -17,8 +16,8 @@ public class SimpleLoader implements SceneLoader {
     @Override
     public void load(Scene scene) {
         // Load textures
-        int cubeTexture = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
-        int skyboxTexture = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int cubeTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
 
         // Create skybox (large sphere)
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);

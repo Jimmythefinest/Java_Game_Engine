@@ -7,7 +7,6 @@ import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.simulation.entities.GraphNPC;
 
@@ -48,11 +47,11 @@ public class GraphSocietySimulationLoader implements Scene.SceneLoader {
         });
 
         // Load textures
-        int skyboxTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
-        int groundTex = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
-        this.npcTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
-        this.foodTex = ShaderProgram.loadTexture(data.rootDirectory + "/kj.jpg");
-        this.waterTex = ShaderProgram.loadTexture(data.rootDirectory + "/blade.png");
+        int skyboxTex = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int groundTex = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg");
+        this.npcTex = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        this.foodTex = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/kj.jpg");
+        this.waterTex = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/blade.png");
 
         // Skybox
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTex);

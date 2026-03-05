@@ -9,16 +9,16 @@ import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
+import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
 
 public class TetraLoader implements SceneLoader {
 
     @Override
     public void load(Scene scene) {
-        int texture1 = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int texture1 = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
         System.out.println("tetra");
-        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int skybox = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(new SphereGeometry(1, 20, 20), skybox);
         scene.renderer.skybox = (skyboxo);
         skyboxo.ambientlight_multiplier = 5;
@@ -42,9 +42,9 @@ public class TetraLoader implements SceneLoader {
         Tetrahedron[] tera = new Tetrahedron[terrain.geometry.getIndices().length / 3];
         float[] vertices = terrain.geometry.getVertices();
         int[] indices = terrain.geometry.getIndices();
-        ShaderProgram shader = new ShaderProgram(
-                ShaderProgram.loadShader("/resources/shaders/vert11.glsl"),
-                ShaderProgram.loadShader("/resources/shaders/solid_color.glsl"));
+        ShaderHandle shader = scene.renderer.getGraphicsDevice().createShaderProgram(
+                scene.renderer.getGraphicsDevice().loadShaderSource("/resources/shaders/vert11.glsl"),
+                scene.renderer.getGraphicsDevice().loadShaderSource("/resources/shaders/solid_color.glsl"));
 
         for (int i = 0; i < 1; i++) {
             tera[i] = new Tetrahedron();

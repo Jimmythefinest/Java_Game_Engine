@@ -8,7 +8,6 @@ import com.njst.gaming.Geometries.PlantSeed;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.objects.GameObject;
 
 /**
@@ -32,7 +31,7 @@ public class PlantLoader implements Scene.SceneLoader {
     public void load(Scene scene) {
 
         // ---- Skybox --------------------------------------------------------
-        int skyTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int skyTex = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyTex);
         skybox.ambientlight_multiplier = 5;
         skybox.scale = new float[]{500, 500, 500};
@@ -41,7 +40,7 @@ public class PlantLoader implements Scene.SceneLoader {
         scene.addGameObject(skybox);
 
         // ---- Terrain -------------------------------------------------------
-        int terrainTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int terrainTex = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
         TerrainGeometry terrainGeo = new TerrainGeometry(TERRAIN_SIZE, TERRAIN_SIZE);
         GameObject terrain = new GameObject(terrainGeo, terrainTex);
         terrain.translate(new Vector3(TERRAIN_OFFSET_X, 0, TERRAIN_OFFSET_Z));
@@ -50,7 +49,7 @@ public class PlantLoader implements Scene.SceneLoader {
 
         float[][] heightMap = terrainGeo.heightMap;
 
-        int plantTex = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int plantTex = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
 
         // ---- Scatter plants -------------------------------------------------
         java.util.Random rng = new java.util.Random(SCATTER_SEED);

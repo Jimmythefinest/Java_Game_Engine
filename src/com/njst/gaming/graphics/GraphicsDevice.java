@@ -1,5 +1,8 @@
 package com.njst.gaming.graphics;
 
+import com.njst.gaming.Renderer;
+import com.njst.gaming.objects.GameObject;
+
 public interface GraphicsDevice {
     ShaderHandle createShaderProgram(String vertexShaderSource, String fragmentShaderSource);
 
@@ -8,6 +11,10 @@ public interface GraphicsDevice {
     String loadShaderSource(String filePath);
 
     int loadTexture(String texturePath);
+
+    ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height);
+
+    void releaseTexture(int textureId);
 
     int createVertexArray();
 

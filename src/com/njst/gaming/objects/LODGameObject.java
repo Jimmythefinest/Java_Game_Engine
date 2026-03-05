@@ -5,14 +5,9 @@ import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Renderer;
-import com.njst.gaming.Utils.GameObjectRenderUtil;
 import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.graphics.ImposterBakeResult;
 import com.njst.gaming.graphics.ShaderHandle;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import javax.imageio.ImageIO;
-
-import static org.lwjgl.opengl.GL11.glDeleteTextures;
 
 public class LODGameObject extends GameObject {
     public final GameObject gameObject;
@@ -166,7 +161,7 @@ public class LODGameObject extends GameObject {
 
     public void cleanupImposterTexture() {
         if (bakedTextureId != 0) {
-            glDeleteTextures(bakedTextureId);
+            graphicsDevice.releaseTexture(bakedTextureId);
             if (imposter.texture == bakedTextureId) {
                 imposter.texture = 0;
             }
@@ -187,43 +182,23 @@ public class LODGameObject extends GameObject {
     }
 
     private void bakeImposterTexture(Renderer renderer, Vector3 currentViewDir) {
-        BufferedImage image = GameObjectRenderUtil.renderToBitmap(renderer, gameObject, bakeWidth, bakeHeight);
-        if (image == null) {
+        ImposterBakeResult result = graphicsDevice.bakeImposter(renderer, gameObject, bakeWidth, bakeHeight);
+        if (result == null) {
             return;
         }
-        int textureId = GameObjectRenderUtil.uploadImageAsTexture(image);
+        int textureId = result.textureId;
         if (textureId == 0) {
             return;
         }
         if (bakedTextureId != 0) {
-            glDeleteTextures(bakedTextureId);
+            graphicsDevice.releaseTexture(bakedTextureId);
         }
         bakedTextureId = textureId;
-        bakedTextureWidth = image.getWidth();
-        bakedTextureHeight = image.getHeight();
+        bakedTextureWidth = result.width;
+        bakedTextureHeight = result.height;
         imposter.texture = textureId;
         hasImposterTexture = true;
         lastBakedViewDir = currentViewDir;
-        saveImposterImage(image);
-    }
-
-    /**
-     * Saves the baked imposter image to disk as a PNG for inspection/debugging.
-     * File is written to the working directory as:
-     *   imposter_<name>_<timestamp>.png
-     */
-    private void saveImposterImage(BufferedImage image) {
-        try {
-            String name = (gameObject.name != null && !gameObject.name.isEmpty())
-                    ? gameObject.name.replaceAll("[^a-zA-Z0-9_\\-]", "_")
-                    : "object";
-            String filename = "imposter_" + name + "_" + System.currentTimeMillis() + ".png";
-            File out = new File(filename);
-            ImageIO.write(image, "PNG", out);
-            System.out.println("[LODGameObject] Imposter saved: " + out.getAbsolutePath());
-        } catch (Exception e) {
-            System.err.println("[LODGameObject] Failed to save imposter image: " + e.getMessage());
-        }
     }
 
     private boolean isInsideAcceptanceCone(Vector3 currentViewDir) {

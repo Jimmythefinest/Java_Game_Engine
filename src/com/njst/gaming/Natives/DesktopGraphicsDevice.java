@@ -15,9 +15,14 @@ import org.lwjgl.opengl.GL30;
 
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.graphics.ImposterBakeResult;
 import com.njst.gaming.graphics.ShaderHandle;
+import com.njst.gaming.Renderer;
+import com.njst.gaming.objects.GameObject;
 
 public class DesktopGraphicsDevice implements GraphicsDevice {
+    private final DesktopImposterBaker imposterBaker = new DesktopImposterBaker();
+
     @Override
     public ShaderHandle createShaderProgram(String vertexShaderSource, String fragmentShaderSource) {
         return new ShaderProgram(vertexShaderSource, fragmentShaderSource);
@@ -36,6 +41,16 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public int loadTexture(String texturePath) {
         return ShaderProgram.loadTexture(texturePath);
+    }
+
+    @Override
+    public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
+        return imposterBaker.bake(renderer, object, width, height);
+    }
+
+    @Override
+    public void releaseTexture(int textureId) {
+        imposterBaker.releaseTexture(textureId);
     }
 
     @Override

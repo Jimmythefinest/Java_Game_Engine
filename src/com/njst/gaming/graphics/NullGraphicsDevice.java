@@ -1,5 +1,8 @@
 package com.njst.gaming.graphics;
 
+import com.njst.gaming.Renderer;
+import com.njst.gaming.objects.GameObject;
+
 public class NullGraphicsDevice implements GraphicsDevice {
     private static IllegalStateException unsupported() {
         return new IllegalStateException("GraphicsDevice is not configured.");
@@ -23,6 +26,16 @@ public class NullGraphicsDevice implements GraphicsDevice {
     @Override
     public int loadTexture(String texturePath) {
         throw unsupported();
+    }
+
+    @Override
+    public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
+        return null;
+    }
+
+    @Override
+    public void releaseTexture(int textureId) {
+        // no-op
     }
 
     @Override

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.ai.NeuralNetwork;
 import com.njst.gaming.objects.GameObject;
 
@@ -15,13 +14,13 @@ public class EvolutionSim implements Scene.SceneLoader {
 
     @Override
     public void load(Scene s) {
-        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int skybox = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(
                 new SphereGeometry(1, 20, 20), skybox);
         skyboxo.scale = new float[] { 500, 500, 500 };
         skyboxo.updateModelMatrix();
         s.addGameObject(skyboxo);
-        int texure = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
+        int texure = s.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg");
         GameObject plane = new GameObject(new TerrainGeometry(128, 128), texure);
         // plane.scale=new float[]{100,1,100};
         plane.updateModelMatrix();
