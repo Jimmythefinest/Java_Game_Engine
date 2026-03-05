@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.njst'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            srcDirs = ['src/resources']
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: '../../Java_libs', include: ['*.jar'])
+}
+
+application {
+    mainClass = 'com.rebuild.RotatingCube'
+}
+
+tasks.named('jar') {
+    manifest {
+        attributes('Main-Class': application.mainClass.get())
+    }
+}
+
+tasks.register('runDemo', JavaExec) {
+    group = 'application'
+    description = 'Run RotatingCube demo (equivalent to run.sh)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+}

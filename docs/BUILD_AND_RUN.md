@@ -1,33 +1,40 @@
 # Build and Run Instructions
 
-The engine uses a shell script based build process for Linux systems.
+The engine supports a Gradle-based build process.
 
 ## Prerequisites
 
 - **Java Development Kit (JDK)**: Ensure `javac` and `java` are in your PATH.
 - **LWJGL Libraries**: The engine expects LWJGL native and JAR files to be located in `../../Java_libs/` relative to the project root.
 
-## Compiling and Executing
+## Building and Executing With Gradle
 
-Use the [run.sh](../run.sh) script located in the project root:
+From project root:
 
 ```bash
-# From the project root:
-bash run.sh
+gradle build
 ```
 
-### Script Breakdown
+Run the demo:
 
-1. **Compiling**:
-   `javac -d bin -cp "../../Java_libs/*" $(find src -name "*.java")`
-   - Compiles all `.java` files in the `src` directory.
-   - Outputs compiled classes to the `bin` folder.
-   - Includes the class path to external libraries.
+```bash
+gradle runDemo
+```
 
-2. **Running**:
-   `java -cp "../../Java_libs/*:bin" com.rebuild.RotatingCube`
-   - Executes the `com.rebuild.RotatingCube` class.
-   - Includes both original source bin and libraries in the classpath.
+### Gradle Configuration Notes
+
+1. Sources are compiled from `src/` (current non-standard project layout).
+2. Resources are loaded from `src/resources/`.
+3. External dependencies are read from `../../Java_libs/*.jar`.
+4. Demo entrypoint is `com.rebuild.RotatingCube`.
+
+## Legacy Script-Based Build (Fallback)
+
+Use the [run.sh](../run.sh) script:
+
+```bash
+bash run.sh
+```
 
 ## Manual Troubleshooting
 

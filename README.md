@@ -27,10 +27,20 @@ NJST Game Engine is designed for real-time 3D rendering and integrated artificia
 
 ### Prerequisites
 - JDK 8 or higher.
+- Gradle installed locally.
 - LWJGL libraries (expected in `../../Java_libs/`).
 
-### How to Run
-To compile and launch the sample Rotating Cube demo:
+### Build With Gradle
+```bash
+gradle build
+```
+
+### Run Demo With Gradle
+```bash
+gradle runDemo
+```
+
+### Legacy Script (still available)
 ```bash
 ./run.sh
 ```

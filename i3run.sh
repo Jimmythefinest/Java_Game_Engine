@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # Compile and start the application in the background
-javac -d bin -cp "../../Java_libs/*" $(find src -name "*.java")
-cp -r src/resources bin/
-java -cp "../../Java_libs/*:bin" com.rebuild.RotatingCube &
+gradle runDemo &
 
 
 # Wait for windows to appear
