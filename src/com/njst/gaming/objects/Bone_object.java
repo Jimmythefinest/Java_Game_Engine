@@ -3,10 +3,7 @@ package com.njst.gaming.objects;
 import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.GlUtils;
 import com.njst.gaming.graphics.ShaderHandle;
-
-import static com.njst.gaming.Natives.GlUtils.*;
 
 import com.njst.gaming.Bone;
 
@@ -27,7 +24,7 @@ public class Bone_object extends GameObject {
         }
         bone.update();
         render_bone(bone,shaderProgram);
-      //  GlUtils.DrawElements(GlUtils.GL_TRIANGLES, indice_length, GlUtils.GL_UNSIGNED_INT, 0);
+      //  DrawElements(GL_TRIANGLES, indice_length, GL_UNSIGNED_INT, 0);
        // bind_vertex_array(0);
         x=0;
         first=false;
@@ -51,12 +48,12 @@ public class Bone_object extends GameObject {
         modelMatrix.scale(bone.scale); // Scale the square (1.0 means no scaling)
         shaderProgram.setUniformMatrix4fv("uMMatrix", modelMatrix);
         
-       // GlUtils.bind_array(GlUtils.GL_ELEMENT_ARRAY_BUFFER, vboIds[4]); // Bind the VBO for indices
+       // bind_array(GL_ELEMENT_ARRAY_BUFFER, vboIds[4]); // Bind the VBO for indices
         if(x!=0){
-            GlUtils.bind_vertex_array(vaoIds[0]); // Bind the VAO
-            GlUtils.DrawElements(GL_TRIANGLES, geometry.getIndices().length, GL_UNSIGNED_INT, 0);
+            graphicsDevice.bindVertexArray(vaoIds[0]); // Bind the VAO
+            graphicsDevice.drawElementsTriangles(geometry.getIndices().length);
             // Unbind the VAO
-            GlUtils.bind_vertex_array(0); // Unbind the VAO
+            graphicsDevice.bindVertexArray(0); // Unbind the VAO
         }
     }
         tabs++;

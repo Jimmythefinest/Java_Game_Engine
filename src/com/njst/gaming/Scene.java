@@ -4,7 +4,6 @@ import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.*;
 import com.njst.gaming.Physics.*;
 import com.njst.gaming.objects.GameObject;
 import java.util.ArrayList;
@@ -113,7 +112,14 @@ public class Scene {
             n.v2 = lis.get(1);
             n.v3 = lis.get(2);
             n.v4 = renderer.camera.cameraPosition.clone().sub(n.v1).mul(0.6f).add(n.v1);
-            GameObject obj = new GameObject(n, ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg"));
+            int texture = 0;
+            if (renderer != null) {
+                texture = renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
+            }
+            GameObject obj = new GameObject(n, texture);
+            if (renderer != null) {
+                obj.setGraphicsDevice(renderer.getGraphicsDevice());
+            }
             obj.generateBuffers();
             addGameObject(obj);
 

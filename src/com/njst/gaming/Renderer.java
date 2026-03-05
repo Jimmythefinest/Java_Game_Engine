@@ -1,9 +1,9 @@
 package com.njst.gaming;
 
 import com.njst.gaming.Math.*;
-import com.njst.gaming.Natives.*;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
 
@@ -20,7 +20,6 @@ public class Renderer {
 
     // Shader programs
     public ShaderHandle shaderProgram;// , shadowShaderProgram, lineProgram;
-    ShadowMap shadowMap;
     public float speed = 1;
     public GameObject test;
 
@@ -52,7 +51,7 @@ public class Renderer {
     private final GraphicsDevice graphicsDevice;
 
     public Renderer() {
-        this(new DesktopGraphicsDevice());
+        this(new NullGraphicsDevice());
     }
 
     public Renderer(GraphicsDevice graphicsDevice) {
@@ -75,6 +74,7 @@ public class Renderer {
                     graphicsDevice.loadShaderSource("resources/shaders/frag11.glsl"));
             scene.loader.load(scene);
             for (GameObject object : scene.objects) {
+                object.setGraphicsDevice(graphicsDevice);
                 object.generateBuffers();
             }
 
@@ -111,6 +111,7 @@ public class Renderer {
             // skybox.updateModelMatrix();
             scene.onDrawFrame();
             for (GameObject object : scene.objects) {
+                object.setGraphicsDevice(graphicsDevice);
                 shaderProgram.use();
                 object.updateModelMatrix();
                 object.render(shaderProgram, textureHandle);
@@ -144,6 +145,7 @@ public class Renderer {
         ssbo.bindToShader(0);
         shaderProgram.use();
         shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+        object.setGraphicsDevice(graphicsDevice);
         object.updateModelMatrix();
         object.render(shaderProgram, textureHandle);
     }
@@ -172,6 +174,10 @@ public class Renderer {
 
     public synchronized long getlast() {
         return lasttym;
+    }
+
+    public GraphicsDevice getGraphicsDevice() {
+        return graphicsDevice;
     }
 
     private void logException(Exception e) {

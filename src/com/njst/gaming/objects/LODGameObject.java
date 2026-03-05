@@ -6,6 +6,7 @@ import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Utils.GameObjectRenderUtil;
+import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -106,6 +107,13 @@ public class LODGameObject extends GameObject {
         } else {
             gameObject.render(shader, textureHandle);
         }
+    }
+
+    @Override
+    public void setGraphicsDevice(GraphicsDevice graphicsDevice) {
+        super.setGraphicsDevice(graphicsDevice);
+        gameObject.setGraphicsDevice(graphicsDevice);
+        imposter.setGraphicsDevice(graphicsDevice);
     }
 
     @Override

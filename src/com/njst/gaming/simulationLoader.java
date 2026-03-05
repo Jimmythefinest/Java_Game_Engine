@@ -3,7 +3,6 @@ package com.njst.gaming;
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.*;
 import com.njst.gaming.objects.GameObject;
 
 import java.util.ArrayList;
@@ -14,7 +13,7 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
 
     public void load(Scene scene) {
 
-        int skybox = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
+        int skybox = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
         GameObject skyboxo = new GameObject(
                 new SphereGeometry(1, 20, 20), skybox);
         skyboxo.scale = new float[] { 500, 500, 500 };
@@ -24,7 +23,7 @@ public class simulationLoader extends Animation implements Scene.SceneLoader {
         Quarks = new ArrayList<>();
         skins = new ArrayList<>();
         scene.animations.add(this);
-        int text = ShaderProgram.loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int text = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
         for (int i2 = 0; i2 < 1; i2++) {
             for (int i1 = 0; i1 < 1; i1++) {
                 for (int i = 0; i < 4; i++) {

@@ -3,6 +3,7 @@ package com.njst.gaming;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.Natives.DesktopGraphicsDevice;
 import java.util.Scanner;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -62,7 +63,7 @@ public abstract class Engine {
         glEnable(GL_DEPTH_TEST);
 
         scene = new Scene();
-        renderer = new Renderer();
+        renderer = new Renderer(new DesktopGraphicsDevice());
         input = new Input();
         renderer.scene = scene;
         scene.renderer = renderer;

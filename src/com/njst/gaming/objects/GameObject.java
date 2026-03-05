@@ -1,18 +1,11 @@
 package com.njst.gaming.objects;
 
-import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
-import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
-import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL15.glBufferData;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
-
 import java.util.ArrayList;
 
-import com.njst.gaming.Natives.*;
 import com.njst.gaming.Utils.GeneralUtil;
 import com.njst.gaming.Utils.Matrice_Math;
+import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 
 import com.njst.gaming.Geometries.*;
@@ -50,6 +43,7 @@ public class GameObject {
     // float[] vertices, normals, texture_coordinates, colors;
     // int[] indices;
     public Geometry geometry;
+    protected GraphicsDevice graphicsDevice = new NullGraphicsDevice();
 
     public GameObject(Geometry geometry, int texture) {
         // vertices = geometry.getVertices();
@@ -230,33 +224,38 @@ public class GameObject {
     }
 
     public void generateBuffers() {
-        int vaoId = GlUtils.generateVAO(new int[1], 0, 0)[0];
-        vboIds = GlUtils.generateVBOs(new int[6], 0, 0);
-        GlUtils.bind_vertex_array(vaoId);
+        int vaoId = graphicsDevice.createVertexArray();
+        vboIds = graphicsDevice.createBuffers(6);
+        graphicsDevice.bindVertexArray(vaoId);
         int vboId = vboIds[0];
         int vboId1 = vboIds[1];
-        GlUtils.set_VBO_Float(vboId, geometry.getVertices());
-        GlUtils.set_VBO_Float(vboId1, geometry.getNormals());
-        GlUtils.set_VBO_Float(vboIds[2], geometry.getTextureCoordinates());
+        graphicsDevice.uploadArrayBufferFloat(vboId, geometry.getVertices());
+        graphicsDevice.uploadArrayBufferFloat(vboId1, geometry.getNormals());
+        graphicsDevice.uploadArrayBufferFloat(vboIds[2], geometry.getTextureCoordinates());
 
-        GlUtils.set_VBO_attrib_pointer(vboId1, 1, 3);
-        GlUtils.set_VBO_attrib_pointer(vboId, 0, 3);
-        GlUtils.set_VBO_attrib_pointer(vboIds[2], 2, 2);
+        graphicsDevice.setVertexAttribPointer(vboId1, 1, 3);
+        graphicsDevice.setVertexAttribPointer(vboId, 0, 3);
+        graphicsDevice.setVertexAttribPointer(vboIds[2], 2, 2);
 
         int eboId = vboIds[5];
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.getIndices(), GL_STATIC_DRAW);
+        graphicsDevice.uploadElementArrayBufferInt(eboId, geometry.getIndices());
 
-        glBindVertexArray(0);
+        graphicsDevice.bindVertexArray(0);
         vaoIds[0] = vaoId;
         buffers_generated = true;
     }
 
     public void cleanup() {
         if (buffers_generated) {
-            GlUtils.DeleteBuffers(vboIds);
-            GlUtils.DeleteVAO(vaoIds);
+            graphicsDevice.deleteBuffers(vboIds);
+            graphicsDevice.deleteVertexArrays(vaoIds);
             buffers_generated = false;
+        }
+    }
+
+    public void setGraphicsDevice(GraphicsDevice graphicsDevice) {
+        if (graphicsDevice != null) {
+            this.graphicsDevice = graphicsDevice;
         }
     }
 
@@ -276,9 +275,9 @@ public class GameObject {
         shaderprogram.setUniformMatrix4fv("uMMatrix", modelMatrix);
         shaderprogram.activateTexture(textureHandle, texture);
 
-        GlUtils.bind_vertex_array(vaoIds[0]); // Bind the VAO
-        GlUtils.DrawElements(GL_TRIANGLES, geometry.getIndices().length, GL_UNSIGNED_INT, 0);
-        GlUtils.bind_vertex_array(0); // Unbind the VAO
+        graphicsDevice.bindVertexArray(vaoIds[0]); // Bind the VAO
+        graphicsDevice.drawElementsTriangles(geometry.getIndices().length);
+        graphicsDevice.bindVertexArray(0); // Unbind the VAO
     }
 
     public interface Animation {

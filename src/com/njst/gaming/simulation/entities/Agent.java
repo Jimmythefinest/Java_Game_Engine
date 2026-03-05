@@ -3,7 +3,6 @@ package com.njst.gaming.simulation.entities;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.Geometries.CubeGeometry;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.ai.NeuralNetwork;
 
 public class Agent {

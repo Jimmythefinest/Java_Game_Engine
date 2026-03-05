@@ -20,12 +20,34 @@ sourceSets {
             include 'com/njst/gaming/Math/Vector3f.java'
             include 'com/njst/gaming/Animations/**/*.java'
             include 'com/njst/gaming/Bone.java'
+            include 'com/njst/gaming/Camera.java'
             include 'com/njst/gaming/Physics/Triangle.java'
+            include 'com/njst/gaming/Physics/PhysicsEngine.java'
+            include 'com/njst/gaming/Math/Tetrahedron.java'
+            include 'com/njst/gaming/Scene.java'
+            include 'com/njst/gaming/Renderer.java'
+            include 'com/njst/gaming/RootLogger.java'
+            include 'com/njst/gaming/data.java'
             include 'com/njst/gaming/Utils/GeneralUtil.java'
             include 'com/njst/gaming/Utils/Matrice_Math.java'
             include 'com/njst/gaming/Utils/PerlinNoise.java'
             include 'com/njst/gaming/Utils/Utils.java'
             include 'com/njst/gaming/graphics/**/*.java'
+            include 'com/njst/gaming/Geometries/**/*.java'
+            include 'com/njst/gaming/objects/GameObject.java'
+            include 'com/njst/gaming/objects/Bone_object.java'
+            include 'com/njst/gaming/objects/CollisionBoxGameObject.java'
+            include 'com/njst/gaming/objects/Weighted_GameObject.java'
+            include 'com/njst/gaming/objects/instancedGameObject.java'
+            include 'com/njst/gaming/simulation/**/*.java'
+            include 'com/njst/gaming/simulationLoader.java'
+            include 'com/njst/gaming/skeleton/Skeleton.java'
+            include 'com/njst/gaming/ai/Character.java'
+            include 'com/njst/gaming/ai/Entity.java'
+            include 'com/njst/gaming/ai/NeuralNetwork.java'
+            include 'com/njst/gaming/ai/QLearningNeuralNetwork.java'
+            include 'com/njst/gaming/ai/RLNeuralNetwork.java'
+            include 'com/njst/gaming/ai/TicTacToeQLearning.java'
         }
     }
 }
@@ -35,5 +57,8 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree(dir: rootProject.file('../../Java_libs'), include: ['*.jar'])
+    implementation files(
+            rootProject.file('../../Java_libs/gson-2.10.1.jar'),
+            rootProject.file('../../Java_libs/joml-1.10.7.jar')
+    )
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
-import com.njst.gaming.Natives.GlUtils;
 import com.njst.gaming.graphics.ShaderHandle;
 
 public class instancedGameObject extends GameObject{
@@ -25,9 +24,9 @@ public class instancedGameObject extends GameObject{
     }
     public void generateBuffers(){
         super.generateBuffers();
-        instanceBuffer = GlUtils.generateVBOs(new int[1], 0, 0)[0];
-        GlUtils.set_VBO_Float(instanceBuffer, getModelMatrices());
-        GlUtils.set_VBO_attrib_pointer(instanceBuffer,6,16);
+        instanceBuffer = graphicsDevice.createBuffers(1)[0];
+        graphicsDevice.uploadArrayBufferFloat(instanceBuffer, getModelMatrices());
+        graphicsDevice.setVertexAttribPointer(instanceBuffer,6,16);
 
 
 
