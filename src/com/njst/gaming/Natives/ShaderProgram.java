@@ -16,11 +16,12 @@ import org.lwjgl.stb.STBImage;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Utils.Utils;
+import com.njst.gaming.graphics.ShaderHandle;
 
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryStack.stackMallocInt;
 
-public class ShaderProgram {
+public class ShaderProgram implements ShaderHandle {
     public int programId;
     public String log = "";
 
@@ -38,6 +39,7 @@ public class ShaderProgram {
         GL30.glDeleteShader(fragmentShaderId);
     }
 
+    @Override
     public boolean compiled() {
         int[] status = new int[2];
         GL30.glGetProgramiv(programId, GL30.GL_LINK_STATUS, status);
@@ -135,14 +137,17 @@ public class ShaderProgram {
         return shaderId; // Return the compiled shader ID
     }
 
+    @Override
     public void use() {
         GL30.glUseProgram(programId);
     }
 
+    @Override
     public void cleanup() {
         GL30.glDeleteProgram(programId);
     }
 
+    @Override
     public int getUniformLocation(String name) {
         return GL30.glGetUniformLocation(programId, name);
     }
@@ -165,20 +170,28 @@ public class ShaderProgram {
 
     }
 
+    @Override
     public void setUniformVector3(String name, float[] vector3f) {
         GL30.glUniform3fv(getUniformLocation(name), vector3f);
 
     }
 
+    @Override
     public void setUniformMatrix4fv(String name, float[] matrix) {
         GL30.glUniformMatrix4fv(getUniformLocation(name), false, matrix);
 
     }
 
-    public void ActivateTexture(int location, int textureID) {
+    @Override
+    public void activateTexture(int location, int textureID) {
         glActiveTexture(GL_TEXTURE0);
         GL30.glBindTexture(GL_TEXTURE_2D, textureID);
         GL30.glUniform1i(location, 0);
+    }
+
+    // Backward-compatible alias used by existing code paths.
+    public void ActivateTexture(int location, int textureID) {
+        activateTexture(location, textureID);
     }
 
     public void setUniformMatrix4fv(int location, Matrix4 matrix) {
@@ -186,6 +199,7 @@ public class ShaderProgram {
 
     }
 
+    @Override
     public void setUniformMatrix4fv(String name, Matrix4 vector3f) {
         setUniformMatrix4fv(getUniformLocation(name), vector3f);
 
@@ -199,6 +213,7 @@ public class ShaderProgram {
 
     }
 
+    @Override
     public void setUniformVector3(String name, Vector3 vector3f) {
         setUniformVector3(getUniformLocation(name), vector3f);
 
@@ -206,6 +221,11 @@ public class ShaderProgram {
 
     public int getAttributeLocation(String string) {
         return GL30.glGetAttribLocation(programId, string);
+    }
+
+    @Override
+    public Object rawHandle() {
+        return this;
     }
 
     public static int loadTexture(String path) {

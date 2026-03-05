@@ -1,0 +1,39 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.njst'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = [rootProject.file('src')]
+            include 'com/njst/gaming/Math/Matrix4.java'
+            include 'com/njst/gaming/Math/Quaternion.java'
+            include 'com/njst/gaming/Math/Vector3.java'
+            include 'com/njst/gaming/Math/Vector3f.java'
+            include 'com/njst/gaming/Animations/**/*.java'
+            include 'com/njst/gaming/Bone.java'
+            include 'com/njst/gaming/Physics/Triangle.java'
+            include 'com/njst/gaming/Utils/GeneralUtil.java'
+            include 'com/njst/gaming/Utils/Matrice_Math.java'
+            include 'com/njst/gaming/Utils/PerlinNoise.java'
+            include 'com/njst/gaming/Utils/Utils.java'
+            include 'com/njst/gaming/graphics/**/*.java'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: rootProject.file('../../Java_libs'), include: ['*.jar'])
+}

@@ -5,6 +5,7 @@ import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.GlUtils;
 import com.njst.gaming.Natives.ShaderProgram;
+import com.njst.gaming.graphics.ShaderHandle;
 
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
@@ -16,7 +17,7 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Weighted_GameObject extends GameObject {
     public WeightedGeometry geo;
-    ShaderProgram program1;
+    ShaderHandle program1;
 
     public Weighted_GameObject(WeightedGeometry geo, int t) {
         super(geo, t);
@@ -56,12 +57,13 @@ public class Weighted_GameObject extends GameObject {
 
     }
 
-    public void render(ShaderProgram shaderprogram, int textureHandle) {
+    @Override
+    public void render(ShaderHandle shaderprogram, int textureHandle) {
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         // Bind the VAO
         program1.setUniformMatrix4fv("uMMatrix", modelMatrix);
-        program1.ActivateTexture(textureHandle, texture);
+        program1.activateTexture(textureHandle, texture);
 
         GlUtils.bind_vertex_array(vaoIds[0]); // Bind the VAO
         GlUtils.DrawElements(GL_TRIANGLES, geo.getIndices().length, GL_UNSIGNED_INT, 0);

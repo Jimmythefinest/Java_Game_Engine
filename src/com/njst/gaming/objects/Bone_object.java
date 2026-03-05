@@ -4,7 +4,7 @@ import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.GlUtils;
-import com.njst.gaming.Natives.ShaderProgram;
+import com.njst.gaming.graphics.ShaderHandle;
 
 import static com.njst.gaming.Natives.GlUtils.*;
 
@@ -15,16 +15,15 @@ public class Bone_object extends GameObject {
     public Bone_object(Geometry p,int r){
         super(p, r);
     }
-    public void render(ShaderProgram shaderProgram,int textureHandle) {
+    @Override
+    public void render(ShaderHandle shaderProgram,int textureHandle) {
        // shaderProgram.use();
        // bind_vertex_array(vaoIds[0]);
-        shaderProgram.ActivateTexture(textureHandle, texture);
-        int modelLocation = shaderProgram.getUniformLocation("uMMatrix");
-        shaderProgram.setUniformMatrix4fv(modelLocation, modelMatrix);
-        int PropetiesLocation = shaderProgram.getUniformLocation("properties");
-        shaderProgram.setUniformVector3(PropetiesLocation, new Vector3(shininess,ambientlight_multiplier,0));
+        shaderProgram.activateTexture(textureHandle, texture);
+        shaderProgram.setUniformMatrix4fv("uMMatrix", modelMatrix);
+        shaderProgram.setUniformVector3("properties", new Vector3(shininess,ambientlight_multiplier,0));
         if(texture!=0){
-            shaderProgram.ActivateTexture(shaderProgram.getTextureLocation("uTexture"), texture);
+            shaderProgram.activateTexture(shaderProgram.getUniformLocation("uTexture"), texture);
         }
         bone.update();
         render_bone(bone,shaderProgram);
@@ -37,7 +36,7 @@ public class Bone_object extends GameObject {
     int x=0;
     boolean first=true;
     int tabs=0;
-    public void render_bone(Bone bone,ShaderProgram shaderProgram){
+    public void render_bone(Bone bone,ShaderHandle shaderProgram){
         x++;
         //  if(tabs>17)return;
         // if(first)System.out.println(getTabs()+bone.name+"  :"+bone.rotation.toString());

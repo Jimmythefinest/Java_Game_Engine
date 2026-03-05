@@ -1,14 +1,10 @@
 package com.njst.gaming;
 
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.glClear;
-import org.lwjgl.opengl.GL30;
-
-import org.lwjgl.opengl.GL15;
-
 import com.njst.gaming.Math.*;
 import com.njst.gaming.Natives.*;
+import com.njst.gaming.graphics.BufferHandle;
+import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
 
 public class Renderer {
@@ -23,7 +19,7 @@ public class Renderer {
     public boolean hasError = false;
 
     // Shader programs
-    public ShaderProgram shaderProgram;// , shadowShaderProgram, lineProgram;
+    public ShaderHandle shaderProgram;// , shadowShaderProgram, lineProgram;
     ShadowMap shadowMap;
     public float speed = 1;
     public GameObject test;
@@ -42,7 +38,7 @@ public class Renderer {
     public float angle;
     public final float[] lightPos = { 0, 50f, 0 };
     public final float[] lightColor = { 1.0f, 1.0f, 1.0f };
-    public SSBO ssbo = new SSBO();
+    public BufferHandle ssbo;
 
     // Frame rate measurement
     public long lasttym = 0;
@@ -53,7 +49,15 @@ public class Renderer {
     public float[] lightViewMatrix, lightProjectionMatrix;
 
     // Bounding box (for drawing wireframes)
+    private final GraphicsDevice graphicsDevice;
+
     public Renderer() {
+        this(new DesktopGraphicsDevice());
+    }
+
+    public Renderer(GraphicsDevice graphicsDevice) {
+        this.graphicsDevice = graphicsDevice;
+        this.ssbo = graphicsDevice.createShaderStorageBuffer();
         log = new RootLogger(data.rootDirectory + "/render.log");
         camera = new Camera(new Vector3(0f, 0f, -7f), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f));
         lightCamera = new Camera(new Vector3(0f, 5f, 0f), new Vector3(0f, 0f, 0f), new Vector3(-1f, 10f, 0f));
@@ -66,18 +70,16 @@ public class Renderer {
 
             // Initialize main shader program
             // Build and compile shader program
-            shaderProgram = new ShaderProgram(
-                    ShaderProgram.loadShader("resources/shaders/vert11.glsl"),
-                    ShaderProgram.loadShader("resources/shaders/frag11.glsl"));
+            shaderProgram = graphicsDevice.createShaderProgram(
+                    graphicsDevice.loadShaderSource("resources/shaders/vert11.glsl"),
+                    graphicsDevice.loadShaderSource("resources/shaders/frag11.glsl"));
             scene.loader.load(scene);
             for (GameObject object : scene.objects) {
                 object.generateBuffers();
             }
 
             // Enable blending for transparent objects (leaves, glass, etc.)
-            GL30.glEnable(GL30.GL_BLEND);
-            GL30.glBlendFunc(GL30.GL_SRC_ALPHA, GL30.GL_ONE_MINUS_SRC_ALPHA);
-            GL30.glEnable(GL30.GL_DEPTH_TEST);
+            graphicsDevice.enableBlendAndDepth();
 
         } catch (Exception e) {
             logException(e);
@@ -95,11 +97,11 @@ public class Renderer {
             System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
             System.arraycopy(camera.cameraPosition.toArray(), 0, consts, 32, 3);
             System.arraycopy(new float[] { 0, 0, 100, 0 }, 0, consts, 35, 4);
-            ssbo.setData(consts, GL15.GL_DYNAMIC_DRAW);
+            ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
             ssbo.bind();
             ssbo.bindToShader(0);
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            graphicsDevice.clearColorAndDepth();
             // shaderProgram.setUniformVector3("lightpos", new float[] { 0, 10, 0 });
             shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
             // shaderProgram.setUniformMatrix4fv("uPMatrix", camera.getProjectionMatrix());
@@ -137,7 +139,7 @@ public class Renderer {
         System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
         System.arraycopy(camera.cameraPosition.toArray(), 0, consts, 32, 3);
         System.arraycopy(new float[] { 0, 0, 100, 0 }, 0, consts, 35, 4);
-        ssbo.setData(consts, GL15.GL_DYNAMIC_DRAW);
+        ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
         shaderProgram.use();
@@ -154,7 +156,7 @@ public class Renderer {
     public void onSurfaceChanged(int w, int h) {
         width = w;
         height = h;
-        GL30.glViewport(0, 0, width, height);
+        graphicsDevice.viewport(width, height);
         float ratio = (float) width / height;
         camera.setPerspective(45, ratio, 0.1f, 1000);
 
@@ -178,4 +180,5 @@ public class Renderer {
             log.logToRootDirectory(element.getClassName() + element.getMethodName() + element.getLineNumber());
         }
     }
+
 }

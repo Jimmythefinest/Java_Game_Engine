@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.njst'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = [rootProject.file('src')]
+            exclude 'com/njst/gaming/Math/Matrix4.java'
+            exclude 'com/njst/gaming/Math/Quaternion.java'
+            exclude 'com/njst/gaming/Math/Vector3.java'
+            exclude 'com/njst/gaming/Math/Vector3f.java'
+            exclude 'com/njst/gaming/Animations/**/*.java'
+            exclude 'com/njst/gaming/Bone.java'
+            exclude 'com/njst/gaming/Physics/Triangle.java'
+            exclude 'com/njst/gaming/Utils/GeneralUtil.java'
+            exclude 'com/njst/gaming/Utils/Matrice_Math.java'
+            exclude 'com/njst/gaming/Utils/PerlinNoise.java'
+            exclude 'com/njst/gaming/Utils/Utils.java'
+            exclude 'com/njst/gaming/graphics/**/*.java'
+            exclude 'com/njst/gaming/untitled.txt'
+            exclude 'GameObjectTest.java'
+            exclude 'test.java'
+        }
+        resources {
+            srcDirs = [rootProject.file('src/resources')]
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':engine-core')
+    implementation fileTree(dir: rootProject.file('../../Java_libs'), include: ['*.jar'])
+}
+
+application {
+    mainClass = 'com.rebuild.RotatingCube'
+}
+
+tasks.register('runDemo', JavaExec) {
+    group = 'application'
+    description = 'Run RotatingCube demo (equivalent to run.sh)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+}

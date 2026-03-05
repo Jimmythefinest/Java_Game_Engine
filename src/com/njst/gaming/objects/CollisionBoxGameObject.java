@@ -3,7 +3,7 @@ package com.njst.gaming.objects;
 import com.njst.gaming.Geometries.CollisionBoxGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.GlUtils;
-import com.njst.gaming.Natives.ShaderProgram;
+import com.njst.gaming.graphics.ShaderHandle;
 
 public class CollisionBoxGameObject extends GameObject {
     private final GameObject target;
@@ -25,7 +25,7 @@ public class CollisionBoxGameObject extends GameObject {
     }
 
     @Override
-    public void render(ShaderProgram shader, int textureHandle) {
+    public void render(ShaderHandle shader, int textureHandle) {
         if (target == null) {
             return;
         }
@@ -45,7 +45,7 @@ public class CollisionBoxGameObject extends GameObject {
         }
         shaderprogram.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         shaderprogram.setUniformMatrix4fv("uMMatrix", modelMatrix);
-        shaderprogram.ActivateTexture(textureHandle, texture);
+        shaderprogram.activateTexture(textureHandle, texture);
 
         GlUtils.bind_vertex_array(vaoIds[0]);
         GlUtils.DrawElements(GlUtils.GL_LINES, geometry.getIndices().length, GlUtils.GL_UNSIGNED_INT, 0);

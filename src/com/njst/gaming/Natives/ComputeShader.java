@@ -5,11 +5,13 @@ import org.lwjgl.opengl.GL43;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.njst.gaming.graphics.BufferHandle;
+
 public class ComputeShader {
     private int program = 0;
     public String err = "";
 
-    private final Map<Integer, SSBO> buffers = new HashMap<>();
+    private final Map<Integer, BufferHandle> buffers = new HashMap<>();
     private final Map<Integer, Integer> bufferSizes = new HashMap<>();
 
     public ComputeShader(String shaderCode) {
@@ -42,7 +44,7 @@ public class ComputeShader {
     }
 
     public void bindBufferToShader(int bindingIndex, float[] data) {
-        SSBO buffer = new SSBO();
+        BufferHandle buffer = new SSBO();
         buffer.setData(data, GL43.GL_DYNAMIC_COPY);
         buffer.bindToShader(bindingIndex);
         buffers.put(bindingIndex, buffer);
@@ -50,7 +52,7 @@ public class ComputeShader {
     }
 
     public void bindBufferToShader(int bindingIndex, int[] data) {
-        SSBO buffer = new SSBO();
+        BufferHandle buffer = new SSBO();
         buffer.setData(data, GL43.GL_DYNAMIC_COPY);
         buffer.bindToShader(bindingIndex);
         buffers.put(bindingIndex, buffer);
@@ -58,7 +60,7 @@ public class ComputeShader {
     }
 
     public void updateBuffer(int bindingIndex, float[] data) {
-        SSBO buffer = buffers.get(bindingIndex);
+        BufferHandle buffer = buffers.get(bindingIndex);
         bufferSizes.put(bindingIndex, data.length);
         if (buffer != null) {
             buffer.updateData(data);
@@ -74,7 +76,7 @@ public class ComputeShader {
     }
 
     public float[] getBufferData(int bindingIndex) {
-        SSBO buffer = buffers.get(bindingIndex);
+        BufferHandle buffer = buffers.get(bindingIndex);
         return buffer != null ? buffer.getData(bufferSizes.get(bindingIndex)) : null;
     }
 
@@ -89,7 +91,7 @@ public class ComputeShader {
             program = 0;
         }
 
-        for (SSBO buffer : buffers.values()) {
+        for (BufferHandle buffer : buffers.values()) {
             buffer.delete();
         }
         buffers.clear();

@@ -4,9 +4,9 @@ import com.njst.gaming.Geometries.CustomGeometry;
 import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
-import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Utils.GameObjectRenderUtil;
+import com.njst.gaming.graphics.ShaderHandle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
@@ -53,7 +53,7 @@ public class LODGameObject extends GameObject {
         return distance >= lodSwitchDistance ? imposter : gameObject;
     }
 
-    public void render(ShaderProgram shader, int textureHandle, Vector3 cameraPosition, Renderer renderer) {
+    public void render(ShaderHandle shader, int textureHandle, Vector3 cameraPosition, Renderer renderer) {
         gameObject.updateModelMatrix();
         syncProxyBounds();
 
@@ -97,7 +97,7 @@ public class LODGameObject extends GameObject {
     }
 
     @Override
-    public void render(ShaderProgram shader, int textureHandle) {
+    public void render(ShaderHandle shader, int textureHandle) {
         gameObject.updateModelMatrix();
         syncProxyBounds();
         if (renderer != null) {

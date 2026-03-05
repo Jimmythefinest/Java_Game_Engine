@@ -1,1 +1,3 @@
 rootProject.name = 'NJST_Game_engine'
+include 'engine-core'
+include 'engine-platform-desktop'

@@ -3,6 +3,7 @@ package com.rebuild;
 import com.njst.gaming.*;
 import com.njst.gaming.Math.Vector3;
 import static org.lwjgl.glfw.GLFW.*;
+import com.njst.gaming.Loaders.*;
 import com.njst.gaming.Utils.ScreenshotUtil;
 
 /**
@@ -17,7 +18,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new DefaultLoader();
+        scene.loader = new CollisionBoxDemoLoader();
     }
 
     @Override

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Natives.GlUtils;
-import com.njst.gaming.Natives.ShaderProgram;
+import com.njst.gaming.graphics.ShaderHandle;
 
 public class instancedGameObject extends GameObject{
     public ArrayList<Matrix4> matrices;
@@ -15,7 +15,7 @@ public class instancedGameObject extends GameObject{
         matrices=new ArrayList<>();
     }
     @Override
-    public void  render(ShaderProgram shader, int textureHandle){
+    public void  render(ShaderHandle shader, int textureHandle){
         for (Matrix4 mat : matrices) {
             this.modelMatrix=mat;
             super.render(shader, textureHandle);

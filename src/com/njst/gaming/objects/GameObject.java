@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import com.njst.gaming.Natives.*;
 import com.njst.gaming.Utils.GeneralUtil;
 import com.njst.gaming.Utils.Matrice_Math;
+import com.njst.gaming.graphics.ShaderHandle;
 
 import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Math.Matrix4;
@@ -259,9 +260,9 @@ public class GameObject {
         }
     }
 
-    public ShaderProgram shaderprogram;
+    public ShaderHandle shaderprogram;
 
-    public void render(ShaderProgram shader, int textureHandle) {
+    public void render(ShaderHandle shader, int textureHandle) {
         if (!buffers_generated) {
             generateBuffers();
         }
@@ -273,7 +274,7 @@ public class GameObject {
         shaderprogram.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         // Bind the VAO
         shaderprogram.setUniformMatrix4fv("uMMatrix", modelMatrix);
-        shaderprogram.ActivateTexture(textureHandle, texture);
+        shaderprogram.activateTexture(textureHandle, texture);
 
         GlUtils.bind_vertex_array(vaoIds[0]); // Bind the VAO
         GlUtils.DrawElements(GL_TRIANGLES, geometry.getIndices().length, GL_UNSIGNED_INT, 0);
