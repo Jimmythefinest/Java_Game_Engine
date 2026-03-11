@@ -134,47 +134,58 @@ public class GameObjectRenderUtil {
     }
 
     private static int[] computeScreenBounds(Renderer renderer, GameObject object, int width, int height) {
-        // Use LOCAL-space bounds + model matrix (full MVP) to match computeImposterWorldSize exactly.
-        // Using the world-space AABB (min/max) without the model matrix gives an inflated crop
-        // for rotated objects, leaving blank borders on the baked texture.
-        Vector3 mn = object.localMin;
-        Vector3 mx = object.localMax;
-        if (mn == null || mx == null) {
+        if (renderer == null || renderer.camera == null) {
             return null;
         }
 
-        Vector3[] corners = new Vector3[] {
-                new Vector3(mn.x, mn.y, mn.z),
-                new Vector3(mn.x, mn.y, mx.z),
-                new Vector3(mn.x, mx.y, mn.z),
-                new Vector3(mn.x, mx.y, mx.z),
-                new Vector3(mx.x, mn.y, mn.z),
-                new Vector3(mx.x, mn.y, mx.z),
-                new Vector3(mx.x, mx.y, mn.z),
-                new Vector3(mx.x, mx.y, mx.z)
-        };
+        object.updateModelMatrix();
 
+        Vector3 localCenter = getLocalBoundsCenter(object);
+        float worldRadius = computeWorldBoundingSphereRadius(object);
+        if (localCenter == null || worldRadius <= 0.0001f) {
+            return null;
+        }
+
+        Vector3 worldCenter = object.modelMatrix.multiply(localCenter);
         Matrix4 view = renderer.camera.getViewMatrix();
         Matrix4 proj = renderer.camera.getProjectionMatrix();
-        // Full MVP: proj * view * model — same as computeImposterWorldSize
-        Matrix4 viewProj = new Matrix4().set(proj.r).multiply(view).multiply(object.modelMatrix);
+        Matrix4 viewProj = new Matrix4().set(proj.r).multiply(view);
 
-        float minX = Float.POSITIVE_INFINITY;
-        float minY = Float.POSITIVE_INFINITY;
-        float maxX = Float.NEGATIVE_INFINITY;
-        float maxY = Float.NEGATIVE_INFINITY;
-
-        for (Vector3 c : corners) {
-            Vector3 ndc = viewProj.multiply(c);
-            float sx = (ndc.x * 0.5f + 0.5f) * width;
-            float sy = (ndc.y * 0.5f + 0.5f) * height;
-            float imgY = height - sy;
-
-            if (sx < minX) minX = sx;
-            if (sx > maxX) maxX = sx;
-            if (imgY < minY) minY = imgY;
-            if (imgY > maxY) maxY = imgY;
+        Vector3 ndcCenter = viewProj.multiply(worldCenter);
+        float centerDepth = -view.multiply(worldCenter).z;
+        if (centerDepth <= 0.0001f) {
+            return null;
         }
+
+        float tanAlpha;
+        if (centerDepth > worldRadius + 0.0001f) {
+            tanAlpha = worldRadius / (float) Math.sqrt(centerDepth * centerDepth - worldRadius * worldRadius);
+        } else {
+            tanAlpha = Float.POSITIVE_INFINITY;
+        }
+
+        float tanFov = (float) Math.tan(Math.toRadians(renderer.camera.FOV * 0.5f));
+        float aspect = renderer.camera.aspect;
+        if (tanFov <= 0.0001f || aspect <= 0.0001f) {
+            return null;
+        }
+
+        float ndcHalfY = tanAlpha / tanFov;
+        float ndcHalfX = ndcHalfY / aspect;
+        if (!Float.isFinite(ndcHalfX) || !Float.isFinite(ndcHalfY)) {
+            ndcHalfX = 2f;
+            ndcHalfY = 2f;
+        }
+
+        float minNdcX = ndcCenter.x - ndcHalfX;
+        float maxNdcX = ndcCenter.x + ndcHalfX;
+        float minNdcY = ndcCenter.y - ndcHalfY;
+        float maxNdcY = ndcCenter.y + ndcHalfY;
+
+        float minX = (minNdcX * 0.5f + 0.5f) * width;
+        float maxX = (maxNdcX * 0.5f + 0.5f) * width;
+        float maxY = height - ((minNdcY * 0.5f + 0.5f) * height);
+        float minY = height - ((maxNdcY * 0.5f + 0.5f) * height);
 
         int x0 = clamp((int) Math.floor(minX) - CROP_PADDING_PX, 0, width - 1);
         int y0 = clamp((int) Math.floor(minY) - CROP_PADDING_PX, 0, height - 1);
@@ -187,6 +198,51 @@ public class GameObjectRenderUtil {
             return null;
         }
         return new int[] { x0, y0, w, h };
+    }
+
+    private static Vector3 getLocalBoundsCenter(GameObject object) {
+        if (object.localMin != null && object.localMax != null) {
+            return new Vector3(
+                    (object.localMin.x + object.localMax.x) * 0.5f,
+                    (object.localMin.y + object.localMax.y) * 0.5f,
+                    (object.localMin.z + object.localMax.z) * 0.5f);
+        }
+        if (object.min != null && object.max != null) {
+            return new Vector3(
+                    (object.min.x + object.max.x) * 0.5f,
+                    (object.min.y + object.max.y) * 0.5f,
+                    (object.min.z + object.max.z) * 0.5f);
+        }
+        return new Vector3(0f, 0f, 0f);
+    }
+
+    private static float computeWorldBoundingSphereRadius(GameObject object) {
+        if (object.localMin != null && object.localMax != null) {
+            float ex = Math.abs(object.localMax.x - object.localMin.x) * 0.5f;
+            float ey = Math.abs(object.localMax.y - object.localMin.y) * 0.5f;
+            float ez = Math.abs(object.localMax.z - object.localMin.z) * 0.5f;
+            float localRadius = (float) Math.sqrt(ex * ex + ey * ey + ez * ez);
+            return Math.max(0.0001f, localRadius * getMaxModelAxisScale(object));
+        }
+        if (object.min != null && object.max != null) {
+            float dx = object.max.x - object.min.x;
+            float dy = object.max.y - object.min.y;
+            float dz = object.max.z - object.min.z;
+            float worldRadius = 0.5f * (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+            return Math.max(0.0001f, worldRadius);
+        }
+        return 1f;
+    }
+
+    private static float getMaxModelAxisScale(GameObject object) {
+        if (object.modelMatrix == null || object.modelMatrix.r == null || object.modelMatrix.r.length < 16) {
+            return 1f;
+        }
+        float[] m = object.modelMatrix.r;
+        float sx = (float) Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
+        float sy = (float) Math.sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]);
+        float sz = (float) Math.sqrt(m[8] * m[8] + m[9] * m[9] + m[10] * m[10]);
+        return Math.max(0.0001f, Math.max(sx, Math.max(sy, sz)));
     }
 
     private static int clamp(int value, int min, int max) {
