@@ -1,5 +1,8 @@
 package com.njst.gaming;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+
 import com.njst.gaming.Math.*;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
@@ -110,7 +113,20 @@ public class Renderer {
             // skybox.position=camera.cameraPosition;
             // skybox.updateModelMatrix();
             scene.onDrawFrame();
-            for (GameObject object : scene.objects) {
+            if (skybox != null) {
+                skybox.setGraphicsDevice(graphicsDevice);
+                shaderProgram.use();
+                skybox.updateModelMatrix();
+                skybox.render(shaderProgram, textureHandle);
+            }
+
+            ArrayList<GameObject> renderQueue = new ArrayList<>(scene.objects);
+            if (skybox != null) {
+                renderQueue.remove(skybox);
+            }
+            renderQueue.sort(Comparator.comparingDouble(
+                    object -> -object.position.distance(camera.cameraPosition)));
+            for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
                 shaderProgram.use();
                 object.updateModelMatrix();

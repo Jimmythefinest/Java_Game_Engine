@@ -2,9 +2,10 @@ package com.njst.gaming.Loaders;
 
 import com.njst.gaming.Scene;
 import com.njst.gaming.data;
-import com.njst.gaming.Geometries.CubeGeometry;
+import com.njst.gaming.Geometries.PlantConfig;
+import com.njst.gaming.Geometries.PlantGeometry;
+import com.njst.gaming.Geometries.PlantSeed;
 import com.njst.gaming.Geometries.SphereGeometry;
-import com.njst.gaming.objects.CollisionBoxGameObject;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.LODGameObject;
 
@@ -12,7 +13,7 @@ public class CollisionBoxDemoLoader implements Scene.SceneLoader {
 
     @Override
     public void load(Scene scene) {
-        int cubeTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
+        int plantTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg");
         int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
@@ -23,26 +24,26 @@ public class CollisionBoxDemoLoader implements Scene.SceneLoader {
         scene.renderer.skybox = skybox;
         scene.addGameObject(skybox);
 
-        // Real cube (rendered up close)
-        GameObject cube = new GameObject(new CubeGeometry(), cubeTexture);
-        cube.setPosition(0, 0, 0);
-        scene.animations.add(new com.njst.gaming.Animations.Animation() {
-            float angle = 0f;
+        // 20 procedural trees laid out in a grid, each using imposter LOD.
+        int treeRows = 4;
+        int treeCols = 5;
+        float spacing = 7f;
+        float halfX = (treeCols - 1) * spacing * 0.5f;
+        float halfZ = (treeRows - 1) * spacing * 0.5f;
+        long seedBase = 0x5EEDBEEFL;
 
-            @Override
-            public void animate() {
-                // angle += 0.5f;
-                cube.setRotation(0, angle, 0);
+        for (int r = 0; r < treeRows; r++) {
+            for (int c = 0; c < treeCols; c++) {
+                long seed = seedBase + (r * treeCols + c);
+                PlantConfig cfg = new PlantSeed(seed).generateConfig();
+                GameObject tree = new GameObject(new SphereGeometry(1,20,20), plantTexture);
+                tree.setPosition(c * spacing - halfX, 0f, r * spacing - halfZ);
+
+                LODGameObject lodTree = new LODGameObject(tree, plantTexture, 14f);
+                lodTree.renderer = scene.renderer;
+                lodTree.acceptanceConeDegrees = 25f;
+                scene.addGameObject(lodTree);
             }
-        });
-
-        // Wrap cube in LODGameObject — switches to baked billboard beyond 8 units
-        LODGameObject lodCube = new LODGameObject(cube, cubeTexture, 8f);
-        lodCube.renderer = scene.renderer;  // gives the standard render loop LOD awareness
-        lodCube.acceptanceConeDegrees = 25f; // rebake when camera rotates more than 25°
-        scene.addGameObject(lodCube);
-
-        CollisionBoxGameObject box = new CollisionBoxGameObject(cube, cubeTexture);
-        scene.addGameObject(box);
+        }
     }
 }
