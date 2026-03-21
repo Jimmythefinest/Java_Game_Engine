@@ -2,8 +2,14 @@ package com.njst.gaming;
 
 import com.njst.gaming.Math.Vector3;
 
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class data {
-        public static String rootDirectory = "/jimmy/";
+        public static String rootDirectory = resolveResourceRoot();
         public static final float[] VERTICES1 = {
                         -1, 1, 1, // Front top left
                         1, 1, 1, // Front top right
@@ -187,5 +193,47 @@ public class data {
                         4, 5, 5, 6, 6, 7, 7, 4, // Front face
                         0, 4, 1, 5, 2, 6, 3, 7 // Connecting edges
         };
+
+        private static String resolveResourceRoot() {
+                String override = System.getProperty("njst.resources.dir");
+                if (override != null && !override.trim().isEmpty()) {
+                        return Paths.get(override).toAbsolutePath().normalize().toString();
+                }
+
+                Path[] candidates = new Path[] {
+                                Paths.get("engine-platform-desktop", "src", "main", "resources"),
+                                Paths.get("engine-platform-desktop", "build", "resources", "main"),
+                                Paths.get("src", "main", "resources"),
+                                Paths.get("build", "resources", "main"),
+                                Paths.get("src", "resources")
+                };
+                for (Path candidate : candidates) {
+                        Path absolute = candidate.toAbsolutePath().normalize();
+                        if (Files.isDirectory(absolute)) {
+                                return absolute.toString();
+                        }
+                }
+
+                URL shaderUrl = data.class.getResource("/shaders/vert11.glsl");
+                if (shaderUrl != null && "file".equalsIgnoreCase(shaderUrl.getProtocol())) {
+                        try {
+                                Path shaderPath = Paths.get(shaderUrl.toURI()).toAbsolutePath().normalize();
+                                Path root = shaderPath.getParent();
+                                if (root != null) {
+                                        root = root.getParent();
+                                }
+                                if (root != null && Files.isDirectory(root)) {
+                                        return root.toString();
+                                }
+                        } catch (URISyntaxException ignored) {
+                        }
+                }
+
+                return Paths.get(".").toAbsolutePath().normalize().toString();
+        }
+
+        public static String resourcePath(String relativePath) {
+                return Paths.get(rootDirectory, relativePath).normalize().toString();
+        }
 
 }

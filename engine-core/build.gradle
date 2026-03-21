@@ -18,13 +18,7 @@ sourceSets {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation files(
-            rootProject.file('../../Java_libs/gson-2.10.1.jar'),
-            rootProject.file('../../Java_libs/joml-1.10.7.jar')
-    )
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.joml:joml:1.10.7'
 }

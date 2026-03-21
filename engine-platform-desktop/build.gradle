@@ -6,6 +6,8 @@ plugins {
 group = 'com.njst'
 version = '1.0.0'
 
+def lwjglVersion = '3.3.6'
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -28,7 +30,18 @@ repositories {
 
 dependencies {
     implementation project(':engine-core')
-    implementation fileTree(dir: rootProject.file('../../Java_libs'), include: ['*.jar'])
+    implementation platform("org.lwjgl:lwjgl-bom:${lwjglVersion}")
+    implementation 'org.lwjgl:lwjgl'
+    implementation 'org.lwjgl:lwjgl-assimp'
+    implementation 'org.lwjgl:lwjgl-glfw'
+    implementation 'org.lwjgl:lwjgl-opengl'
+    implementation 'org.lwjgl:lwjgl-stb'
+
+    runtimeOnly 'org.lwjgl:lwjgl::natives-linux'
+    runtimeOnly 'org.lwjgl:lwjgl-assimp::natives-linux'
+    runtimeOnly 'org.lwjgl:lwjgl-glfw::natives-linux'
+    runtimeOnly 'org.lwjgl:lwjgl-opengl::natives-linux'
+    runtimeOnly 'org.lwjgl:lwjgl-stb::natives-linux'
 }
 
 application {

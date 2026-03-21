@@ -30,6 +30,7 @@ public class Scene {
     PhysicsEngine physics;
     RootLogger log;
     public float[][] heightMap;
+    private OpenWorldTerrainManager openWorldTerrainManager;
     public SceneLoader loader = new SceneLoader() {
         public void load(Scene s) {
 
@@ -58,6 +59,9 @@ public class Scene {
     }
 
     public void onDrawFrame() {
+        if (openWorldTerrainManager != null && renderer != null && renderer.camera != null) {
+            openWorldTerrainManager.update(renderer.camera.cameraPosition);
+        }
         if (camera_should_move) {
             renderer.camera.moveForward(0.1f * speed);
         }
@@ -69,6 +73,14 @@ public class Scene {
             i.animate();
         }
         // physics.simulate(1f/60f);
+    }
+
+    public void enableOpenWorld(OpenWorldTerrainManager openWorldTerrainManager) {
+        this.openWorldTerrainManager = openWorldTerrainManager;
+    }
+
+    public OpenWorldTerrainManager getOpenWorldTerrainManager() {
+        return openWorldTerrainManager;
     }
 
     public void addGameObject(GameObject r) {

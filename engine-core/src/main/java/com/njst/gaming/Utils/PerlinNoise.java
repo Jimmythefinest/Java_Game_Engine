@@ -8,6 +8,10 @@ public class PerlinNoise {
     private static final int PERMUTATION_SIZE = 256;
 
     public PerlinNoise() {
+        this(new Random().nextLong());
+    }
+
+    public PerlinNoise(long seed) {
         permutation = new int[PERMUTATION_SIZE];
         p = new int[PERMUTATION_SIZE * 2];
 
@@ -17,7 +21,7 @@ public class PerlinNoise {
         }
 
         // Shuffle the permutation array
-        Random random = new Random();
+        Random random = new Random(seed);
         for (int i = PERMUTATION_SIZE - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
             int temp = permutation[i];

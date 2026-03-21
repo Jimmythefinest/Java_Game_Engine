@@ -18,7 +18,7 @@ public class RotatingCube extends Engine {
     @Override
     protected void onInit() {
         System.out.println("Initializing RotatingCube Demo");
-        scene.loader = new CollisionBoxDemoLoader();
+        scene.loader = new OpenWorldLoader();
     }
 
     @Override

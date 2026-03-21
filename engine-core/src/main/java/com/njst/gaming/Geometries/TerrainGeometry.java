@@ -2,10 +2,11 @@ package com.njst.gaming.Geometries;
 
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Utils.PerlinNoise;
+
 public class TerrainGeometry extends Geometry {
     private int width; // Width of the terrain
     private int depth; // Depth of the terrain
-    public  float[][] heightMap; // 2D array to hold height values for the terrain
+    public float[][] heightMap; // 2D array to hold height values for the terrain
 
     // Constructor that takes a width, depth, and a height map
     public TerrainGeometry(int width, int depth, float[][] heightMap) {
@@ -21,6 +22,39 @@ public class TerrainGeometry extends Geometry {
         this.heightMap = g.generateHeightMap();
         calculateBounds();
         //heightMap[1][1]=10f;
+    }
+
+    public static TerrainGeometry createChunk(int width, int depth, long seed, int worldStartX, int worldStartZ,
+            float noiseScale, float heightScale) {
+        TerrainGenerator generator = new TerrainGenerator(width, depth, noiseScale, heightScale, seed, worldStartX, worldStartZ);
+        return new TerrainGeometry(width, depth, generator.generateHeightMap());
+    }
+
+    public float sampleHeight(float localX, float localZ) {
+        if (heightMap == null || heightMap.length == 0 || heightMap[0].length == 0) {
+            return 0f;
+        }
+
+        float clampedX = clamp(localX, 0, width - 1);
+        float clampedZ = clamp(localZ, 0, depth - 1);
+        int x0 = (int) java.lang.Math.floor(clampedX);
+        int z0 = (int) java.lang.Math.floor(clampedZ);
+        int x1 = java.lang.Math.min(x0 + 1, width - 1);
+        int z1 = java.lang.Math.min(z0 + 1, depth - 1);
+        float tx = clampedX - x0;
+        float tz = clampedZ - z0;
+
+        float h00 = heightMap[x0][z0];
+        float h10 = heightMap[x1][z0];
+        float h01 = heightMap[x0][z1];
+        float h11 = heightMap[x1][z1];
+        float hx0 = h00 + ((h10 - h00) * tx);
+        float hx1 = h01 + ((h11 - h01) * tx);
+        return hx0 + ((hx1 - hx0) * tz);
+    }
+
+    private float clamp(float value, float minValue, float maxValue) {
+        return java.lang.Math.max(minValue, java.lang.Math.min(maxValue, value));
     }
 
     // Calculate the min and max bounds based on the heightMap
@@ -118,18 +152,28 @@ public class TerrainGeometry extends Geometry {
         return indices;
     }
     
-    public static  class TerrainGenerator {
+    public static class TerrainGenerator {
     private int width;
     private int depth;
     PerlinNoise perlinNoise;
 
     private float scale; // Scale for the noise
+    private float heightScale;
+    private int worldStartX;
+    private int worldStartZ;
 
     public TerrainGenerator(int width, int depth, float scale) {
+        this(width, depth, scale, 10f, 0L, 0, 0);
+    }
+
+    public TerrainGenerator(int width, int depth, float scale, float heightScale, long seed, int worldStartX, int worldStartZ) {
         this.width = width;
         this.depth = depth;
         this.scale = scale;
-        perlinNoise = new PerlinNoise();
+        this.heightScale = heightScale;
+        this.worldStartX = worldStartX;
+        this.worldStartZ = worldStartZ;
+        perlinNoise = new PerlinNoise(seed);
     }
 
     public float[][] generateHeightMap() {
@@ -138,7 +182,9 @@ public class TerrainGeometry extends Geometry {
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < depth; z++) {
                 // Generate height using Perlin noise
-                heightMap[x][z] = (float) (perlinNoise.noise(x / scale, z / scale) * 10); // Scale height
+                float sampleX = (worldStartX + x) / scale;
+                float sampleZ = (worldStartZ + z) / scale;
+                heightMap[x][z] = (float) (perlinNoise.noise(sampleX, sampleZ) * heightScale);
             }
         }
 

@@ -49,6 +49,10 @@ public class Quaternion {
         return new float[]{ result.x, result.y, result.z };
     }
 
+    public Vector3 rotateVector(Vector3 vec) {
+        return new Vector3(rotateVector(vec.x, vec.y, vec.z));
+    }
+
     public float[] toMatrix4() {
         // Column-major 4x4 rotation matrix
         float[] m = new float[16];
