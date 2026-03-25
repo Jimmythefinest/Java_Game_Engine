@@ -14,7 +14,7 @@ public class OpenWorldLoader implements Scene.SceneLoader {
     @Override
     public void load(Scene scene) {
         int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
-        int terrainTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/WaterPlain0012_1_350.jpg");
+        int terrainTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg");
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5;

@@ -17,6 +17,10 @@ public class OpenWorldTerrainState {
     public int renderDistance;
     public float noiseScale;
     public float heightScale;
+    public int erosionIterations;
+    public float erosionStrength;
+    public float erosionThreshold;
+    public int erosionPadding;
 
     public OpenWorldTerrainState() {
     }
@@ -61,6 +65,10 @@ public class OpenWorldTerrainState {
         state.renderDistance = 2;
         state.noiseScale = 48f;
         state.heightScale = 12f;
+        state.erosionIterations = 18;
+        state.erosionStrength = 0.22f;
+        state.erosionThreshold = 0.35f;
+        state.erosionPadding = 12;
         return state;
     }
 
@@ -76,6 +84,18 @@ public class OpenWorldTerrainState {
         }
         if (heightScale <= 0) {
             heightScale = 12f;
+        }
+        if (erosionIterations < 0) {
+            erosionIterations = 18;
+        }
+        if (erosionStrength <= 0f) {
+            erosionStrength = 0.22f;
+        }
+        if (erosionThreshold <= 0f) {
+            erosionThreshold = 0.35f;
+        }
+        if (erosionPadding <= 0) {
+            erosionPadding = java.lang.Math.max(8, erosionIterations / 2);
         }
         if (seed == 0L) {
             seed = new Random().nextLong();

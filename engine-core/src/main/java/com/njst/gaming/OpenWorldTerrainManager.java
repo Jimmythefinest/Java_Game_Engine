@@ -64,7 +64,8 @@ public class OpenWorldTerrainManager {
         int worldStartX = chunkX * state.chunkSize;
         int worldStartZ = chunkZ * state.chunkSize;
         TerrainGeometry geometry = TerrainGeometry.createChunk(state.chunkSize + 1, state.chunkSize + 1,
-                state.seed, worldStartX, worldStartZ, state.noiseScale, state.heightScale);
+                state.seed, worldStartX, worldStartZ, state.noiseScale, state.heightScale,
+                state.erosionIterations, state.erosionStrength, state.erosionThreshold, state.erosionPadding);
         chunk = new GameObject(geometry, terrainTexture);
         chunk.name = "terrain_" + chunkX + "_" + chunkZ;
         chunk.setGraphicsDevice(graphicsDevice);

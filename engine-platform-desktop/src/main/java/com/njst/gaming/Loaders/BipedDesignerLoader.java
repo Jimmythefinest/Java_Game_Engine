@@ -10,6 +10,7 @@ import com.njst.gaming.Bone;
 import com.njst.gaming.Scene;
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.BipedWalkAnimation;
+import com.njst.gaming.Animations.ControllableBipedAnimation;
 import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Animations.MixamoBoneMap;
 import com.njst.gaming.Animations.TerrainAwareBipedWalkAnimation;
@@ -34,13 +35,17 @@ public class BipedDesignerLoader implements Scene.SceneLoader {
     private static final String MODEL_TEXTURE_PATH = data.rootDirectory + "/j.jpg";
     private TerrainGeometry terrainGeometry;
     private Vector3 terrainOrigin;
+    private ControllableBipedAnimation playerController;
+    private Weighted_GameObject playerModel;
 
     @Override
     public void load(Scene scene) {
+        playerController = null;
+        playerModel = null;
         setupEnvironment(scene);
         if (loadRigAndExportBoneNames(scene)) {
-            scene.renderer.camera.cameraPosition = new Vector3(0.0f, 1.9f, -7.0f);
-            scene.renderer.camera.targetPosition = new Vector3(0.0f, 1.2f, 0.0f);
+            scene.renderer.camera.cameraPosition = new Vector3(0.0f, 2.2f, -6.5f);
+            scene.renderer.camera.targetPosition = new Vector3(0.0f, 1.4f, 0.0f);
             return;
         }
 
@@ -103,34 +108,28 @@ public class BipedDesignerLoader implements Scene.SceneLoader {
                 bone.calculate_bind_matrix();
             }
 
-            Bone_object rigView = new Bone_object(new CubeGeometry(),
-                    ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg"));
-            rigView.bone = rootBone;
-            rigView.name = "MixamoRig";
-            scene.addGameObject(rigView);
-
             loadSkinnedModel(scene, bones);
             attachBoneBufferUpdater(scene, bones, rootBone);
 
             if (boneMap != null) {
-                final TerrainAwareBipedWalkAnimation walkAnimation = new TerrainAwareBipedWalkAnimation(
-                        boneMap, terrainGeometry, terrainOrigin);
-                scene.animations.add(walkAnimation);
+                playerController = new ControllableBipedAnimation(boneMap, terrainGeometry, terrainOrigin);
+                scene.animations.add(playerController);
+                attachModelTransformUpdater(scene);
                 scene.actions.put(GLFW_KEY_N, new Runnable() {
                     @Override
                     public void run() {
-                        walkAnimation.speedUp();
-                        System.out.println("Walk speed x" + walkAnimation.getSpeedMultiplier());
+                        playerController.setSpeedMultiplier(2.0f);
+                        System.out.println("Humanoid speed set to fast");
                     }
                 });
                 scene.actions.put(GLFW_KEY_M, new Runnable() {
                     @Override
                     public void run() {
-                        walkAnimation.slowDown();
-                        System.out.println("Walk speed x" + walkAnimation.getSpeedMultiplier());
+                        playerController.setSpeedMultiplier(1.0f);
+                        System.out.println("Humanoid speed reset");
                     }
                 });
-                System.out.println("Resolved Mixamo control bones and attached procedural walk animation");
+                System.out.println("Resolved Mixamo control bones and attached player controller");
             } else {
                 System.err.println("Failed to resolve required Mixamo control bones from " + RIG_PATH);
             }
@@ -145,12 +144,14 @@ public class BipedDesignerLoader implements Scene.SceneLoader {
     }
 
     private void loadSkinnedModel(Scene scene, ArrayList<Bone> bones) {
-        WeightedGeometry modelGeometry = FBXBoneLoader.loadModel(RIG_PATH, bones, 1, 1.0f);
-        int modelTexture = ShaderProgram.loadTexture(MODEL_TEXTURE_PATH);
-        Weighted_GameObject model = new Weighted_GameObject(modelGeometry, modelTexture);
-        model.name = "MixamoModel";
-        model.setPosition(0.0f, 0.0f, 0.0f);
-        scene.addGameObject(model);
+		for(int i=1;i>=0;i--){
+	        WeightedGeometry modelGeometry = FBXBoneLoader.loadModel(RIG_PATH, bones, i, 1.0f);
+	        int modelTexture = ShaderProgram.loadTexture(MODEL_TEXTURE_PATH);
+	        playerModel = new Weighted_GameObject(modelGeometry, modelTexture);
+	        playerModel.name = "MixamoModel";
+	        playerModel.setPosition(0.0f, 0.0f, 0.0f);        
+	        scene.addGameObject(playerModel);
+        }
     }
 
     private void attachBoneBufferUpdater(Scene scene, ArrayList<Bone> bones, Bone rootBone) {
@@ -191,7 +192,7 @@ public class BipedDesignerLoader implements Scene.SceneLoader {
 
     private void setupEnvironment(Scene scene) {
         int skyboxTexture = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
-        int groundTexture = ShaderProgram.loadTexture(data.rootDirectory + "/WaterPlain0012_1_350.jpg");
+        int groundTexture = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.scale = new float[] { 100, 100, 100 };
@@ -201,12 +202,31 @@ public class BipedDesignerLoader implements Scene.SceneLoader {
         scene.renderer.skybox = skybox;
         scene.addGameObject(skybox);
 
-        terrainGeometry = new TerrainGeometry(120, 120,new float[120][120]);
+        terrainGeometry = new TerrainGeometry(120, 120);
         terrainOrigin = new Vector3(-60.0f, -1.2f, -60.0f);
         GameObject ground = new GameObject(terrainGeometry, groundTexture);
         ground.setPosition(terrainOrigin.x, terrainOrigin.y, terrainOrigin.z);
         ground.updateModelMatrix();
         scene.addGameObject(ground);
+    }
+
+    private void attachModelTransformUpdater(Scene scene) {
+        if (playerModel == null || playerController == null) {
+            return;
+        }
+
+        scene.animations.add(new Animation() {
+            @Override
+            public void animate() {
+                Vector3 worldPosition = playerController.getWorldPosition();
+                playerModel.setPosition(worldPosition.x, worldPosition.y, worldPosition.z);
+                playerModel.setRotation(0.0f, playerController.getHeadingDegrees(), 0.0f);
+            }
+        });
+    }
+
+    public ControllableBipedAnimation getPlayerController() {
+        return playerController;
     }
 
     private Bone createBone(String name, Vector3 positionToParent, Vector3 scale) {

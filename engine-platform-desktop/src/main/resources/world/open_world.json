@@ -3,5 +3,9 @@
   "chunkSize": 32,
   "renderDistance": 2,
   "noiseScale": 48.0,
-  "heightScale": 12.0
+  "heightScale": 12.0,
+  "erosionIterations": 18,
+  "erosionStrength": 0.22,
+  "erosionThreshold": 0.35,
+  "erosionPadding": 12
 }
