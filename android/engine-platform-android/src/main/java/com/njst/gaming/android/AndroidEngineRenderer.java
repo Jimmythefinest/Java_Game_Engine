@@ -6,14 +6,12 @@ import android.opengl.GLSurfaceView;
 
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Scene;
-import com.njst.gaming.objects.GameObject;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     private final Context context;
-    private GameObject demoCube;
     private Renderer renderer;
 
     public AndroidEngineRenderer(Context context) {
@@ -29,12 +27,10 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
 
         Scene scene = new Scene();
         scene.renderer = renderer;
-        AndroidDemoSceneLoader loader = new AndroidDemoSceneLoader();
-        scene.loader = loader;
+        scene.loader = new AndroidOpenWorldLoader(context);
         renderer.scene = scene;
 
         renderer.onSurfaceCreated();
-        demoCube = loader.getDemoCube();
     }
 
     @Override
@@ -48,9 +44,6 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 gl) {
         if (renderer == null) {
             return;
-        }
-        if (demoCube != null) {
-            demoCube.rotate(0f, 1.0f, 0f);
         }
         renderer.onDrawFrame();
     }

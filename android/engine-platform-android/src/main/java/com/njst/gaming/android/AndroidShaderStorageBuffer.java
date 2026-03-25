@@ -1,9 +1,11 @@
 package com.njst.gaming.android;
 
+import android.opengl.GLES30;
 import android.opengl.GLES31;
 
 import com.njst.gaming.graphics.BufferHandle;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -68,7 +70,24 @@ public class AndroidShaderStorageBuffer implements BufferHandle {
 
     @Override
     public float[] getData(int numElements) {
-        return new float[numElements];
+        bind();
+        Buffer mapped = GLES30.glMapBufferRange(
+                GLES31.GL_SHADER_STORAGE_BUFFER,
+                0,
+                numElements * Float.BYTES,
+                GLES30.GL_MAP_READ_BIT);
+
+        float[] result = new float[numElements];
+        if (mapped instanceof ByteBuffer) {
+            FloatBuffer floatBuffer = ((ByteBuffer) mapped)
+                    .order(ByteOrder.nativeOrder())
+                    .asFloatBuffer();
+            floatBuffer.get(result);
+        }
+
+        GLES30.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER);
+        unbind();
+        return result;
     }
 
     @Override

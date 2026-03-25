@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import com.njst.gaming.android.AndroidEngineSurfaceView;
+import com.njst.gaming.android.AndroidPlatform;
 
 public class MainActivity extends Activity {
     private AndroidEngineSurfaceView engineView;
@@ -11,7 +12,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        engineView = new AndroidEngineSurfaceView(this);
+        engineView = AndroidPlatform.createSurfaceView(this);
         setContentView(engineView);
     }
 
