@@ -16,3 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "android"
 include(":app")
+include(":engine-platform-android")
+include(":engine-core")
+project(":engine-core").projectDir = file("../engine-core")
