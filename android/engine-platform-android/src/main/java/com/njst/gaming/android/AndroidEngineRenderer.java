@@ -47,4 +47,18 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         }
         renderer.onDrawFrame();
     }
+
+    public void cursorMoved(float x, float y) {
+        if (renderer == null || renderer.scene == null) {
+            return;
+        }
+        renderer.scene.cursorMoved(x, y);
+    }
+
+    public void setLooking(boolean active) {
+        if (renderer == null || renderer.scene == null) {
+            return;
+        }
+        renderer.scene.righmouse = active;
+    }
 }
