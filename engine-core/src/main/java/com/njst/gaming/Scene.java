@@ -65,15 +65,41 @@ public class Scene {
         if (openWorldTerrainManager != null && renderer != null && renderer.camera != null) {
             openWorldTerrainManager.update(renderer.camera.cameraPosition);
         }
-        if (camera_should_move) {
-            renderer.camera.moveForward(0.1f * speed);
-        }
-        if (camera_should_move_up) {
-            renderer.camera.cameraPosition.add(new Vector3(0, 0.05f, 0));
-            renderer.camera.targetPosition.add(new Vector3(0, 0.05f, 0));
+        if (renderer != null && renderer.camera != null) {
+            updateCameraMovement();
         }
         for (Animation i : animations) {
             i.animate();
+        }
+    }
+
+    private void updateCameraMovement() {
+        float forward = 0f;
+        if (camera_should_move || inputSystem.button(InputCodes.BUTTON_MOVE_FORWARD).isDown()) {
+            forward += 0.1f * speed;
+        }
+        if (inputSystem.button(InputCodes.BUTTON_MOVE_BACKWARD).isDown()) {
+            forward -= 0.1f * speed;
+        }
+        if (forward != 0f) {
+            renderer.camera.moveForward(forward);
+        }
+
+        float strafe = 0f;
+        if (inputSystem.button(InputCodes.BUTTON_MOVE_LEFT).isDown()) {
+            strafe += 0.1f * speed;
+        }
+        if (inputSystem.button(InputCodes.BUTTON_MOVE_RIGHT).isDown()) {
+            strafe -= 0.1f * speed;
+        }
+        if (strafe != 0f) {
+            renderer.camera.moveStrafe(strafe);
+        }
+
+        if (camera_should_move_up) {
+            Vector3 verticalOffset = new Vector3(0, 0.05f, 0);
+            renderer.camera.cameraPosition.add(verticalOffset);
+            renderer.camera.targetPosition.add(verticalOffset);
         }
     }
 

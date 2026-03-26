@@ -77,6 +77,10 @@ public abstract class Engine {
     }
 
     private void configureDefaultInputBindings() {
+        scene.inputBindings.bindKey(GLFW_KEY_W, InputCodes.BUTTON_MOVE_FORWARD);
+        scene.inputBindings.bindKey(GLFW_KEY_S, InputCodes.BUTTON_MOVE_BACKWARD);
+        scene.inputBindings.bindKey(GLFW_KEY_A, InputCodes.BUTTON_MOVE_LEFT);
+        scene.inputBindings.bindKey(GLFW_KEY_D, InputCodes.BUTTON_MOVE_RIGHT);
         scene.inputBindings.bindMouseButton(MouseButtons.LEFT, InputCodes.BUTTON_LOOK);
     }
 
