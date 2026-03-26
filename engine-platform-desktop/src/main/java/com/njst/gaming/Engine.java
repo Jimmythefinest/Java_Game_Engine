@@ -4,6 +4,9 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.DesktopGraphicsDevice;
+import com.njst.gaming.input.InputCodes;
+import com.njst.gaming.input.InputSystem;
+import com.njst.gaming.input.MouseButtons;
 import java.util.Scanner;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -11,27 +14,16 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-/**
- * Base class for desktop-based engine applications.
- * Handles GLFW window lifecycle, input routing, and the main loop.
- * 
- * Subclasses should implement {@link #onInit()} for setup and 
- * optionally override {@link #onUpdate()} and {@link #onKey(int, int)}.
- */
 public abstract class Engine {
     protected int width = 800;
     protected int height = 600;
     protected String title = "Game Engine";
     protected long window;
-    
+
     protected Renderer renderer;
     protected Scene scene;
-    protected Input input;
+    protected InputSystem input;
 
-    /**
-     * Entry point to start the engine.
-     * Initializes window, runs main loop, and ensures cleanup.
-     */
     public void run() {
         init();
         loop();
@@ -53,8 +45,7 @@ public abstract class Engine {
         }
 
         centerWindow();
-        setupCallbacks();
-        
+
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
         glfwShowWindow(window);
@@ -64,12 +55,14 @@ public abstract class Engine {
 
         scene = new Scene();
         renderer = new Renderer(new DesktopGraphicsDevice());
-        input = new Input();
+        input = scene.inputSystem;
         renderer.scene = scene;
         scene.renderer = renderer;
+        configureDefaultInputBindings();
+        setupCallbacks();
 
         onInit();
-        
+
         renderer.onSurfaceCreated();
         renderer.onSurfaceChanged(width, height);
     }
@@ -83,12 +76,16 @@ public abstract class Engine {
         );
     }
 
+    private void configureDefaultInputBindings() {
+        scene.inputBindings.bindMouseButton(MouseButtons.LEFT, InputCodes.BUTTON_LOOK);
+    }
+
     protected void setupCallbacks() {
         glfwSetKeyCallback(window, (win, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(win, true);
             }
-            input.setKey(key, action);
+            applyBoundButton(scene.inputBindings.resolveKey(key), action != GLFW_RELEASE);
             onKey(key, action);
         });
 
@@ -99,32 +96,46 @@ public abstract class Engine {
         });
 
         glfwSetCursorPosCallback(window, (win, x, y) -> {
-            input.setMousePosition(x, y);
+            input.pointer.setPosition((float) x, (float) y);
             scene.cursorMoved(x, y);
         });
 
         glfwSetMouseButtonCallback(window, (win, button, action, mods) -> {
-            input.setMouseButton(button, action);
-            if (button == GLFW_MOUSE_BUTTON_LEFT) {
-                scene.righmouse = action == GLFW_PRESS;
+            int mouseButton = mapGlfwMouseButton(button);
+            if (mouseButton >= 0) {
+                applyBoundButton(scene.inputBindings.resolveMouseButton(mouseButton), action != GLFW_RELEASE);
             }
         });
 
         glfwSetScrollCallback(window, (win, xOffset, yOffset) -> {
-            input.setScroll(xOffset, yOffset);
         });
     }
 
-    /**
-     * Hook for subclasses to handle key events.
-     * @param key The GLFW key code (e.g., GLFW_KEY_W)
-     * @param action The GLFW action (GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT)
-     */
+    private void applyBoundButton(int buttonCode, boolean down) {
+        if (buttonCode < 0) {
+            return;
+        }
+        input.button(buttonCode).setDown(down);
+        if (buttonCode == InputCodes.BUTTON_LOOK) {
+            input.pointer.setActive(down);
+        }
+    }
+
+    private int mapGlfwMouseButton(int glfwMouseButton) {
+        switch (glfwMouseButton) {
+            case GLFW_MOUSE_BUTTON_LEFT:
+                return MouseButtons.LEFT;
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                return MouseButtons.RIGHT;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                return MouseButtons.MIDDLE;
+            default:
+                return -1;
+        }
+    }
+
     protected abstract void onKey(int key, int action);
 
-    /**
-     * Hook for subclasses to perform initialization (e.g. scene loading).
-     */
     protected abstract void onInit();
 
     private void loop() {
@@ -143,21 +154,17 @@ public abstract class Engine {
             frameCount++;
 
             if (!renderer.hasError) {
-                input.update();
                 onUpdate();
                 renderer.onDrawFrame();
             }
-            
+
             glfwSwapBuffers(window);
+            input.beginFrame();
             glfwPollEvents();
         }
     }
 
-    /**
-     * Hook for custom update logic per frame.
-     */
     protected void onUpdate() {
-        // Default implementation
     }
 
     private void startConsoleThread() {
@@ -176,9 +183,6 @@ public abstract class Engine {
         consoleThread.start();
     }
 
-    /**
-     * Hook for console-based commands.
-     */
     protected void onConsoleInput(String input) {
         String[] args = input.split(" ");
         if (args[0].equals("tp") && args.length >= 4) {

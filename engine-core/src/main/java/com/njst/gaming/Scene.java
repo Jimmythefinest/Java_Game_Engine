@@ -5,6 +5,9 @@ import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
+import com.njst.gaming.input.InputBindings;
+import com.njst.gaming.input.InputCodes;
+import com.njst.gaming.input.InputSystem;
 import com.njst.gaming.objects.GameObject;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,9 +23,10 @@ public class Scene {
     public HashMap<Integer, Runnable> actions = new HashMap<>();
     public HashMap<String, Runnable> commands = new HashMap<>();
     public ArrayList<KeyframeAnimation> KEY_ANIMATIONS;
-
     public ArrayList<ArrayList<KeyframeAnimation>> MOTION_ANIMATIONS;
     public boolean righmouse = false;
+    public final InputSystem inputSystem;
+    public final InputBindings inputBindings;
     public Renderer renderer;
     String info = "";
     public String dat = "";
@@ -33,12 +37,12 @@ public class Scene {
     private OpenWorldTerrainManager openWorldTerrainManager;
     public SceneLoader loader = new SceneLoader() {
         public void load(Scene s) {
-
         }
     };
     public boolean object_should_move = false;
     public boolean camera_should_move = false;
     public boolean camera_should_move_up = false;
+    float lastX = 0, lastY = 0;
 
     public Scene() {
         objects = new CopyOnWriteArrayList<GameObject>();
@@ -46,12 +50,11 @@ public class Scene {
         animations = new CopyOnWriteArrayList<>();
         MOTION_ANIMATIONS = new ArrayList<>();
         KEY_ANIMATIONS = new ArrayList<>();
-        // renderer = new Renderer();
-        // renderer.scene = this;
+        inputSystem = new InputSystem();
+        inputBindings = new InputBindings();
         log = new RootLogger(data.rootDirectory + "/Scene.log");
         log.logToRootDirectory("hiisis");
         physics = new PhysicsEngine(this);
-
     }
 
     public Renderer getRenderer() {
@@ -72,7 +75,6 @@ public class Scene {
         for (Animation i : animations) {
             i.animate();
         }
-        // physics.simulate(1f/60f);
     }
 
     public void enableOpenWorld(OpenWorldTerrainManager openWorldTerrainManager) {
@@ -97,18 +99,11 @@ public class Scene {
         objects.add(r);
     }
 
-    /**
-     * Removes a GameObject from the scene.
-     * 
-     * @param obj The GameObject to remove.
-     * @return true if the object was found and removed, false otherwise.
-     */
     public boolean removeGameObject(GameObject obj) {
         return objects.remove(obj);
     }
 
     public void addTetra() {
-
         if (temp.ray_intersects(renderer.camera.cameraPosition.clone(),
                 renderer.camera.targetPosition.clone().sub(renderer.camera.cameraPosition))) {
             System.out.println("Adding");
@@ -134,7 +129,6 @@ public class Scene {
             }
             obj.generateBuffers();
             addGameObject(obj);
-
         }
     }
 
@@ -171,8 +165,6 @@ public class Scene {
     }
 
     public void testCollisions() {
-
-        // x log.logToRootDirectory(objects.get(0).vboIds[1]+"");
     }
 
     public interface SceneLoader {
@@ -180,30 +172,17 @@ public class Scene {
     }
 
     public void cursorMoved(double pos_x, double pos_y) {
-        // System.out.println("cursor position"+pos_x+" : "+pos_y);
         float newx = (float) pos_x;
         float newy = (float) pos_y;
-        // Quaternion q=new Quaternion();
-        // renderer.camera.cameraPosition.add(new Vector3(0,0,01f));
-        // System.out.println(renderer.camera.cameraPosition);
-
-        // s.renderer.camera.cameraPosition.add(new
-        // Vector3((newy-lastY)/80,(newx-lastX)/80,0));
-        // s.renderer.camera.cameraPosition=original_position;//.add(new
-        // Vector3((float)Math.sin(newx-lastX),0,0-(float)Math.sin(newx-lastX)));
-        if (righmouse)
+        boolean looking = righmouse || inputSystem.button(InputCodes.BUTTON_LOOK).isDown();
+        if (looking) {
             renderer.camera.targetPosition = renderer.camera.targetPosition.sub(
                     renderer.camera.cameraPosition).normalize()
                     .rotateX((newy - lastY) / 80)
                     .rotateY((newx - lastX) / 80)
                     .add(renderer.camera.cameraPosition);
-
-        // s.renderer.camera.upDirection.add(new Vector3(0,(0)/80,(newx-lastX)/80));
-
+        }
         lastX = newx;
         lastY = newy;
     }
-
-    float lastX = 0, lastY = 0;
-
 }
