@@ -2,17 +2,20 @@ package com.njst.gaming.android;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.njst.gaming.input.InputCodes;
 
 public class AndroidEngineView extends FrameLayout {
     private final AndroidEngineSurfaceView surfaceView;
+    private final TextView fpsCounter;
 
     public AndroidEngineView(Context context) {
         super(context);
@@ -21,6 +24,11 @@ public class AndroidEngineView extends FrameLayout {
         addView(surfaceView, new LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.MATCH_PARENT));
+
+        fpsCounter = createFpsCounter(context);
+        addView(fpsCounter, createFpsLayoutParams(context));
+        surfaceView.setFpsListener(fps -> fpsCounter.post(() -> fpsCounter.setText("FPS " + fps)));
+
         addView(createMovementOverlay(context));
     }
 
@@ -96,6 +104,30 @@ public class AndroidEngineView extends FrameLayout {
         overlay.addView(hintStrip, hintParams);
 
         return overlay;
+    }
+
+    private TextView createFpsCounter(Context context) {
+        TextView label = new TextView(context);
+        int padX = dp(context, 12);
+        int padY = dp(context, 8);
+        label.setText("FPS 0");
+        label.setTextColor(Color.WHITE);
+        label.setTextSize(14f);
+        label.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        label.setPadding(padX, padY, padX, padY);
+        label.setBackgroundColor(Color.argb(120, 8, 12, 18));
+        return label;
+    }
+
+    private LayoutParams createFpsLayoutParams(Context context) {
+        LayoutParams params = new LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT);
+        int margin = dp(context, 20);
+        params.gravity = Gravity.TOP | Gravity.END;
+        params.topMargin = margin;
+        params.rightMargin = margin;
+        return params;
     }
 
     private Button createMovementButton(Context context, String label, int buttonCode) {

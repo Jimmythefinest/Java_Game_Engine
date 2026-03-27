@@ -45,6 +45,10 @@ public class AndroidEngineSurfaceView extends GLSurfaceView {
         return true;
     }
 
+    public void setFpsListener(AndroidEngineRenderer.FpsListener listener) {
+        renderer.setFpsListener(listener);
+    }
+
     private void handlePointerDown(MotionEvent event, int pointerIndex) {
         float x = event.getX(pointerIndex);
         if (activeLookPointerId != MotionEvent.INVALID_POINTER_ID || x < (getWidth() * 0.5f)) {

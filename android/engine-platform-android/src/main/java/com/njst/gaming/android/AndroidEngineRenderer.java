@@ -12,10 +12,17 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
+    public interface FpsListener {
+        void onFpsUpdated(int fps);
+    }
+
     private final Context context;
     private final boolean[] pendingButtons = new boolean[InputCodes.MAX_BUTTONS];
     private Renderer renderer;
     private boolean pendingLooking;
+    private FpsListener fpsListener;
+    private long fpsWindowStartMillis;
+    private int framesThisWindow;
 
     public AndroidEngineRenderer(Context context) {
         this.context = context;
@@ -34,6 +41,9 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         renderer.scene = scene;
         applyPendingInputs(scene);
 
+        fpsWindowStartMillis = System.currentTimeMillis();
+        framesThisWindow = 0;
+        notifyFps(0);
         renderer.onSurfaceCreated();
     }
 
@@ -50,8 +60,16 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             return;
         }
         renderer.onDrawFrame();
+        updateFps();
         if (renderer.scene != null) {
             renderer.scene.inputSystem.beginFrame();
+        }
+    }
+
+    public void setFpsListener(FpsListener listener) {
+        this.fpsListener = listener;
+        if (listener != null && renderer != null) {
+            listener.onFpsUpdated(renderer.getFps());
         }
     }
 
@@ -93,6 +111,26 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             if (pendingButtons[i]) {
                 scene.inputSystem.button(i).setDown(true);
             }
+        }
+    }
+
+    private void updateFps() {
+        framesThisWindow++;
+        long now = System.currentTimeMillis();
+        long elapsed = now - fpsWindowStartMillis;
+        if (elapsed < 1000L) {
+            return;
+        }
+        int fps = Math.round((framesThisWindow * 1000f) / elapsed);
+        renderer.setFps(fps);
+        notifyFps(fps);
+        fpsWindowStartMillis = now;
+        framesThisWindow = 0;
+    }
+
+    private void notifyFps(int fps) {
+        if (fpsListener != null) {
+            fpsListener.onFpsUpdated(fps);
         }
     }
 }
