@@ -46,20 +46,13 @@ void main() {
 
     vec3 norm = normalize(frag_Normal);
     vec3 lightDir = normalize(lightpos - fragpos);
-    vec3 viewDir = normalize(eyepos - fragpos);
 
-    vec3 ambientColor = vec3(0.1, 0.1, 0.1) * properties.y;
+    vec3 ambientColor = vec3(0.12) * properties.y;
     vec3 ambient = ambientColor * texture_color.rgb;
 
-    float diff = max(dot(norm, lightDir), 0.1);
+    float diff = max(dot(norm, lightDir), 0.05);
     vec3 diffuse = diff * texture_color.rgb;
 
-    float shininess = max(properties.x, 1.0);
-    vec3 reflection = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflection), 0.0), shininess);
-    vec3 lightColor = vec3(1.0);
-    vec3 specular = spec * lightColor / (32.0 / shininess);
-
-    vec3 result = ambient + diffuse + specular;
+    vec3 result = ambient + diffuse;
     finalColor = vec4(result, texture_color.a);
 }

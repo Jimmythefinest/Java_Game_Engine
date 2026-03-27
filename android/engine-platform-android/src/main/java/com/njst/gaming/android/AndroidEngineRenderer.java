@@ -12,15 +12,15 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
-    public interface FpsListener {
-        void onFpsUpdated(int fps);
+    public interface StatsListener {
+        void onStatsUpdated(int fps, Renderer.ProfilerSnapshot snapshot);
     }
 
     private final Context context;
     private final boolean[] pendingButtons = new boolean[InputCodes.MAX_BUTTONS];
     private Renderer renderer;
     private boolean pendingLooking;
-    private FpsListener fpsListener;
+    private StatsListener statsListener;
     private long fpsWindowStartMillis;
     private int framesThisWindow;
 
@@ -43,7 +43,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
 
         fpsWindowStartMillis = System.currentTimeMillis();
         framesThisWindow = 0;
-        notifyFps(0);
+        notifyStats(0);
         renderer.onSurfaceCreated();
     }
 
@@ -60,16 +60,16 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             return;
         }
         renderer.onDrawFrame();
-        updateFps();
+        updateStats();
         if (renderer.scene != null) {
             renderer.scene.inputSystem.beginFrame();
         }
     }
 
-    public void setFpsListener(FpsListener listener) {
-        this.fpsListener = listener;
+    public void setStatsListener(StatsListener listener) {
+        this.statsListener = listener;
         if (listener != null && renderer != null) {
-            listener.onFpsUpdated(renderer.getFps());
+            listener.onStatsUpdated(renderer.getFps(), renderer.getProfilerSnapshot());
         }
     }
 
@@ -114,7 +114,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    private void updateFps() {
+    private void updateStats() {
         framesThisWindow++;
         long now = System.currentTimeMillis();
         long elapsed = now - fpsWindowStartMillis;
@@ -123,14 +123,14 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         }
         int fps = Math.round((framesThisWindow * 1000f) / elapsed);
         renderer.setFps(fps);
-        notifyFps(fps);
+        notifyStats(fps);
         fpsWindowStartMillis = now;
         framesThisWindow = 0;
     }
 
-    private void notifyFps(int fps) {
-        if (fpsListener != null) {
-            fpsListener.onFpsUpdated(fps);
+    private void notifyStats(int fps) {
+        if (statsListener != null) {
+            statsListener.onStatsUpdated(fps, renderer != null ? renderer.getProfilerSnapshot() : null);
         }
     }
 }

@@ -45,8 +45,8 @@ public class AndroidEngineSurfaceView extends GLSurfaceView {
         return true;
     }
 
-    public void setFpsListener(AndroidEngineRenderer.FpsListener listener) {
-        renderer.setFpsListener(listener);
+    public void setStatsListener(AndroidEngineRenderer.StatsListener listener) {
+        renderer.setStatsListener(listener);
     }
 
     private void handlePointerDown(MotionEvent event, int pointerIndex) {

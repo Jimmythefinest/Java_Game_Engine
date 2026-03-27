@@ -12,6 +12,24 @@ import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.TerrainObject;
 
 public class Renderer {
+    public static class ProfilerSnapshot {
+        public final float frameMs;
+        public final float updateMs;
+        public final float skyboxMs;
+        public final float renderMs;
+        public final int objectCount;
+        public final int terrainCount;
+
+        public ProfilerSnapshot(float frameMs, float updateMs, float skyboxMs, float renderMs,
+                int objectCount, int terrainCount) {
+            this.frameMs = frameMs;
+            this.updateMs = updateMs;
+            this.skyboxMs = skyboxMs;
+            this.renderMs = renderMs;
+            this.objectCount = objectCount;
+            this.terrainCount = terrainCount;
+        }
+    }
 
     public GameObject screen;
     public GameObject skybox;
@@ -46,6 +64,15 @@ public class Renderer {
     public float[] lightViewMatrix, lightProjectionMatrix;
 
     private final GraphicsDevice graphicsDevice;
+    private ProfilerSnapshot profilerSnapshot = new ProfilerSnapshot(0f, 0f, 0f, 0f, 0, 0);
+    private long profilerWindowStartMillis = 0L;
+    private long profilerFrameNanos = 0L;
+    private long profilerUpdateNanos = 0L;
+    private long profilerSkyboxNanos = 0L;
+    private long profilerRenderNanos = 0L;
+    private int profilerFrames = 0;
+    private int profilerObjects = 0;
+    private int profilerTerrainObjects = 0;
 
     public Renderer() {
         this(new NullGraphicsDevice());
@@ -63,6 +90,7 @@ public class Renderer {
     public void onSurfaceCreated() {
         try {
             lasttym = System.currentTimeMillis();
+            profilerWindowStartMillis = lasttym;
 
             shaderProgram = graphicsDevice.createShaderProgram(
                     graphicsDevice.loadShaderSource("resources/shaders/vert11.glsl"),
@@ -89,7 +117,7 @@ public class Renderer {
         if (hasError)
             return;
         try {
-            long start = System.nanoTime();
+            long frameStart = System.nanoTime();
             float[] consts = new float[39];
             System.arraycopy(camera.getProjectionMatrix().r, 0, consts, 0, 16);
             System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
@@ -103,28 +131,44 @@ public class Renderer {
             shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
             terrainShaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
 
+            long updateStart = System.nanoTime();
             scene.onDrawFrame();
+            long updateEnd = System.nanoTime();
+
+            long skyboxNanos = 0L;
             if (skybox != null) {
+                long skyboxStart = System.nanoTime();
                 skybox.setGraphicsDevice(graphicsDevice);
                 shaderProgram.use();
                 skybox.updateModelMatrix();
                 skybox.render(shaderProgram, textureHandle);
+                skyboxNanos = System.nanoTime() - skyboxStart;
             }
 
+            long renderStart = System.nanoTime();
             ArrayList<GameObject> renderQueue = new ArrayList<>(scene.objects);
             if (skybox != null) {
                 renderQueue.remove(skybox);
             }
             renderQueue.sort(Comparator.comparingDouble(
                     object -> -object.position.distance(camera.cameraPosition)));
+            int terrainCount = 0;
             for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
-                ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
+                boolean terrainObject = object instanceof TerrainObject;
+                if (terrainObject) {
+                    terrainCount++;
+                }
+                ShaderHandle activeShader = terrainObject ? terrainShaderProgram : shaderProgram;
                 activeShader.use();
                 object.updateModelMatrix();
                 object.render(activeShader, textureHandle);
             }
-            time += (System.nanoTime() - start);
+            long renderNanos = System.nanoTime() - renderStart;
+            long frameNanos = System.nanoTime() - frameStart;
+            updateProfiler(frameNanos, updateEnd - updateStart, skyboxNanos, renderNanos, renderQueue.size(), terrainCount);
+
+            time += frameNanos;
             if (frame == 200) {
                 frame = 0;
                 System.out.println(time / 200 / 1000000);
@@ -181,6 +225,10 @@ public class Renderer {
         return fps;
     }
 
+    public synchronized ProfilerSnapshot getProfilerSnapshot() {
+        return profilerSnapshot;
+    }
+
     public synchronized long getlast() {
         return lasttym;
     }
@@ -194,5 +242,39 @@ public class Renderer {
         for (StackTraceElement element : e.getStackTrace()) {
             log.logToRootDirectory(element.getClassName() + element.getMethodName() + element.getLineNumber());
         }
+    }
+
+    private synchronized void updateProfiler(long frameNanos, long updateNanos, long skyboxNanos,
+            long renderNanos, int objectCount, int terrainCount) {
+        profilerFrameNanos += frameNanos;
+        profilerUpdateNanos += updateNanos;
+        profilerSkyboxNanos += skyboxNanos;
+        profilerRenderNanos += renderNanos;
+        profilerObjects += objectCount;
+        profilerTerrainObjects += terrainCount;
+        profilerFrames++;
+
+        long now = System.currentTimeMillis();
+        if ((now - profilerWindowStartMillis) < 1000L || profilerFrames == 0) {
+            return;
+        }
+
+        float divisor = 1_000_000f * profilerFrames;
+        profilerSnapshot = new ProfilerSnapshot(
+                profilerFrameNanos / divisor,
+                profilerUpdateNanos / divisor,
+                profilerSkyboxNanos / divisor,
+                profilerRenderNanos / divisor,
+                Math.round(profilerObjects / (float) profilerFrames),
+                Math.round(profilerTerrainObjects / (float) profilerFrames));
+
+        profilerWindowStartMillis = now;
+        profilerFrameNanos = 0L;
+        profilerUpdateNanos = 0L;
+        profilerSkyboxNanos = 0L;
+        profilerRenderNanos = 0L;
+        profilerObjects = 0;
+        profilerTerrainObjects = 0;
+        profilerFrames = 0;
     }
 }

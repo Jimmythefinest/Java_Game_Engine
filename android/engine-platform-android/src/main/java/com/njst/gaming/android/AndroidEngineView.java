@@ -11,11 +11,14 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.njst.gaming.Renderer;
 import com.njst.gaming.input.InputCodes;
+
+import java.util.Locale;
 
 public class AndroidEngineView extends FrameLayout {
     private final AndroidEngineSurfaceView surfaceView;
-    private final TextView fpsCounter;
+    private final TextView statsOverlay;
 
     public AndroidEngineView(Context context) {
         super(context);
@@ -25,9 +28,9 @@ public class AndroidEngineView extends FrameLayout {
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.MATCH_PARENT));
 
-        fpsCounter = createFpsCounter(context);
-        addView(fpsCounter, createFpsLayoutParams(context));
-        surfaceView.setFpsListener(fps -> fpsCounter.post(() -> fpsCounter.setText("FPS " + fps)));
+        statsOverlay = createStatsOverlay(context);
+        addView(statsOverlay, createStatsLayoutParams(context));
+        surfaceView.setStatsListener((fps, snapshot) -> statsOverlay.post(() -> statsOverlay.setText(formatStats(fps, snapshot))));
 
         addView(createMovementOverlay(context));
     }
@@ -106,20 +109,20 @@ public class AndroidEngineView extends FrameLayout {
         return overlay;
     }
 
-    private TextView createFpsCounter(Context context) {
+    private TextView createStatsOverlay(Context context) {
         TextView label = new TextView(context);
         int padX = dp(context, 12);
         int padY = dp(context, 8);
-        label.setText("FPS 0");
+        label.setText(formatStats(0, null));
         label.setTextColor(Color.WHITE);
-        label.setTextSize(14f);
+        label.setTextSize(12f);
         label.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         label.setPadding(padX, padY, padX, padY);
-        label.setBackgroundColor(Color.argb(120, 8, 12, 18));
+        label.setBackgroundColor(Color.argb(140, 8, 12, 18));
         return label;
     }
 
-    private LayoutParams createFpsLayoutParams(Context context) {
+    private LayoutParams createStatsLayoutParams(Context context) {
         LayoutParams params = new LayoutParams(
                 LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT);
@@ -128,6 +131,21 @@ public class AndroidEngineView extends FrameLayout {
         params.topMargin = margin;
         params.rightMargin = margin;
         return params;
+    }
+
+    private String formatStats(int fps, Renderer.ProfilerSnapshot snapshot) {
+        if (snapshot == null) {
+            return "FPS 0\nframe 0.0ms\nupd 0.0 sky 0.0\nrnd 0.0 obj 0 t 0";
+        }
+        return String.format(Locale.US,
+                "FPS %d\nframe %.1fms\nupd %.1f sky %.1f\nrnd %.1f obj %d t %d",
+                fps,
+                snapshot.frameMs,
+                snapshot.updateMs,
+                snapshot.skyboxMs,
+                snapshot.renderMs,
+                snapshot.objectCount,
+                snapshot.terrainCount);
     }
 
     private Button createMovementButton(Context context, String label, int buttonCode) {
