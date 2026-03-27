@@ -22,7 +22,9 @@ This documentation provides a technical reference for the NJST Game Engine.
 
 ## Documentation Index
 
-- [Core Engine Components](CORE_ENGINE.md): Detailed breakdown of Scene, Renderer, and GameObject.
+- [Core Engine Components](CORE_ENGINE.md): Legacy breakdown of Scene, Renderer, and GameObject.
+- [Engine Core Documentation](ENGINE_CORE.md): Current architecture and extension guide for the `engine-core` module.
+- [Engine Platform Expectations](ENGINE_PLATFORM_EXPECTATIONS.md): Contract and lifecycle expectations for platform adapters.
 - [Engine & Input System](ENGINE_AND_INPUT.md): Guide to the abstracted Engine lifecycle and Input management.
 - [Skeletal Animation](SKELETAL_ANIMATION.md): Reference for character skinning and animation logic.
 - [SSBO Management](SSBO.md): Comprehensive guide to Shader Storage Buffer Objects.
