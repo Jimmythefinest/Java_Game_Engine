@@ -62,7 +62,7 @@ public class OpenWorldTerrainState {
         OpenWorldTerrainState state = new OpenWorldTerrainState();
         state.seed = new Random().nextLong();
         state.chunkSize = 32;
-        state.renderDistance = 2;
+        state.renderDistance = 4;
         state.noiseScale = 48f;
         state.heightScale = 12f;
         state.erosionIterations = 18;
@@ -77,7 +77,7 @@ public class OpenWorldTerrainState {
             chunkSize = 32;
         }
         if (renderDistance <= 0) {
-            renderDistance = 2;
+            renderDistance = 4;
         }
         if (noiseScale <= 0) {
             noiseScale = 48f;

@@ -79,6 +79,7 @@ public class Renderer {
             graphicsDevice.enableBlendAndDepth();
 
         } catch (Exception e) {
+            System.err.println("NJST Renderer.onSurfaceCreated failed: " + e);
             logException(e);
             e.printStackTrace();
         }

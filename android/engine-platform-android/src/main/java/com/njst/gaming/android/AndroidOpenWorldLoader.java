@@ -1,6 +1,7 @@
 package com.njst.gaming.android;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.njst.gaming.Geometries.SphereGeometry;
@@ -8,10 +9,13 @@ import com.njst.gaming.OpenWorldTerrainManager;
 import com.njst.gaming.OpenWorldTerrainState;
 import com.njst.gaming.Scene;
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.objects.GameObject;
 
 public class AndroidOpenWorldLoader implements Scene.SceneLoader {
+    private static final String TAG = "NJST";
     private static final Gson GSON = new Gson();
+    private static final String CONTROL_MAP_PATH = "terrain_control_map.png";
     private final Context context;
 
     public AndroidOpenWorldLoader(Context context) {
@@ -20,13 +24,17 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
 
     @Override
     public void load(Scene scene) {
-        int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture("desertstorm.jpg");
+        Log.i(TAG, "AndroidOpenWorldLoader.load start");
+        GraphicsDevice graphicsDevice = scene.renderer.getGraphicsDevice();
+        int skyboxTexture = graphicsDevice.loadTexture("desertstorm.jpg");
         int[] terrainTextures = new int[] {
-                scene.renderer.getGraphicsDevice().loadTexture("terrain_texture.jpeg"),
-                scene.renderer.getGraphicsDevice().loadTexture("j.jpg"),
-                scene.renderer.getGraphicsDevice().loadTexture("WaterPlain0012_1_350.jpg"),
-                scene.renderer.getGraphicsDevice().loadTexture("images (2).jpeg")
+                graphicsDevice.loadTexture("terrain_texture.jpeg"),
+                graphicsDevice.loadTexture("j.jpg"),
+                graphicsDevice.loadTexture("stone.jpeg"),
+                graphicsDevice.loadTexture("images (2).jpeg")
         };
+        int controlMapTexture = loadControlMapTexture(graphicsDevice, CONTROL_MAP_PATH);
+        Log.i(TAG, "Loaded texture handles skybox=" + skyboxTexture + " terrain0=" + terrainTextures[0] + " terrain1=" + terrainTextures[1] + " terrain2=" + terrainTextures[2] + " terrain3=" + terrainTextures[3] + " control=" + controlMapTexture);
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5;
@@ -37,10 +45,12 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
         scene.addGameObject(skybox);
 
         OpenWorldTerrainState state = loadState();
+        Log.i(TAG, "Open world state seed=" + state.seed + " chunkSize=" + state.chunkSize + " renderDistance=" + state.renderDistance + " noiseScale=" + state.noiseScale + " heightScale=" + state.heightScale);
         OpenWorldTerrainManager terrainManager = new OpenWorldTerrainManager(
                 scene,
-                scene.renderer.getGraphicsDevice(),
+                graphicsDevice,
                 terrainTextures,
+                controlMapTexture,
                 state);
         scene.enableOpenWorld(terrainManager);
 
@@ -49,6 +59,17 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
         float spawnHeight = terrainManager.getHeightAt(0f, 0f);
         scene.renderer.camera.cameraPosition.y = spawnHeight + 18f;
         scene.renderer.camera.targetPosition.y = spawnHeight + 6f;
+        Log.i(TAG, "Open world spawnHeight=" + spawnHeight + " cameraY=" + scene.renderer.camera.cameraPosition.y);
+    }
+
+    private int loadControlMapTexture(GraphicsDevice graphicsDevice, String path) {
+        int texture = graphicsDevice.loadTexture(path);
+        if (texture != 0) {
+            Log.i(TAG, "Using control map texture asset " + path + " -> id=" + texture);
+            return texture;
+        }
+        Log.e(TAG, "Control map texture missing, creating fallback green RGBA texture for " + path);
+        return graphicsDevice.createTextureRGBA(1, 1, new byte[] { 0, (byte) 255, 0, 0 });
     }
 
     private OpenWorldTerrainState loadState() {
@@ -60,6 +81,7 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
                 return state;
             }
         } catch (RuntimeException ignored) {
+            Log.e(TAG, "Failed to read Android open world state asset, falling back to defaults", ignored);
         }
         return defaultState();
     }
@@ -68,7 +90,7 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
         OpenWorldTerrainState state = new OpenWorldTerrainState();
         state.seed = 7153246945977311624L;
         state.chunkSize = 32;
-        state.renderDistance = 2;
+        state.renderDistance = 4;
         state.noiseScale = 48f;
         state.heightScale = 12f;
         state.erosionIterations = 18;
@@ -83,7 +105,7 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
             state.chunkSize = 32;
         }
         if (state.renderDistance <= 0) {
-            state.renderDistance = 2;
+            state.renderDistance = 4;
         }
         if (state.noiseScale <= 0f) {
             state.noiseScale = 48f;

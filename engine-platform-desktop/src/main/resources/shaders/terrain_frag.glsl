@@ -13,6 +13,7 @@ uniform sampler2D uSplatMap;
 uniform vec3 eyepos1;
 uniform vec3 properties;
 uniform vec3 terrainBlendConfig;
+uniform vec3 terrainControlOffset;
 
 layout(std430, binding = 0) buffer MySSBO {
     mat4 perspective;
@@ -26,8 +27,9 @@ out vec4 finalColor;
 void main()
 {
     vec2 detailUv = fract(fragpos.xz / terrainBlendConfig.x);
-    vec2 splatUv = clamp(terrainLocalCoord / terrainBlendConfig.y, vec2(0.0), vec2(1.0));
-    vec4 splat = texture(uSplatMap, splatUv);
+    vec2 localControlUv = clamp((terrainLocalCoord + vec2(0.5)) / (terrainBlendConfig.y + 1.0), vec2(0.0), vec2(1.0));
+    vec2 controlUv = terrainControlOffset.xy + (localControlUv * terrainBlendConfig.z);
+    vec4 splat = texture(uSplatMap, controlUv);
     float splatSum = splat.r + splat.g + splat.b + splat.a;
     vec4 weights = splatSum > 0.0001 ? (splat / splatSum) : vec4(0.0, 1.0, 0.0, 0.0);
 

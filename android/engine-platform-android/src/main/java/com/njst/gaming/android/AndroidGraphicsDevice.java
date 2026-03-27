@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLES30;
 import android.opengl.GLES31;
 import android.opengl.GLUtils;
+import android.util.Log;
 
 import com.njst.gaming.Renderer;
 import com.njst.gaming.graphics.BufferHandle;
@@ -23,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class AndroidGraphicsDevice implements GraphicsDevice {
+    private static final String TAG = "NJST";
     private final AssetManager assetManager;
     private int whiteTextureId;
 
@@ -50,6 +52,7 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
             normalized = normalized.substring("resources/".length());
         }
 
+        Log.i(TAG, "Loading shader asset: " + normalized);
         try (InputStream inputStream = assetManager.open(normalized);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             StringBuilder shader = new StringBuilder();
@@ -57,8 +60,11 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
             while ((line = reader.readLine()) != null) {
                 shader.append(line).append('\n');
             }
-            return shader.toString();
+            String shaderSource = shader.toString();
+            Log.i(TAG, "Loaded shader asset: " + normalized + " (" + shaderSource.length() + " chars)");
+            return shaderSource;
         } catch (IOException e) {
+            Log.e(TAG, "Failed to load shader asset: " + normalized, e);
             throw new IllegalStateException("Unable to load Android shader asset: " + normalized, e);
         }
     }
@@ -66,6 +72,7 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
     @Override
     public int loadTexture(String texturePath) {
         if (texturePath == null || texturePath.isEmpty() || texturePath.startsWith("generated:")) {
+            Log.i(TAG, "Using generated white texture for request: " + texturePath);
             return getWhiteTexture();
         }
 
@@ -77,15 +84,21 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
             normalized = normalized.substring("resources/".length());
         }
 
+        Log.i(TAG, "Loading texture asset: " + normalized);
         try (InputStream inputStream = assetManager.open(normalized)) {
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
             if (bitmap == null) {
+                Log.e(TAG, "Bitmap decode returned null for texture asset: " + normalized);
                 return getWhiteTexture();
             }
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
             int textureId = createTextureFromBitmap(bitmap);
+            Log.i(TAG, "Loaded texture asset: " + normalized + " -> id=" + textureId + " size=" + width + "x" + height);
             bitmap.recycle();
             return textureId;
         } catch (IOException e) {
+            Log.e(TAG, "Failed to load texture asset, falling back to white: " + normalized, e);
             return getWhiteTexture();
         }
     }
@@ -115,11 +128,13 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
                 GLES31.GL_RGBA,
                 GLES31.GL_UNSIGNED_BYTE,
                 pixelBuffer);
+        Log.i(TAG, "Created RGBA texture id=" + textureId + " size=" + width + "x" + height);
         return textureId;
     }
 
     private int getWhiteTexture() {
         if (whiteTextureId != 0) {
+            Log.i(TAG, "Reusing fallback white texture id=" + whiteTextureId);
             return whiteTextureId;
         }
         int[] textures = new int[1];
@@ -142,6 +157,7 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
                 GLES31.GL_RGBA,
                 GLES31.GL_UNSIGNED_BYTE,
                 pixel);
+        Log.i(TAG, "Created fallback white texture id=" + whiteTextureId);
         return whiteTextureId;
     }
 

@@ -1,15 +1,18 @@
 package com.njst.gaming.android;
 
 import android.opengl.GLES31;
+import android.util.Log;
 
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.graphics.ShaderHandle;
 
 public class AndroidShaderProgram implements ShaderHandle {
+    private static final String TAG = "NJST";
     private final int programId;
 
     public AndroidShaderProgram(String vertexShaderSource, String fragmentShaderSource) {
+        Log.i(TAG, "Starting Android shader program build");
         int vertexShaderId = compileShader(GLES31.GL_VERTEX_SHADER, vertexShaderSource);
         int fragmentShaderId = compileShader(GLES31.GL_FRAGMENT_SHADER, fragmentShaderSource);
 
@@ -22,18 +25,23 @@ public class AndroidShaderProgram implements ShaderHandle {
         GLES31.glGetProgramiv(programId, GLES31.GL_LINK_STATUS, status, 0);
         if (status[0] == 0) {
             String log = GLES31.glGetProgramInfoLog(programId);
+            Log.e(TAG, "Android shader link failed for program " + programId + ": " + log);
             GLES31.glDeleteShader(vertexShaderId);
             GLES31.glDeleteShader(fragmentShaderId);
             GLES31.glDeleteProgram(programId);
             throw new IllegalStateException("Failed to link Android shader program: " + log);
         }
 
+        Log.i(TAG, "Android shader program linked successfully: programId=" + programId
+                + " vertexShaderId=" + vertexShaderId + " fragmentShaderId=" + fragmentShaderId);
         GLES31.glDeleteShader(vertexShaderId);
         GLES31.glDeleteShader(fragmentShaderId);
     }
 
     private int compileShader(int type, String source) {
         int shaderId = GLES31.glCreateShader(type);
+        String shaderType = type == GLES31.GL_VERTEX_SHADER ? "vertex" : type == GLES31.GL_FRAGMENT_SHADER ? "fragment" : String.valueOf(type);
+        Log.i(TAG, "Compiling Android " + shaderType + " shader id=" + shaderId + " sourceLength=" + (source == null ? 0 : source.length()));
         GLES31.glShaderSource(shaderId, source);
         GLES31.glCompileShader(shaderId);
 
@@ -41,9 +49,11 @@ public class AndroidShaderProgram implements ShaderHandle {
         GLES31.glGetShaderiv(shaderId, GLES31.GL_COMPILE_STATUS, status, 0);
         if (status[0] == 0) {
             String log = GLES31.glGetShaderInfoLog(shaderId);
+            Log.e(TAG, "Android " + shaderType + " shader compile failed for id=" + shaderId + ": " + log);
             GLES31.glDeleteShader(shaderId);
             throw new IllegalStateException("Failed to compile Android shader: " + log);
         }
+        Log.i(TAG, "Android " + shaderType + " shader compiled successfully: id=" + shaderId);
         return shaderId;
     }
 
