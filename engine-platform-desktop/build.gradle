@@ -7,6 +7,9 @@ group = 'com.njst'
 version = '1.0.0'
 
 def lwjglVersion = '3.3.6'
+def packagedAppName = 'NJST-3D-Tetris'
+def packagedVendor = 'NJST'
+def packagedMainClass = 'com.rebuild.Tetris3D'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -45,12 +48,50 @@ dependencies {
 }
 
 application {
-    mainClass = 'com.rebuild.RotatingCube'
+    mainClass = packagedMainClass
 }
 
 tasks.register('runDemo', JavaExec) {
     group = 'application'
-    description = 'Run RotatingCube demo (equivalent to run.sh)'
+    description = 'Run the desktop 3D Tetris demo'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
+}
+
+tasks.register('stageJpackageInput', Sync) {
+    group = 'distribution'
+    description = 'Stage jars and external resources for jpackage'
+    dependsOn tasks.named('jar')
+
+    into(layout.buildDirectory.dir('jpackage/input'))
+    from(tasks.named('jar'))
+    from(configurations.runtimeClasspath)
+    from('src/main/resources') {
+        into 'resources'
+    }
+}
+
+tasks.register('jpackageImage', Exec) {
+    group = 'distribution'
+    description = 'Build a desktop app image with jpackage'
+    dependsOn tasks.named('stageJpackageInput')
+
+    doFirst {
+        def inputDir = layout.buildDirectory.dir('jpackage/input').get().asFile
+        def destDir = layout.buildDirectory.dir('jpackage').get().asFile
+        destDir.mkdirs()
+
+        commandLine(
+                'jpackage',
+                '--type', 'app-image',
+                '--name', packagedAppName,
+                '--dest', destDir.absolutePath,
+                '--input', inputDir.absolutePath,
+                '--main-jar', tasks.named('jar').get().archiveFileName.get(),
+                '--main-class', application.mainClass.get(),
+                '--app-version', project.version.toString(),
+                '--vendor', packagedVendor,
+                '--java-options', '-Dnjst.resources.dir=$APPDIR/resources'
+        )
+    }
 }
