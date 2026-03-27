@@ -81,7 +81,14 @@ public class AndroidShaderProgram implements ShaderHandle {
     public void activateTexture(int location, int textureID) {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureID);
-        GLES31.glUniform1i(getUniformLocation("uTexture"), 0);
+        GLES31.glUniform1i(location, 0);
+    }
+
+    @Override
+    public void activateTexture(String uniformName, int unit, int textureID) {
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0 + unit);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureID);
+        GLES31.glUniform1i(getUniformLocation(uniformName), unit);
     }
 
     @Override

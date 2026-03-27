@@ -14,7 +14,12 @@ public class OpenWorldLoader implements Scene.SceneLoader {
     @Override
     public void load(Scene scene) {
         int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/desertstorm.jpg");
-        int terrainTexture = scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg");
+        int[] terrainTextures = new int[] {
+                scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/terrain_texture.jpeg"),
+                scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/j.jpg"),
+                scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/WaterPlain0012_1_350.jpg"),
+                scene.renderer.getGraphicsDevice().loadTexture(data.rootDirectory + "/images (2).jpeg")
+        };
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5;
@@ -26,7 +31,7 @@ public class OpenWorldLoader implements Scene.SceneLoader {
 
         OpenWorldTerrainState state = OpenWorldTerrainState.loadOrCreate(WORLD_STATE_PATH);
         OpenWorldTerrainManager terrainManager = new OpenWorldTerrainManager(scene,
-                scene.renderer.getGraphicsDevice(), terrainTexture, state);
+                scene.renderer.getGraphicsDevice(), terrainTextures, state);
         scene.enableOpenWorld(terrainManager);
 
         scene.renderer.camera.lookAt(new Vector3(0f, 18f, -20f), new Vector3(0f, 6f, 0f), new Vector3(0f, 1f, 0f));

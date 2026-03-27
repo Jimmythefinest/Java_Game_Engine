@@ -44,6 +44,11 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public int createTextureRGBA(int width, int height, byte[] rgbaPixels) {
+        return ShaderProgram.createTextureRGBA(width, height, rgbaPixels);
+    }
+
+    @Override
     public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
         return imposterBaker.bake(renderer, object, width, height);
     }

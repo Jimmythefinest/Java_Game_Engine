@@ -12,6 +12,8 @@ public interface GraphicsDevice {
 
     int loadTexture(String texturePath);
 
+    int createTextureRGBA(int width, int height, byte[] rgbaPixels);
+
     ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height);
 
     void releaseTexture(int textureId);

@@ -29,6 +29,11 @@ public class NullGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public int createTextureRGBA(int width, int height, byte[] rgbaPixels) {
+        throw unsupported();
+    }
+
+    @Override
     public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
         return null;
     }

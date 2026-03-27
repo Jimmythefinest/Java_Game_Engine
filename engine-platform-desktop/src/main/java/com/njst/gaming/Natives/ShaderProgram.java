@@ -43,7 +43,7 @@ public class ShaderProgram implements ShaderHandle {
     public boolean compiled() {
         int[] status = new int[2];
         GL30.glGetProgramiv(programId, GL30.GL_LINK_STATUS, status);
-        return !(status[0] == GL30.GL_FALSE);
+        return status[0] != GL30.GL_FALSE;
     }
 
     public String getLog() {
@@ -68,7 +68,6 @@ public class ShaderProgram implements ShaderHandle {
             };
         }
 
-        // Prefer classpath resources so Gradle/JAR layouts work reliably.
         for (String candidate : classpathCandidates) {
             try (InputStream is = ShaderProgram.class.getResourceAsStream(candidate)) {
                 if (is == null) {
@@ -83,11 +82,9 @@ public class ShaderProgram implements ShaderHandle {
                     return shaderSource.toString();
                 }
             } catch (IOException e) {
-                // Try next candidate.
             }
         }
 
-        // Fallback for legacy file-based execution.
         Path[] fileCandidates = new Path[] {
                 Paths.get(normalized),
                 Paths.get("src", normalized),
@@ -101,7 +98,6 @@ public class ShaderProgram implements ShaderHandle {
             try {
                 return Files.readString(candidate, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                // Try next candidate.
             }
         }
 
@@ -109,32 +105,25 @@ public class ShaderProgram implements ShaderHandle {
     }
 
     private int compileShader(int type, String source) {
-        // Create the shader object
         int shaderId = GL30.glCreateShader(type);
 
-        // Check if shader creation was successful
         if (shaderId == 0) {
             throw new RuntimeException("Error creating shader of type " + type);
         }
 
-        // Set the shader source code
         GL30.glShaderSource(shaderId, source);
-
-        // Compile the shader
         GL30.glCompileShader(shaderId);
 
-        // Check for compilation errors
         int[] compileStatus = new int[1];
         GL30.glGetShaderiv(shaderId, GL30.GL_COMPILE_STATUS, compileStatus);
 
         if (compileStatus[0] == GL30.GL_FALSE) {
-            // Get the error log
             String errorLog = GL30.glGetShaderInfoLog(shaderId);
-            GL30.glDeleteShader(shaderId); // Delete the shader if compilation failed
+            GL30.glDeleteShader(shaderId);
             throw new RuntimeException("Error compiling shader: " + errorLog);
         }
 
-        return shaderId; // Return the compiled shader ID
+        return shaderId;
     }
 
     @Override
@@ -158,28 +147,20 @@ public class ShaderProgram implements ShaderHandle {
 
     public void setUniformMatrix4fv(int location, float[] matrix) {
         GL30.glUniformMatrix4fv(location, false, matrix);
-        // try (MemoryStack stack = stackPush()) {
-        // FloatBuffer buffer = stack.mallocFloat(16); // 4x4 matrix
-        // matrix.get(buffer); // Fill the buffer with matrix data
-        // glUniformMatrix4fv(location, false, buffer); // Set the uniform matrix
-        // }
     }
 
     public void setUniformVector3(int location, float[] vector3f) {
         GL30.glUniform3fv(location, vector3f);
-
     }
 
     @Override
     public void setUniformVector3(String name, float[] vector3f) {
         GL30.glUniform3fv(getUniformLocation(name), vector3f);
-
     }
 
     @Override
     public void setUniformMatrix4fv(String name, float[] matrix) {
         GL30.glUniformMatrix4fv(getUniformLocation(name), false, matrix);
-
     }
 
     @Override
@@ -189,34 +170,36 @@ public class ShaderProgram implements ShaderHandle {
         GL30.glUniform1i(location, 0);
     }
 
-    // Backward-compatible alias used by existing code paths.
+    @Override
+    public void activateTexture(String uniformName, int unit, int textureID) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        GL30.glBindTexture(GL_TEXTURE_2D, textureID);
+        GL30.glUniform1i(getUniformLocation(uniformName), unit);
+    }
+
     public void ActivateTexture(int location, int textureID) {
         activateTexture(location, textureID);
     }
 
     public void setUniformMatrix4fv(int location, Matrix4 matrix) {
-        GL30.glUniformMatrix4fv(location, false, matrix.getAsBuffer()); // Set the uniform matrix
-
+        GL30.glUniformMatrix4fv(location, false, matrix.getAsBuffer());
     }
 
     @Override
     public void setUniformMatrix4fv(String name, Matrix4 vector3f) {
         setUniformMatrix4fv(getUniformLocation(name), vector3f);
-
     }
 
     public void setUniformVector3(int cameraPositionLocation, Vector3 vector3f) {
-        FloatBuffer buffer = Utils.mallocFloat(3); // 3 floats
+        FloatBuffer buffer = Utils.mallocFloat(3);
         buffer.put(vector3f.x).put(vector3f.y).put(vector3f.z);
         buffer.flip();
-        GL30.glUniform3fv(cameraPositionLocation, buffer); // Set the uniform vector
-
+        GL30.glUniform3fv(cameraPositionLocation, buffer);
     }
 
     @Override
     public void setUniformVector3(String name, Vector3 vector3f) {
         setUniformVector3(getUniformLocation(name), vector3f);
-
     }
 
     public int getAttributeLocation(String string) {
@@ -236,18 +219,29 @@ public class ShaderProgram implements ShaderHandle {
                 System.err.println("Failed to load texture: " + path);
                 return 0;
             }
-            int textureID = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, textureID);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w.get(), h.get(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            int textureID = createTextureRGBA(w.get(0), h.get(0), image);
             STBImage.stbi_image_free(image);
             return textureID;
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    public static int createTextureRGBA(int width, int height, byte[] rgbaPixels) {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(rgbaPixels.length);
+        buffer.put(rgbaPixels).flip();
+        return createTextureRGBA(width, height, buffer);
+    }
+
+    private static int createTextureRGBA(int width, int height, ByteBuffer pixelBuffer) {
+        int textureID = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelBuffer);
+        return textureID;
     }
 }

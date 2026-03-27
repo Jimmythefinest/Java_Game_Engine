@@ -90,6 +90,34 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
         }
     }
 
+    @Override
+    public int createTextureRGBA(int width, int height, byte[] rgbaPixels) {
+        if (rgbaPixels == null || rgbaPixels.length != width * height * 4) {
+            throw new IllegalArgumentException("RGBA texture data does not match the requested size.");
+        }
+        int[] textures = new int[1];
+        GLES31.glGenTextures(1, textures, 0);
+        int textureId = textures[0];
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureId);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_S, GLES31.GL_CLAMP_TO_EDGE);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_T, GLES31.GL_CLAMP_TO_EDGE);
+        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(rgbaPixels.length);
+        pixelBuffer.put(rgbaPixels).position(0);
+        GLES31.glTexImage2D(
+                GLES31.GL_TEXTURE_2D,
+                0,
+                GLES31.GL_RGBA,
+                width,
+                height,
+                0,
+                GLES31.GL_RGBA,
+                GLES31.GL_UNSIGNED_BYTE,
+                pixelBuffer);
+        return textureId;
+    }
+
     private int getWhiteTexture() {
         if (whiteTextureId != 0) {
             return whiteTextureId;

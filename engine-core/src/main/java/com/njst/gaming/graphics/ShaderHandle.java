@@ -18,6 +18,8 @@ public interface ShaderHandle {
 
     void activateTexture(int location, int textureID);
 
+    void activateTexture(String uniformName, int unit, int textureID);
+
     boolean compiled();
 
     void cleanup();

@@ -9,10 +9,10 @@ import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.objects.TerrainObject;
 
 public class Renderer {
 
-    // Scene objects
     public GameObject screen;
     public GameObject skybox;
     public Scene scene;
@@ -21,36 +21,30 @@ public class Renderer {
     private int textureHandle;
     public boolean hasError = false;
 
-    // Shader programs
-    public ShaderHandle shaderProgram;// , shadowShaderProgram, lineProgram;
+    public ShaderHandle shaderProgram;
+    public ShaderHandle terrainShaderProgram;
     public float speed = 1;
     public GameObject test;
 
-    // Logging
     public RootLogger log;
 
-    // Dimensions
     public int width = 100;
     public int height = 100;
     public float[] clearColor = { 0, 0, 0, 1 };
 
     int tex1;
 
-    // Miscellaneous
     public float angle;
     public final float[] lightPos = { 0, 50f, 0 };
     public final float[] lightColor = { 1.0f, 1.0f, 1.0f };
     public BufferHandle ssbo;
 
-    // Frame rate measurement
     public long lasttym = 0;
     public int fps;
     public int frame_counter = 0;
 
-    // Shadow matrices
     public float[] lightViewMatrix, lightProjectionMatrix;
 
-    // Bounding box (for drawing wireframes)
     private final GraphicsDevice graphicsDevice;
 
     public Renderer() {
@@ -70,18 +64,18 @@ public class Renderer {
         try {
             lasttym = System.currentTimeMillis();
 
-            // Initialize main shader program
-            // Build and compile shader program
             shaderProgram = graphicsDevice.createShaderProgram(
                     graphicsDevice.loadShaderSource("resources/shaders/vert11.glsl"),
                     graphicsDevice.loadShaderSource("resources/shaders/frag11.glsl"));
+            terrainShaderProgram = graphicsDevice.createShaderProgram(
+                    graphicsDevice.loadShaderSource("resources/shaders/terrain_vert.glsl"),
+                    graphicsDevice.loadShaderSource("resources/shaders/terrain_frag.glsl"));
             scene.loader.load(scene);
             for (GameObject object : scene.objects) {
                 object.setGraphicsDevice(graphicsDevice);
                 object.generateBuffers();
             }
 
-            // Enable blending for transparent objects (leaves, glass, etc.)
             graphicsDevice.enableBlendAndDepth();
 
         } catch (Exception e) {
@@ -105,13 +99,9 @@ public class Renderer {
             ssbo.bindToShader(0);
 
             graphicsDevice.clearColorAndDepth();
-            // shaderProgram.setUniformVector3("lightpos", new float[] { 0, 10, 0 });
             shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
-            // shaderProgram.setUniformMatrix4fv("uPMatrix", camera.getProjectionMatrix());
-            // shaderProgram.setUniformMatrix4fv("uVMatrix", camera.getViewMatrix());
+            terrainShaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
 
-            // skybox.position=camera.cameraPosition;
-            // skybox.updateModelMatrix();
             scene.onDrawFrame();
             if (skybox != null) {
                 skybox.setGraphicsDevice(graphicsDevice);
@@ -128,9 +118,10 @@ public class Renderer {
                     object -> -object.position.distance(camera.cameraPosition)));
             for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
-                shaderProgram.use();
+                ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
+                activeShader.use();
                 object.updateModelMatrix();
-                object.render(shaderProgram, textureHandle);
+                object.render(activeShader, textureHandle);
             }
             time += (System.nanoTime() - start);
             if (frame == 200) {
@@ -159,11 +150,12 @@ public class Renderer {
         ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
-        shaderProgram.use();
-        shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+        ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
+        activeShader.use();
+        activeShader.setUniformVector3("eyepos1", camera.cameraPosition);
         object.setGraphicsDevice(graphicsDevice);
         object.updateModelMatrix();
-        object.render(shaderProgram, textureHandle);
+        object.render(activeShader, textureHandle);
     }
 
     int frame = 0;
@@ -202,5 +194,4 @@ public class Renderer {
             log.logToRootDirectory(element.getClassName() + element.getMethodName() + element.getLineNumber());
         }
     }
-
 }

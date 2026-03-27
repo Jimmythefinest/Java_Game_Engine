@@ -21,7 +21,12 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
     @Override
     public void load(Scene scene) {
         int skyboxTexture = scene.renderer.getGraphicsDevice().loadTexture("desertstorm.jpg");
-        int terrainTexture = scene.renderer.getGraphicsDevice().loadTexture("j.jpg");
+        int[] terrainTextures = new int[] {
+                scene.renderer.getGraphicsDevice().loadTexture("terrain_texture.jpeg"),
+                scene.renderer.getGraphicsDevice().loadTexture("j.jpg"),
+                scene.renderer.getGraphicsDevice().loadTexture("WaterPlain0012_1_350.jpg"),
+                scene.renderer.getGraphicsDevice().loadTexture("images (2).jpeg")
+        };
 
         GameObject skybox = new GameObject(new SphereGeometry(1, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5;
@@ -35,7 +40,7 @@ public class AndroidOpenWorldLoader implements Scene.SceneLoader {
         OpenWorldTerrainManager terrainManager = new OpenWorldTerrainManager(
                 scene,
                 scene.renderer.getGraphicsDevice(),
-                terrainTexture,
+                terrainTextures,
                 state);
         scene.enableOpenWorld(terrainManager);
 
