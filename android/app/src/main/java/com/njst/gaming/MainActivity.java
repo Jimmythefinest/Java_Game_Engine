@@ -3,11 +3,11 @@ package com.njst.gaming;
 import android.app.Activity;
 import android.os.Bundle;
 
-import com.njst.gaming.android.AndroidEngineSurfaceView;
+import com.njst.gaming.android.AndroidEngineView;
 import com.njst.gaming.android.AndroidPlatform;
 
 public class MainActivity extends Activity {
-    private AndroidEngineSurfaceView engineView;
+    private AndroidEngineView engineView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

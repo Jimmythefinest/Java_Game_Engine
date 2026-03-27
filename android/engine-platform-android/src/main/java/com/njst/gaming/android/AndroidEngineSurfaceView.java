@@ -4,6 +4,8 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.view.MotionEvent;
 
+import com.njst.gaming.input.InputCodes;
+
 public class AndroidEngineSurfaceView extends GLSurfaceView {
     private final AndroidEngineRenderer renderer;
     private int activeLookPointerId = MotionEvent.INVALID_POINTER_ID;
@@ -16,7 +18,8 @@ public class AndroidEngineSurfaceView extends GLSurfaceView {
         setRenderer(renderer);
         setRenderMode(RENDERMODE_CONTINUOUSLY);
     }
-    
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         int actionIndex = event.getActionIndex();
@@ -75,5 +78,17 @@ public class AndroidEngineSurfaceView extends GLSurfaceView {
     private void cancelLook() {
         activeLookPointerId = MotionEvent.INVALID_POINTER_ID;
         renderer.setLooking(false);
+    }
+
+    public void setButtonState(int buttonCode, boolean down) {
+        renderer.setButtonState(buttonCode, down);
+    }
+
+    public void releaseAllInputs() {
+        cancelLook();
+        setButtonState(InputCodes.BUTTON_MOVE_FORWARD, false);
+        setButtonState(InputCodes.BUTTON_MOVE_BACKWARD, false);
+        setButtonState(InputCodes.BUTTON_MOVE_LEFT, false);
+        setButtonState(InputCodes.BUTTON_MOVE_RIGHT, false);
     }
 }

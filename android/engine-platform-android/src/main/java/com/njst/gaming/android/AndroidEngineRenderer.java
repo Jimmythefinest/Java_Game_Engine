@@ -6,13 +6,16 @@ import android.opengl.GLSurfaceView;
 
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Scene;
+import com.njst.gaming.input.InputCodes;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     private final Context context;
+    private final boolean[] pendingButtons = new boolean[InputCodes.MAX_BUTTONS];
     private Renderer renderer;
+    private boolean pendingLooking;
 
     public AndroidEngineRenderer(Context context) {
         this.context = context;
@@ -29,6 +32,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         scene.renderer = renderer;
         scene.loader = new AndroidOpenWorldLoader(context);
         renderer.scene = scene;
+        applyPendingInputs(scene);
 
         renderer.onSurfaceCreated();
     }
@@ -46,6 +50,9 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             return;
         }
         renderer.onDrawFrame();
+        if (renderer.scene != null) {
+            renderer.scene.inputSystem.beginFrame();
+        }
     }
 
     public void cursorMoved(float x, float y) {
@@ -56,9 +63,36 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     }
 
     public void setLooking(boolean active) {
+        pendingLooking = active;
+        setButtonState(InputCodes.BUTTON_LOOK, active);
         if (renderer == null || renderer.scene == null) {
             return;
         }
         renderer.scene.righmouse = active;
+        renderer.scene.inputSystem.pointer.setActive(active);
+    }
+
+    public void setButtonState(int buttonCode, boolean down) {
+        if (buttonCode < 0 || buttonCode >= pendingButtons.length) {
+            return;
+        }
+        pendingButtons[buttonCode] = down;
+        if (renderer == null || renderer.scene == null) {
+            return;
+        }
+        renderer.scene.inputSystem.button(buttonCode).setDown(down);
+        if (buttonCode == InputCodes.BUTTON_LOOK) {
+            renderer.scene.inputSystem.pointer.setActive(down);
+        }
+    }
+
+    private void applyPendingInputs(Scene scene) {
+        scene.righmouse = pendingLooking;
+        scene.inputSystem.pointer.setActive(pendingLooking);
+        for (int i = 0; i < pendingButtons.length; i++) {
+            if (pendingButtons[i]) {
+                scene.inputSystem.button(i).setDown(true);
+            }
+        }
     }
 }
