@@ -5,7 +5,7 @@ import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
 
 import com.njst.gaming.Renderer;
-import com.njst.gaming.TetraLoader;
+import com.njst.gaming.ri.battlearena.BattleArenaDemoLoader;
 import com.njst.gaming.Scene;
 import com.njst.gaming.input.InputCodes;
 
@@ -38,7 +38,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
 
         Scene scene = new Scene();
         scene.renderer = renderer;
-        scene.loader = new TetraLoader();
+        scene.loader = new BattleArenaDemoLoader();
         renderer.scene = scene;
         applyPendingInputs(scene);
 

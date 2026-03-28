@@ -55,7 +55,14 @@ tasks.register('runDemo', JavaExec) {
     group = 'application'
     description = 'Run the desktop 3D Tetris demo'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = application.mainClass
+    mainClass = providers.gradleProperty("demoMainClass").orElse(application.mainClass).get()
+}
+
+tasks.register('runBattleground', JavaExec) {
+    group = 'application'
+    description = 'Run the battle arena skybox demo'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
 }
 
 tasks.register('stageJpackageInput', Sync) {
