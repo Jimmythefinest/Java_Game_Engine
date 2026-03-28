@@ -6,8 +6,8 @@ public final class AndroidPlatform {
     private AndroidPlatform() {
     }
 
-    public static AndroidEngineView createSurfaceView(Context context) {
-        return new AndroidEngineView(context);
+    public static AndroidEngineView createSurfaceView(Context context, AndroidGameConfig gameConfig) {
+        return new AndroidEngineView(context, gameConfig);
     }
 
     public static AndroidGraphicsDevice createGraphicsDevice(Context context) {

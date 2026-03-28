@@ -8,22 +8,21 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.njst.gaming.Renderer;
-import com.njst.gaming.input.InputCodes;
 
+import java.util.List;
 import java.util.Locale;
 
 public class AndroidEngineView extends FrameLayout {
     private final AndroidEngineSurfaceView surfaceView;
     private final TextView statsOverlay;
 
-    public AndroidEngineView(Context context) {
+    public AndroidEngineView(Context context, AndroidGameConfig gameConfig) {
         super(context);
 
-        surfaceView = new AndroidEngineSurfaceView(context);
+        surfaceView = new AndroidEngineSurfaceView(context, gameConfig);
         addView(surfaceView, new LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.MATCH_PARENT));
@@ -32,7 +31,7 @@ public class AndroidEngineView extends FrameLayout {
         addView(statsOverlay, createStatsLayoutParams(context));
         surfaceView.setStatsListener((fps, snapshot) -> statsOverlay.post(() -> statsOverlay.setText(formatStats(fps, snapshot))));
 
-        addView(createMovementOverlay(context));
+        addView(createControlOverlay(context, gameConfig));
     }
 
     public void onResume() {
@@ -44,7 +43,7 @@ public class AndroidEngineView extends FrameLayout {
         surfaceView.releaseAllInputs();
     }
 
-    private View createMovementOverlay(Context context) {
+    private View createControlOverlay(Context context, AndroidGameConfig gameConfig) {
         FrameLayout overlay = new FrameLayout(context);
         overlay.setLayoutParams(new LayoutParams(
                 LayoutParams.MATCH_PARENT,
@@ -54,57 +53,59 @@ public class AndroidEngineView extends FrameLayout {
         int gap = dp(context, 12);
         int outerMargin = dp(context, 24);
 
-        Button forward = createMovementButton(context, "W", InputCodes.BUTTON_MOVE_FORWARD);
-        Button backward = createMovementButton(context, "S", InputCodes.BUTTON_MOVE_BACKWARD);
-        Button left = createMovementButton(context, "A", InputCodes.BUTTON_MOVE_LEFT);
-        Button right = createMovementButton(context, "D", InputCodes.BUTTON_MOVE_RIGHT);
+        String virtualJoystickPointerId = gameConfig.getVirtualJoystickPointerId();
+        if (virtualJoystickPointerId != null && !virtualJoystickPointerId.isEmpty()) {
+            AndroidVirtualJoystickView joystickView = new AndroidVirtualJoystickView(context, new AndroidVirtualJoystickView.Listener() {
+                @Override
+                public void onJoystickStart() {
+                    surfaceView.setVirtualPointerActive(virtualJoystickPointerId, true);
+                }
 
-        LayoutParams forwardParams = new LayoutParams(buttonSize, buttonSize);
-        forwardParams.gravity = Gravity.START | Gravity.BOTTOM;
-        forwardParams.leftMargin = outerMargin + buttonSize + gap;
-        forwardParams.bottomMargin = outerMargin + buttonSize + gap;
-        overlay.addView(forward, forwardParams);
+                @Override
+                public void onJoystickMove(float normalizedX, float normalizedY) {
+                    surfaceView.moveVirtualPointer(virtualJoystickPointerId, normalizedX, normalizedY);
+                }
 
-        LayoutParams leftParams = new LayoutParams(buttonSize, buttonSize);
-        leftParams.gravity = Gravity.START | Gravity.BOTTOM;
-        leftParams.leftMargin = outerMargin;
-        leftParams.bottomMargin = outerMargin;
-        overlay.addView(left, leftParams);
+                @Override
+                public void onJoystickEnd() {
+                    surfaceView.moveVirtualPointer(virtualJoystickPointerId, 0f, 0f);
+                    surfaceView.setVirtualPointerActive(virtualJoystickPointerId, false);
+                }
+            });
+            int joystickSize = dp(context, 164);
+            LayoutParams joystickParams = new LayoutParams(joystickSize, joystickSize);
+            joystickParams.gravity = Gravity.START | Gravity.BOTTOM;
+            joystickParams.leftMargin = outerMargin;
+            joystickParams.bottomMargin = outerMargin;
+            overlay.addView(joystickView, joystickParams);
+        }
 
-        LayoutParams backwardParams = new LayoutParams(buttonSize, buttonSize);
-        backwardParams.gravity = Gravity.START | Gravity.BOTTOM;
-        backwardParams.leftMargin = outerMargin + buttonSize + gap;
-        backwardParams.bottomMargin = outerMargin;
-        overlay.addView(backward, backwardParams);
+        List<AndroidActionButton> actionButtons = gameConfig.getActionButtons();
+        for (int i = 0; i < actionButtons.size(); i++) {
+            AndroidActionButton actionButton = actionButtons.get(i);
+            Button button = createActionButton(context, actionButton.getLabel(), down -> surfaceView.setActionState(actionButton.getActionId(), down));
+            LayoutParams params = new LayoutParams(buttonSize, buttonSize);
+            params.gravity = Gravity.END | Gravity.BOTTOM;
+            params.rightMargin = outerMargin + (i * (buttonSize + gap));
+            params.bottomMargin = outerMargin;
+            overlay.addView(button, params);
+        }
 
-        LayoutParams rightParams = new LayoutParams(buttonSize, buttonSize);
-        rightParams.gravity = Gravity.START | Gravity.BOTTOM;
-        rightParams.leftMargin = outerMargin + ((buttonSize + gap) * 2);
-        rightParams.bottomMargin = outerMargin;
-        overlay.addView(right, rightParams);
-
-        LinearLayout hintStrip = new LinearLayout(context);
-        hintStrip.setOrientation(LinearLayout.VERTICAL);
-        hintStrip.setGravity(Gravity.END);
-        hintStrip.setPadding(gap, gap / 2, gap, gap / 2);
-        hintStrip.setBackgroundColor(Color.argb(80, 10, 14, 20));
-
-        Button lookHint = new Button(context);
-        lookHint.setText("LOOK");
-        lookHint.setEnabled(false);
-        lookHint.setAllCaps(false);
-        lookHint.setAlpha(0.65f);
-        hintStrip.addView(lookHint, new LinearLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT));
+        TextView lookHint = new TextView(context);
+        lookHint.setText(gameConfig.getLookHintLabel());
+        lookHint.setTextColor(Color.argb(180, 255, 255, 255));
+        lookHint.setTextSize(12f);
+        lookHint.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        lookHint.setPadding(gap, gap / 2, gap, gap / 2);
+        lookHint.setBackgroundColor(Color.argb(80, 10, 14, 20));
 
         LayoutParams hintParams = new LayoutParams(
                 LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT);
         hintParams.gravity = Gravity.END | Gravity.BOTTOM;
         hintParams.rightMargin = outerMargin;
-        hintParams.bottomMargin = outerMargin;
-        overlay.addView(hintStrip, hintParams);
+        hintParams.bottomMargin = outerMargin + buttonSize + gap;
+        overlay.addView(lookHint, hintParams);
 
         return overlay;
     }
@@ -148,25 +149,25 @@ public class AndroidEngineView extends FrameLayout {
                 snapshot.terrainCount);
     }
 
-    private Button createMovementButton(Context context, String label, int buttonCode) {
+    private Button createActionButton(Context context, String label, ActionSetter setter) {
         Button button = new Button(context);
         button.setText(label);
         button.setAllCaps(false);
         button.setAlpha(0.82f);
-        button.setOnTouchListener((view, event) -> handleMovementTouch(buttonCode, event));
+        button.setOnTouchListener((view, event) -> handleActionTouch(event, setter));
         return button;
     }
 
-    private boolean handleMovementTouch(int buttonCode, MotionEvent event) {
+    private boolean handleActionTouch(MotionEvent event, ActionSetter setter) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                surfaceView.setButtonState(buttonCode, true);
+                setter.set(true);
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
             case MotionEvent.ACTION_CANCEL:
-                surfaceView.setButtonState(buttonCode, false);
+                setter.set(false);
                 return true;
             default:
                 return true;
@@ -176,5 +177,9 @@ public class AndroidEngineView extends FrameLayout {
     private static int dp(Context context, int value) {
         float density = context.getResources().getDisplayMetrics().density;
         return Math.round(value * density);
+    }
+
+    private interface ActionSetter {
+        void set(boolean down);
     }
 }

@@ -5,10 +5,13 @@ import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
+import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.InputBindings;
-import com.njst.gaming.input.InputCodes;
 import com.njst.gaming.input.InputSystem;
+import com.njst.gaming.input.PointerInputHandler;
+import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,10 +27,15 @@ public class Scene {
     public HashMap<String, Runnable> commands = new HashMap<>();
     public ArrayList<KeyframeAnimation> KEY_ANIMATIONS;
     public ArrayList<ArrayList<KeyframeAnimation>> MOTION_ANIMATIONS;
-    public boolean righmouse = false;
     public final InputSystem inputSystem;
+    public final ActionInput actionInput;
     public final InputBindings inputBindings;
+    private final Map<String, PointerInputHandler> pointerHandlers;
     public Renderer renderer;
+    public String cameraForwardAction;
+    public String cameraBackwardAction;
+    public String cameraLeftAction;
+    public String cameraRightAction;
     String info = "";
     public String dat = "";
     public float speed = 1;
@@ -42,16 +50,17 @@ public class Scene {
     public boolean object_should_move = false;
     public boolean camera_should_move = false;
     public boolean camera_should_move_up = false;
-    float lastX = 0, lastY = 0;
 
     public Scene() {
-        objects = new CopyOnWriteArrayList<GameObject>();
+        objects = new CopyOnWriteArrayList<>();
         animation_groups = new HashMap<>();
         animations = new CopyOnWriteArrayList<>();
         MOTION_ANIMATIONS = new ArrayList<>();
         KEY_ANIMATIONS = new ArrayList<>();
         inputSystem = new InputSystem();
+        actionInput = new ActionInput(inputSystem);
         inputBindings = new InputBindings();
+        pointerHandlers = new HashMap<>();
         log = new RootLogger(data.rootDirectory + "/Scene.log");
         log.logToRootDirectory("hiisis");
         physics = new PhysicsEngine(this);
@@ -75,10 +84,10 @@ public class Scene {
 
     private void updateCameraMovement() {
         float forward = 0f;
-        if (camera_should_move || inputSystem.button(InputCodes.BUTTON_MOVE_FORWARD).isDown()) {
+        if (camera_should_move || isActionDown(cameraForwardAction)) {
             forward += 0.1f * speed;
         }
-        if (inputSystem.button(InputCodes.BUTTON_MOVE_BACKWARD).isDown()) {
+        if (isActionDown(cameraBackwardAction)) {
             forward -= 0.1f * speed;
         }
         if (forward != 0f) {
@@ -86,10 +95,10 @@ public class Scene {
         }
 
         float strafe = 0f;
-        if (inputSystem.button(InputCodes.BUTTON_MOVE_LEFT).isDown()) {
+        if (isActionDown(cameraLeftAction)) {
             strafe += 0.1f * speed;
         }
-        if (inputSystem.button(InputCodes.BUTTON_MOVE_RIGHT).isDown()) {
+        if (isActionDown(cameraRightAction)) {
             strafe -= 0.1f * speed;
         }
         if (strafe != 0f) {
@@ -100,6 +109,34 @@ public class Scene {
             Vector3 verticalOffset = new Vector3(0, 0.05f, 0);
             renderer.camera.cameraPosition.add(verticalOffset);
             renderer.camera.targetPosition.add(verticalOffset);
+        }
+    }
+
+    private boolean isActionDown(String actionId) {
+        return actionId != null && inputSystem.button(actionId).isDown();
+    }
+
+    public void registerPointerInput(String pointerId, PointerInputHandler handler) {
+        if (pointerId == null || pointerId.isEmpty()) {
+            throw new IllegalArgumentException("Pointer id must not be empty.");
+        }
+        if (handler == null) {
+            pointerHandlers.remove(pointerId);
+            return;
+        }
+        pointerHandlers.put(pointerId, handler);
+    }
+
+    public PointerState pointer(String pointerId) {
+        return inputSystem.pointer(pointerId);
+    }
+
+    public void handlePointerInput(String pointerId, float x, float y) {
+        PointerState pointer = inputSystem.pointer(pointerId);
+        pointer.setPosition(x, y);
+        PointerInputHandler handler = pointerHandlers.get(pointerId);
+        if (handler != null) {
+            handler.onPointerMoved(this, pointer);
         }
     }
 
@@ -194,21 +231,6 @@ public class Scene {
     }
 
     public interface SceneLoader {
-        public void load(Scene s);
-    }
-
-    public void cursorMoved(double pos_x, double pos_y) {
-        float newx = (float) pos_x;
-        float newy = (float) pos_y;
-        boolean looking = righmouse || inputSystem.button(InputCodes.BUTTON_LOOK).isDown();
-        if (looking) {
-            renderer.camera.targetPosition = renderer.camera.targetPosition.sub(
-                    renderer.camera.cameraPosition).normalize()
-                    .rotateX((newy - lastY) / 80)
-                    .rotateY((newx - lastX) / 80)
-                    .add(renderer.camera.cameraPosition);
-        }
-        lastX = newx;
-        lastY = newy;
+        void load(Scene s);
     }
 }

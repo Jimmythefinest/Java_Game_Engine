@@ -1,27 +1,36 @@
 package com.njst.gaming.input;
 
-public class InputSystem {
-    public final ButtonState[] buttons;
-    public final PointerState pointer = new PointerState();
+import java.util.HashMap;
+import java.util.Map;
 
-    public InputSystem() {
-        buttons = new ButtonState[InputCodes.MAX_BUTTONS];
-        for (int i = 0; i < buttons.length; i++) {
-            buttons[i] = new ButtonState();
+public class InputSystem {
+    private final Map<String, ButtonState> buttons = new HashMap<>();
+    private final Map<String, PointerState> pointers = new HashMap<>();
+
+    public void beginFrame() {
+        for (ButtonState button : buttons.values()) {
+            button.beginFrame();
+        }
+        for (PointerState pointer : pointers.values()) {
+            pointer.beginFrame();
         }
     }
 
-    public void beginFrame() {
-        for (ButtonState button : buttons) {
-            button.beginFrame();
+    public ButtonState button(String actionId) {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("Action id must not be empty.");
         }
-        pointer.beginFrame();
+        return buttons.computeIfAbsent(actionId, ignored -> new ButtonState());
     }
 
     public ButtonState button(int buttonCode) {
-        if (buttonCode < 0 || buttonCode >= buttons.length) {
-            throw new IllegalArgumentException("Invalid button code: " + buttonCode);
+        return button(Integer.toString(buttonCode));
+    }
+
+    public PointerState pointer(String pointerId) {
+        if (pointerId == null || pointerId.isEmpty()) {
+            throw new IllegalArgumentException("Pointer id must not be empty.");
         }
-        return buttons[buttonCode];
+        return pointers.computeIfAbsent(pointerId, ignored -> new PointerState());
     }
 }

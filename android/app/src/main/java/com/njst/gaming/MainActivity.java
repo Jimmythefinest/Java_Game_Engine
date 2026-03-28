@@ -16,7 +16,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        engineView = AndroidPlatform.createSurfaceView(this);
+        engineView = AndroidPlatform.createSurfaceView(this, new BattleArenaAndroidConfig());
         setContentView(engineView);
         enterFullscreen();
     }

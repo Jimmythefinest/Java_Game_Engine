@@ -5,9 +5,10 @@ import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
 
 import com.njst.gaming.Renderer;
-import com.njst.gaming.ri.battlearena.BattleArenaDemoLoader;
 import com.njst.gaming.Scene;
-import com.njst.gaming.input.InputCodes;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -18,15 +19,16 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     }
 
     private final Context context;
-    private final boolean[] pendingButtons = new boolean[InputCodes.MAX_BUTTONS];
+    private final AndroidGameConfig gameConfig;
+    private final Map<String, Boolean> pendingActions = new LinkedHashMap<>();
     private Renderer renderer;
-    private boolean pendingLooking;
     private StatsListener statsListener;
     private long fpsWindowStartMillis;
     private int framesThisWindow;
 
-    public AndroidEngineRenderer(Context context) {
+    public AndroidEngineRenderer(Context context, AndroidGameConfig gameConfig) {
         this.context = context;
+        this.gameConfig = gameConfig;
     }
 
     @Override
@@ -38,8 +40,8 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
 
         Scene scene = new Scene();
         scene.renderer = renderer;
-        scene.loader = new BattleArenaDemoLoader();
         renderer.scene = scene;
+        gameConfig.configureScene(scene);
         applyPendingInputs(scene);
 
         fpsWindowStartMillis = System.currentTimeMillis();
@@ -74,43 +76,58 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    public void cursorMoved(float x, float y) {
-        if (renderer == null || renderer.scene == null) {
+    public void pointerMoved(String pointerId, float x, float y) {
+        if (renderer == null || renderer.scene == null || pointerId == null || pointerId.isEmpty()) {
             return;
         }
-        renderer.scene.cursorMoved(x, y);
+        renderer.scene.handlePointerInput(pointerId, x, y);
     }
 
-    public void setLooking(boolean active) {
-        pendingLooking = active;
-        setButtonState(InputCodes.BUTTON_LOOK, active);
+    public void setPointerActionState(String pointerId, String actionId, boolean down) {
         if (renderer == null || renderer.scene == null) {
+            if (actionId != null && !actionId.isEmpty()) {
+                pendingActions.put(actionId, down);
+            }
             return;
         }
-        renderer.scene.righmouse = active;
-        renderer.scene.inputSystem.pointer.setActive(active);
+        if (pointerId != null && !pointerId.isEmpty()) {
+            renderer.scene.pointer(pointerId).setActive(down);
+        }
+        if (actionId != null && !actionId.isEmpty()) {
+            pendingActions.put(actionId, down);
+            renderer.scene.inputSystem.button(actionId).setDown(down);
+        }
     }
 
-    public void setButtonState(int buttonCode, boolean down) {
-        if (buttonCode < 0 || buttonCode >= pendingButtons.length) {
+    public void resetPointer(String pointerId) {
+        if (renderer == null || renderer.scene == null || pointerId == null || pointerId.isEmpty()) {
             return;
         }
-        pendingButtons[buttonCode] = down;
+        renderer.scene.handlePointerInput(pointerId, 0f, 0f);
+        renderer.scene.pointer(pointerId).setActive(false);
+    }
+
+    public void setActionState(String actionId, boolean down) {
+        if (actionId == null || actionId.isEmpty()) {
+            return;
+        }
+        pendingActions.put(actionId, down);
         if (renderer == null || renderer.scene == null) {
             return;
         }
-        renderer.scene.inputSystem.button(buttonCode).setDown(down);
-        if (buttonCode == InputCodes.BUTTON_LOOK) {
-            renderer.scene.inputSystem.pointer.setActive(down);
+        renderer.scene.inputSystem.button(actionId).setDown(down);
+    }
+
+    public void releaseAllActions() {
+        for (String actionId : pendingActions.keySet().toArray(new String[0])) {
+            setActionState(actionId, false);
         }
     }
 
     private void applyPendingInputs(Scene scene) {
-        scene.righmouse = pendingLooking;
-        scene.inputSystem.pointer.setActive(pendingLooking);
-        for (int i = 0; i < pendingButtons.length; i++) {
-            if (pendingButtons[i]) {
-                scene.inputSystem.button(i).setDown(true);
+        for (Map.Entry<String, Boolean> entry : pendingActions.entrySet()) {
+            if (Boolean.TRUE.equals(entry.getValue())) {
+                scene.inputSystem.button(entry.getKey()).setDown(true);
             }
         }
     }

@@ -4,22 +4,39 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class InputBindings {
-    private final Map<Integer, Integer> keyBindings = new HashMap<>();
-    private final Map<Integer, Integer> mouseBindings = new HashMap<>();
+    private final Map<Integer, String> keyBindings = new HashMap<>();
+    private final Map<Integer, String> mouseBindings = new HashMap<>();
+    private String mousePointerId;
+
+    public void bindKey(int keyCode, String actionId) {
+        keyBindings.put(keyCode, actionId);
+    }
 
     public void bindKey(int keyCode, int buttonCode) {
-        keyBindings.put(keyCode, buttonCode);
+        bindKey(keyCode, Integer.toString(buttonCode));
+    }
+
+    public void bindMouseButton(int mouseButton, String actionId) {
+        mouseBindings.put(mouseButton, actionId);
     }
 
     public void bindMouseButton(int mouseButton, int buttonCode) {
-        mouseBindings.put(mouseButton, buttonCode);
+        bindMouseButton(mouseButton, Integer.toString(buttonCode));
     }
 
-    public int resolveKey(int keyCode) {
-        return keyBindings.getOrDefault(keyCode, -1);
+    public void bindMousePointer(String pointerId) {
+        mousePointerId = pointerId;
     }
 
-    public int resolveMouseButton(int mouseButton) {
-        return mouseBindings.getOrDefault(mouseButton, -1);
+    public String resolveKeyAction(int keyCode) {
+        return keyBindings.get(keyCode);
+    }
+
+    public String resolveMouseButtonAction(int mouseButton) {
+        return mouseBindings.get(mouseButton);
+    }
+
+    public String resolveMousePointer() {
+        return mousePointerId;
     }
 }

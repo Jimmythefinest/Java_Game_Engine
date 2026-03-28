@@ -4,7 +4,7 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Natives.DesktopGraphicsDevice;
-import com.njst.gaming.input.InputCodes;
+import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.input.InputSystem;
 import com.njst.gaming.input.MouseButtons;
 import java.util.Scanner;
@@ -58,7 +58,7 @@ public abstract class Engine {
         input = scene.inputSystem;
         renderer.scene = scene;
         scene.renderer = renderer;
-        configureDefaultInputBindings();
+        configureInputBindings(scene.inputBindings);
         setupCallbacks();
 
         onInit();
@@ -76,12 +76,7 @@ public abstract class Engine {
         );
     }
 
-    private void configureDefaultInputBindings() {
-        scene.inputBindings.bindKey(GLFW_KEY_W, InputCodes.BUTTON_MOVE_FORWARD);
-        scene.inputBindings.bindKey(GLFW_KEY_S, InputCodes.BUTTON_MOVE_BACKWARD);
-        scene.inputBindings.bindKey(GLFW_KEY_A, InputCodes.BUTTON_MOVE_LEFT);
-        scene.inputBindings.bindKey(GLFW_KEY_D, InputCodes.BUTTON_MOVE_RIGHT);
-        scene.inputBindings.bindMouseButton(MouseButtons.LEFT, InputCodes.BUTTON_LOOK);
+    protected void configureInputBindings(InputBindings bindings) {
     }
 
     protected void setupCallbacks() {
@@ -89,7 +84,7 @@ public abstract class Engine {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(win, true);
             }
-            applyBoundButton(scene.inputBindings.resolveKey(key), action != GLFW_RELEASE);
+            applyBoundAction(scene.inputBindings.resolveKeyAction(key), action != GLFW_RELEASE);
             onKey(key, action);
         });
 
@@ -100,14 +95,16 @@ public abstract class Engine {
         });
 
         glfwSetCursorPosCallback(window, (win, x, y) -> {
-            input.pointer.setPosition((float) x, (float) y);
-            scene.cursorMoved(x, y);
+            String pointerId = scene.inputBindings.resolveMousePointer();
+            if (pointerId != null && !pointerId.isEmpty()) {
+                scene.handlePointerInput(pointerId, (float) x, (float) y);
+            }
         });
 
         glfwSetMouseButtonCallback(window, (win, button, action, mods) -> {
             int mouseButton = mapGlfwMouseButton(button);
             if (mouseButton >= 0) {
-                applyBoundButton(scene.inputBindings.resolveMouseButton(mouseButton), action != GLFW_RELEASE);
+                applyBoundAction(scene.inputBindings.resolveMouseButtonAction(mouseButton), action != GLFW_RELEASE);
             }
         });
 
@@ -115,14 +112,11 @@ public abstract class Engine {
         });
     }
 
-    private void applyBoundButton(int buttonCode, boolean down) {
-        if (buttonCode < 0) {
+    private void applyBoundAction(String actionId, boolean down) {
+        if (actionId == null || actionId.isEmpty()) {
             return;
         }
-        input.button(buttonCode).setDown(down);
-        if (buttonCode == InputCodes.BUTTON_LOOK) {
-            input.pointer.setActive(down);
-        }
+        input.button(actionId).setDown(down);
     }
 
     private int mapGlfwMouseButton(int glfwMouseButton) {
