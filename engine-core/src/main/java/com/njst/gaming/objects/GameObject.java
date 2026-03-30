@@ -24,6 +24,7 @@ public class GameObject {
     public float[] scale = new float[] { 1, 1, 1 }; // Initial size (sx, sy, sz)
     private Vector3 rotation = new Vector3(); // Initial size (sx, sy, sz)
     public Matrix4 modelMatrix = new Matrix4();
+    private boolean needsUpdate = true;
 
     public float[] velocity = new float[] { 0, 0, 0 };
     private boolean buffers_generated = false;
@@ -70,14 +71,14 @@ public class GameObject {
 
     public void move(float x, float y, float z) {
         position.add(new Vector3(x, y, z));
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void setPosition(float x, float y, float z) {
         position.x = x;
         position.y = y;
         position.z = z;
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void rotate(float x, float y, float z) {
@@ -85,19 +86,19 @@ public class GameObject {
         rotation.y += y;
         rotation.z += z;
 
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void setRotation(float x, float y, float z) {
         rotation.x = x;
         rotation.y = y;
         rotation.z = z;
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void translate(Vector3 position) {
         this.position.add(position);
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void resize(float sx, float sy, float sz) {
@@ -105,17 +106,20 @@ public class GameObject {
         scale[1] = sy;
         scale[2] = sz;
 
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void setScale(float sx, float sy, float sz) {
         scale[0] = sx;
         scale[1] = sy;
         scale[2] = sz;
-        updateModelMatrix();
+        needsUpdate = true;
     }
 
     public void updateModelMatrix() {
+        if (!needsUpdate) {
+            return;
+        }
         // Matrix.setIdentityM(modelMatrix,0);
         modelMatrix.identity();
         modelMatrix.translate(position);
@@ -124,7 +128,7 @@ public class GameObject {
         modelMatrix.rotate(rotation.z, new Vector3(0f, 0, 1));
         modelMatrix.scale(new Vector3(scale[0], scale[1], scale[2]));
         updateCollisionBox();
-
+        needsUpdate = false;
     }
 
     private void initCollisionBoxFromGeometry() {

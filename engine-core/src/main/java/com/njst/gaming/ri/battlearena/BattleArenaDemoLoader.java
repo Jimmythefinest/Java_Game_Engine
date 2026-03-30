@@ -30,7 +30,7 @@ import java.util.Map;
 
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
-    private static final String GROUND_FILE = "j.jpg";
+    private static final String GROUND_FILE = "stone.jpeg";
     private static final String MODEL_FILE = "weighted_geometry/defeated_mesh_1.ser";
     private static final String BONE_FILE = "weighted_geometry/defeated_bones.ser";
     private static final String BONE_NAMES_FILE = "weighted_geometry/defeated_bone_names.json";
