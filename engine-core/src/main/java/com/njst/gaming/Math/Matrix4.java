@@ -104,6 +104,13 @@ public class Matrix4 implements Serializable {
         return this;
     }
 
+    public Matrix4 rotate(Quaternion quaternion) {
+        new Matrix4f().set(r)
+                .rotate(new Quaternionf(quaternion.x, quaternion.y, quaternion.z, quaternion.w))
+                .get(r);
+        return this;
+    }
+
     public Matrix4 scale(Vector3 scale) {
         new Matrix4f().set(r).scale(scale.x, scale.y, scale.z).get(r);
         return this;

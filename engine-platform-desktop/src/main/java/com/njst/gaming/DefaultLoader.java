@@ -164,7 +164,7 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       skeleton.root_bone.update();
 
-      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f);
+      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel_invert_xz(data.rootDirectory + "/a.fbx", bonesList, 1, 100.0f);
       exportWeightedGeometry(npcGeometry);
       exportBoneNames(bonesList);
       exportBones(bonesList);

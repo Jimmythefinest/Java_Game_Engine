@@ -4,7 +4,7 @@ import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Bone;
 import com.njst.gaming.Camera;
-import com.njst.gaming.Geometries.SphereGeometry;
+import com.njst.gaming.Geometries.*;
 import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
@@ -13,7 +13,7 @@ import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
-import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.objects.*;
 import com.njst.gaming.objects.Weighted_GameObject;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
@@ -58,6 +58,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private float cameraPitch = -0.18f;
     private ArrayList<Bone> playerBones = new ArrayList<>();
     private Bone rootBone;
+    private Bone hipBone;
     private Vector3 rootBasePosition = new Vector3(0f, 0f, 0f);
     private Vector3 rootBaseRotation = new Vector3(0f, 0f, 0f);
     private BufferHandle boneBuffer;
@@ -72,6 +73,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         playerBones.clear();
         activeAnimations.clear();
         rootBone = null;
+        hipBone = null;
         boneBuffer = null;
         playerSkeleton = null;
         playerPosition.set(0f, 0f, 0f);
@@ -100,7 +102,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         ground.ambientlight_multiplier = 1.35f;
         ground.shininess = 3f;
         ground.setPosition(terrainOrigin.x, terrainOrigin.y, terrainOrigin.z);
-        scene.addGameObject(ground);
+       scene.addGameObject(ground);
 
         try {
             loadPlayer(scene, graphicsDevice);
@@ -135,6 +137,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         updateCamera(scene.renderer.camera);
         log("load complete playerPosition=" + playerPosition.x + "," + playerPosition.y + "," + playerPosition.z);
+        // if(rootBone.parent!=null){
+        	// log("Root Bone has parent");
+        // }
     }
 
     private void loadPlayer(Scene scene, GraphicsDevice graphicsDevice) {
@@ -179,7 +184,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         if (rootBone == null) {
             throw new IllegalStateException(LOG_PREFIX + "No root bone found in " + BONE_FILE);
         }
+        hipBone = findBone(playerBones, "hips");
+        if (hipBone == null) {
+            throw new IllegalStateException(LOG_PREFIX + "No hip bone found in " + BONE_FILE);
+        }
         log("root bone=" + rootBone.name);
+        log("hip bone=" + hipBone.name);
         rootBasePosition = rootBone.position_to_parent.clone();
         rootBaseRotation = rootBone.rotation.clone();
         rootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
@@ -234,10 +244,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         Weighted_GameObject meshObject = new Weighted_GameObject(weightedGeometry, texture);
         meshObject.name = "BattleArenaPlayerMesh";
+        Bone_object boneobj=new Bone_object(new CubeGeometry(),texture);
+        boneobj.bone=rootBone;
+        boneobj.scale=new float[]{0.1f,0.1f,0.1f};
+        // scene.addGameObject(boneobj);
         meshObject.shininess = 18f;
         meshObject.ambientlight_multiplier = 1.2f;
         meshObject.setScale(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE);
-        scene.addGameObject(meshObject);
+       scene.addGameObject(meshObject);
         playerMeshes.add(meshObject);
         log("spawned weighted mesh name=" + meshObject.name + " scale=" + PLAYER_SCALE);
     }
@@ -250,18 +264,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 rootBasePosition.x + playerPosition.x,
                 rootBasePosition.y + playerPosition.y,
                 rootBasePosition.z + playerPosition.z);
-        rootBone.rotation.set(
-                rootBaseRotation.x,
-                rootBaseRotation.y + playerHeadingDegrees,
-                rootBaseRotation.z);
         rootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
         rootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
         rootBone.update();
+        rootBone.rotate(new Vector3());
         updateBoneBuffer(null);
-        for (GameObject mesh : playerMeshes) {
-            mesh.setPosition(0f, 0f, 0f);
-            mesh.setRotation(0f, 0f, 0f);
-        }
+        // for (GameObject mesh : playerMeshes) {
+            // mesh.setPosition(0f, 0f, 0f);
+            // mesh.setRotation(0f, 0f, 0f);
+        // }
     }
 
     private void updateBoneBuffer(GraphicsDevice graphicsDevice) {
@@ -365,7 +376,17 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 return bone;
             }
         }
-        return bones.isEmpty() ? null : bones.get(0);
+        return  bones.get(0);
+    }
+
+    private Bone findBone(ArrayList<Bone> bones, String nameFragment) {
+        String needle = nameFragment.toLowerCase();
+        for (Bone bone : bones) {
+            if (bone.name != null && bone.name.toLowerCase().contains(needle)) {
+                return bone;
+            }
+        }
+        return null;
     }
 
     private List<String> parseJsonArray(String json) {
@@ -434,7 +455,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         forwardInput = clamp(forwardInput);
         turnInput = clamp(turnInput);
-        playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * sceneSpeed;
+        float turnAmount = turnInput * TURN_SPEED_DEGREES * sceneSpeed;
+        playerHeadingDegrees += turnAmount;
+        if (hipBone != null && Math.abs(turnAmount) > 0.0001f) {
+            rootBone.setRotation(new Vector3(0f, playerHeadingDegrees, 0f));
+            hipBone.rotate(new Vector3());
+        }
 
         float moveAmount = forwardInput * MOVE_SPEED * sceneSpeed;
         if (Math.abs(moveAmount) > 0.0001f) {

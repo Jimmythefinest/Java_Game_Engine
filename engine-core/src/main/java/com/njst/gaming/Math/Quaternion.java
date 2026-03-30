@@ -1,6 +1,9 @@
 package com.njst.gaming.Math;
 
-public class Quaternion {
+import java.io.Serializable;
+
+public class Quaternion implements Serializable {
+    private static final long serialVersionUID = 1L;
     public float x, y, z, w;
 
     public Quaternion() {

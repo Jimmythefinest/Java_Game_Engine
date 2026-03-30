@@ -45,7 +45,7 @@ public class Bone_object extends GameObject {
         modelMatrix.rotate((float) (bone.get_globalrotation().y), new Vector3(0, 1, 0)); // Rotate around the Y-axis
         modelMatrix.rotate((float) (bone.get_globalrotation().z), new Vector3(0, 0, 1)); // Rotate around the Y-axis
        
-        modelMatrix.scale(bone.scale); // Scale the square (1.0 means no scaling)
+        modelMatrix.scale(new Vector3(scale)); // Scale the square (1.0 means no scaling)
         shaderProgram.setUniformMatrix4fv("uMMatrix", modelMatrix);
         
        // bind_array(GL_ELEMENT_ARRAY_BUFFER, vboIds[4]); // Bind the VBO for indices

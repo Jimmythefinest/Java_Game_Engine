@@ -1,11 +1,12 @@
 package com.njst.gaming;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.joml.Math;
-
 import com.njst.gaming.Math.Matrix4;
+import com.njst.gaming.Math.Quaternion;
 import com.njst.gaming.Math.Vector3;
 
 public class Bone implements Serializable {
@@ -21,106 +22,96 @@ public Vector3 position_to_parent = new Vector3();
     Matrix4 inverse_bindpose=new Matrix4();
     Vector3 bind_pos,bind_rot;
     public Vector3 parentposition = new Vector3(), parent_rotation = new Vector3();
+    private Quaternion parent_orientation = new Quaternion();
+    private Quaternion global_orientation = new Quaternion();
 
     public Bone() {
         Children = new ArrayList<>();
     }
 
     public void calculate_bind_matrix(){
+        ensureQuaternionState();
         Matrix4 modelMatrix=new Matrix4().identity();
-        //bone.global_position.mul(x*0.03f);
-        modelMatrix.translate(this.get_globalposition().x, this.get_globalposition().y, this.get_globalposition().z); // Translate to the desired position
-        modelMatrix.rotate((float) (this.get_globalrotation().x), new Vector3(1, 0, 0)); // Rotate around the Y-axis
-        modelMatrix.rotate((float) (this.get_globalrotation().y), new Vector3(0, 1, 0)); // Rotate around the Y-axis
-        modelMatrix.rotate((float) (this.get_globalrotation().z), new Vector3(0, 0, 1)); // Rotate around the Y-axis
-        modelMatrix.scale(scale); // Scale the square (1.0 means no scaling)
+        Vector3 bindPosition = get_globalposition();
+        Quaternion bindOrientation = getGlobalQuaternion();
+        modelMatrix.translate(bindPosition);
+        modelMatrix.rotate(bindOrientation);
+        modelMatrix.scale(scale);
 
-        bind_pos=get_globalposition();
-        bind_rot=get_globalrotation();
+        bind_pos=bindPosition;
+        bind_rot=new Vector3(bindOrientation.toEuler());
         inverse_bindpose=modelMatrix.invert();
     }
     public Matrix4 getAnimationMatrix(){
+        ensureQuaternionState();
         Matrix4 modelMatrix=new Matrix4().identity();
-        //bone.global_position.mul(x*0.03f);
         Vector3 anim_pos=get_globalposition();
-        Vector3 anim_rot=get_globalrotation();
-        modelMatrix.translate(anim_pos.x, anim_pos.y, anim_pos.z); // Translate to the desired position
-        modelMatrix.rotate((float) (anim_rot.x), new Vector3(1, 0, 0)); // Rotate around the Y-axis
-        modelMatrix.rotate((float) (anim_rot.y), new Vector3(0, 1, 0)); // Rotate around the Y-axis
-        modelMatrix.rotate((float) (anim_rot.z), new Vector3(0, 0, 1)); // Rotate around the Y-axis
-        modelMatrix.scale(scale); // Scale the square (1.0 means no scaling)
+        Quaternion animOrientation = getGlobalQuaternion();
+        modelMatrix.translate(anim_pos);
+        modelMatrix.rotate(animOrientation);
+        modelMatrix.scale(scale);
         
         return modelMatrix.multiply(inverse_bindpose);
         
     }
     public void translate(Vector3 r) {
-        global_position.add(r);
         position_to_parent.add(r);
-        for (Bone child : Children) {
-            child.global_position.add(r);
-            child.set_Parent_position(global_position);
-        }
+        update();
     }
 
     public void set_Parent_position(Vector3 pos) {
-        parentposition = pos;
+        parentposition = pos.clone();
     }
 
     public void set_Parent_rotation(Vector3 rot) {
-        parent_rotation = rot;
+        parent_rotation = rot.clone();
+        parent_orientation = Quaternion.fromEuler(rot.x, rot.y, rot.z).normalize();
     }
 
     public void rotate(Vector3 rotation1) {
         this.rotation.add(rotation1);
-        for (Bone bone : Children) {
-            bone.global_position = bone.position_to_parent.clone()
-                .rotateZ((float) Math.toRadians(get_globalrotation().z))
-                .rotateY((float) Math.toRadians(get_globalrotation().y))
-                .rotateX((float) Math.toRadians(get_globalrotation().x))
-                .add(global_position);
-            bone.set_Parent_rotation(get_globalrotation());
-            bone.set_Parent_position(get_globalposition());
-            bone.rotate(new Vector3());
-        }
+        update();
     }
 
     public void update() {
-        this.rotate(new Vector3());
+        ensureQuaternionState();
+        global_orientation = getParentQuaternion().multiply(getLocalQuaternion()).normalize();
+        global_rotation.set(new Vector3(global_orientation.toEuler()));
+        global_position.set(get_globalposition());
+        for (Bone child : Children) {
+            child.parent_orientation = new Quaternion(
+                global_orientation.x,
+                global_orientation.y,
+                global_orientation.z,
+                global_orientation.w
+            );
+            child.parent_rotation.set(global_rotation);
+            child.set_Parent_position(global_position);
+            child.update();
+        }
     }
 
     public Vector3 get_globalrotation() {
-        return parent_rotation.clone().add(rotation);
+        ensureQuaternionState();
+        return new Vector3(global_orientation.toEuler());
     }
 
     public Vector3 get_globalposition() {
-        return position_to_parent.clone()
-        .rotateZ((float) Math.toRadians(parent_rotation.z))
-        .rotateY((float) Math.toRadians(parent_rotation.y))
-        .rotateX((float) Math.toRadians(parent_rotation.x)).add(parentposition);
+        ensureQuaternionState();
+        Quaternion parentQuaternion = getParentQuaternion();
+        return parentQuaternion.rotateVector(position_to_parent).add(parentposition);
     }
 
     // Set the local position of the bone
     public void setPosition(Vector3 position) {
-        this.global_position.set(position);
-        // Update the position relative to the parent
-        if (parentposition != null) {
-            this.position_to_parent = global_position.clone().sub(parentposition, new Vector3());
-        }
-        // Update the positions of child bones
-        for (Bone child : Children) {
-            child.set_Parent_position(global_position);
-            child.setPosition(child.position_to_parent.clone());
-        }
+        position_to_parent.set(position);
+        update();
     }
 
     // Set the local rotation of the bone
     public void setRotation(Vector3 rotation) {
         this.rotation.set(rotation);
-        // Update the global rotation based on the parent's rotation
-        for (Bone bone : Children) {
-            bone.set_Parent_rotation(get_globalrotation());
-            bone.rotate(new Vector3()); // Update child bone rotation
-        }
+        update();
     }
     public String toString(){
         String c="";
@@ -134,5 +125,39 @@ public Vector3 position_to_parent = new Vector3();
         ", position_to_parent:" + position_to_parent +
         ", Children:[" + c +
         "]}";
+    }
+
+    private Quaternion getLocalQuaternion() {
+        return Quaternion.fromEuler(rotation.x, rotation.y, rotation.z).normalize();
+    }
+
+    private Quaternion getParentQuaternion() {
+        ensureQuaternionState();
+        return new Quaternion(
+            parent_orientation.x,
+            parent_orientation.y,
+            parent_orientation.z,
+            parent_orientation.w
+        ).normalize();
+    }
+
+    private Quaternion getGlobalQuaternion() {
+        ensureQuaternionState();
+        return getParentQuaternion().multiply(getLocalQuaternion()).normalize();
+    }
+
+    private void ensureQuaternionState() {
+        if (parent_orientation == null) {
+            parent_orientation = Quaternion.fromEuler(parent_rotation.x, parent_rotation.y, parent_rotation.z)
+                .normalize();
+        }
+        if (global_orientation == null) {
+            global_orientation = parent_orientation.multiply(getLocalQuaternion()).normalize();
+        }
+    }
+
+    private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+        inputStream.defaultReadObject();
+        ensureQuaternionState();
     }
 }
