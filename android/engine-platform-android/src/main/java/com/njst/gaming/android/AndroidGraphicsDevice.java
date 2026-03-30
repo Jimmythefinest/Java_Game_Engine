@@ -70,6 +70,16 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public String loadTextResource(String filePath) {
+        return AndroidAssetLoader.readText(assetManager, filePath);
+    }
+
+    @Override
+    public byte[] loadBinaryResource(String filePath) {
+        return AndroidAssetLoader.readBytes(assetManager, filePath);
+    }
+
+    @Override
     public int loadTexture(String texturePath) {
         if (texturePath == null || texturePath.isEmpty() || texturePath.startsWith("generated:")) {
             Log.i(TAG, "Using generated white texture for request: " + texturePath);
@@ -238,6 +248,13 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
     public void setVertexAttribPointer(int bufferId, int location, int size) {
         GLES31.glBindBuffer(GLES31.GL_ARRAY_BUFFER, bufferId);
         GLES31.glVertexAttribPointer(location, size, GLES31.GL_FLOAT, false, 0, 0);
+        GLES31.glEnableVertexAttribArray(location);
+    }
+
+    @Override
+    public void setVertexAttribIPointer(int bufferId, int location, int size) {
+        GLES31.glBindBuffer(GLES31.GL_ARRAY_BUFFER, bufferId);
+        GLES30.glVertexAttribIPointer(location, size, GLES31.GL_INT, 0, 0);
         GLES31.glEnableVertexAttribArray(location);
     }
 

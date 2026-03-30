@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 final class AndroidAssetLoader {
@@ -23,6 +24,26 @@ final class AndroidAssetLoader {
             normalized = normalized.substring("resources/".length());
         }
         return normalized;
+    }
+
+
+    static byte[] readBytes(AssetManager assetManager, String filePath) {
+        String normalized = normalizeResourcePath(filePath);
+        Log.i(TAG, "Reading binary asset: " + normalized);
+        try (InputStream inputStream = assetManager.open(normalized);
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, read);
+            }
+            byte[] value = outputStream.toByteArray();
+            Log.i(TAG, "Loaded binary asset: " + normalized + " (" + value.length + " bytes)");
+            return value;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load Android binary asset: " + normalized, e);
+            throw new IllegalStateException("Unable to load Android binary asset: " + normalized, e);
+        }
     }
 
     static String readText(AssetManager assetManager, String filePath) {

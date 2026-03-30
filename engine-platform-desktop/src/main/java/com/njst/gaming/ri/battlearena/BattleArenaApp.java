@@ -2,6 +2,8 @@ package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.Engine;
 import com.njst.gaming.input.InputBindings;
+import com.njst.gaming.*;
+
 import com.njst.gaming.input.MouseButtons;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
@@ -20,8 +22,8 @@ public class BattleArenaApp extends Engine {
     protected void configureInputBindings(InputBindings bindings) {
         bindings.bindKey(GLFW_KEY_W, BattleArenaActions.FORWARD);
         bindings.bindKey(GLFW_KEY_S, BattleArenaActions.BACKWARD);
-        bindings.bindKey(GLFW_KEY_A, BattleArenaActions.TURN_LEFT);
-        bindings.bindKey(GLFW_KEY_D, BattleArenaActions.ROTATE);
+        bindings.bindKey(GLFW_KEY_A, BattleArenaActions.ROTATE);
+        bindings.bindKey(GLFW_KEY_D, BattleArenaActions.TURN_LEFT );
         bindings.bindMouseButton(MouseButtons.LEFT, BattleArenaActions.LOOK);
         bindings.bindMousePointer(BattleArenaActions.LOOK_POINTER);
     }

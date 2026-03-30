@@ -1,43 +1,43 @@
 #version 450 core
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec3 color;
-layout(location = 2) in vec2 texture_coordinate;    // Vertex color
-layout (location = 3) in vec3 weights;
-layout (location = 4) in ivec4 bones;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texture_coordinate;
+layout(location = 3) in vec4 weights;
+layout(location = 4) in ivec4 bones;
 
-out vec3 fragColor; // Output color to fragment shader
-out vec3 fragpos;
-out vec3 frag_Normal;
-out vec2 tt_coord; 
+out vec3 fragPosition;
+out vec3 fragNormal;
+out vec2 fragTexCoord;
 
-
-layout(std430, binding = 0) buffer MySSBO {
-    mat4 perspective; // Shader Storage Buffer Object (SSBO)
+layout(std430, binding = 0) buffer CameraData {
+    mat4 perspective;
     mat4 view;
     vec3 eyepos;
     vec3 lightpos;
+};
 
+layout(std430, binding = 2) buffer BoneData {
+    mat4 bone[];
 };
-layout(std430, binding = 2) buffer boneSSBO {
-    mat4 bone[]; // Shader Storage Buffer Object (SSBO)
-};
+
 uniform mat4 uMMatrix;
-uniform mat4 uVMatrix;
-uniform mat4 uPMatrix;
-void main()
-{
-    
-    vec4 final_pos=vec4(0,0,0,0);
-    vec3 normal=vec3(0,0,0);
-    for(int i=0;i<4;i++){
-        if(weights[i]!=0){
-        final_pos=final_pos+bone[bones[i]]*vec4(position, 1.0)*weights[i];
-        normal+=mat3(bone[bones.x])*color;
+
+void main() {
+    vec4 skinnedPosition = vec4(0.0);
+    vec3 skinnedNormal = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+        float weight = weights[i];
+        if (weight <= 0.0) {
+            continue;
         }
+        mat4 boneMatrix = bone[bones[i]];
+        skinnedPosition += (boneMatrix * vec4(position, 1.0)) * weight;
+        skinnedNormal += (mat3(boneMatrix) * normal) * weight;
     }
-    gl_Position = perspective* view * uMMatrix * final_pos;
-    fragColor = color;
-    fragpos=vec3(uMMatrix*vec4(position,1.0));
-    tt_coord=texture_coordinate;
-    frag_Normal=vec3(mat3(uMMatrix)* normal);
+
+    vec4 worldPosition = uMMatrix * skinnedPosition;
+    gl_Position = perspective * view * worldPosition;
+    fragPosition = worldPosition.xyz;
+    fragNormal = normalize(mat3(uMMatrix) * skinnedNormal);
+    fragTexCoord = texture_coordinate;
 }

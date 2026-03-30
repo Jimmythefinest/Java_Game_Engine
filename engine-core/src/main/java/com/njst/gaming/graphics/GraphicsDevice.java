@@ -10,6 +10,10 @@ public interface GraphicsDevice {
 
     String loadShaderSource(String filePath);
 
+    String loadTextResource(String filePath);
+
+    byte[] loadBinaryResource(String filePath);
+
     int loadTexture(String texturePath);
 
     int createTextureRGBA(int width, int height, byte[] rgbaPixels);
@@ -31,6 +35,8 @@ public interface GraphicsDevice {
     void uploadElementArrayBufferInt(int bufferId, int[] data);
 
     void setVertexAttribPointer(int bufferId, int location, int size);
+
+    void setVertexAttribIPointer(int bufferId, int location, int size);
 
     void updateArrayBufferFloat(int bufferId, float[] data);
 

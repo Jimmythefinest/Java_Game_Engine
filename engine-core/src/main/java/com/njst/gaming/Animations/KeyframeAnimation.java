@@ -4,12 +4,14 @@ import com.njst.gaming.Bone;
 import com.njst.gaming.Math.Quaternion;
 import com.njst.gaming.Math.Vector3;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 
 
-public class KeyframeAnimation extends Animation{
+public class KeyframeAnimation extends Animation implements Serializable {
+    private static final long serialVersionUID = 2L;
     public List<Keyframe> keyframes; // List of keyframes for the animation
     // private float duration; // Total duration of the animation
     // private boolean active; // Is the animation currently active?
@@ -91,7 +93,8 @@ public class KeyframeAnimation extends Animation{
     public boolean isActive() {
         return active;
     }
-    public static class Keyframe {
+    public static class Keyframe implements Serializable {
+    private static final long serialVersionUID = 3L;
     public float time; // Time at which this keyframe occurs
     public Vector3 position; // Position of the bone
     public Vector3 rotation; // Rotation of the bone

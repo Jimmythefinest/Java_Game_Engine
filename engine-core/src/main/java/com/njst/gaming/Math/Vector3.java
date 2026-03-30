@@ -1,9 +1,12 @@
 package com.njst.gaming.Math;
 
+import java.io.Serializable;
+
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-public class Vector3 {
+public class Vector3 implements Serializable {
+    private static final long serialVersionUID = 1L;
     public float x,y,z;
     public Vector3(float x, float y, float z) {
         this.x = x;

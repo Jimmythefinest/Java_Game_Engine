@@ -1,5 +1,6 @@
 package com.njst.gaming;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.joml.Math;
@@ -7,7 +8,9 @@ import org.joml.Math;
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 
-public class Bone { 
+public class Bone implements Serializable {
+    private static final long serialVersionUID = 1L;
+
    public ArrayList<Bone> Children;
 public String name="Default_Bone_Name";
 public Vector3 position_to_parent = new Vector3();

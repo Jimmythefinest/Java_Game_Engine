@@ -1,12 +1,14 @@
 package com.njst.gaming.Math;
 
+import java.io.Serializable;
 import java.nio.*;
 
 import org.joml.*;
 
 import com.njst.gaming.Utils.Utils;
 
-public class Matrix4 {
+public class Matrix4 implements Serializable {
+    private static final long serialVersionUID = 1L;
     public float[] r;
 
     public Matrix4() {

@@ -10,6 +10,9 @@ def lwjglVersion = '3.3.6'
 def packagedAppName = 'NJST-3D-Tetris'
 def packagedVendor = 'NJST'
 def packagedMainClass = 'com.rebuild.Tetris3D'
+def defeatedSkinnedOutput = 'src/main/resources/skinned/defeated.model.json'
+
+def androidSkinnedOutput = '../android/engine-platform-android/src/main/assets/skinned/defeated.model.json'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -63,6 +66,28 @@ tasks.register('runBattleground', JavaExec) {
     description = 'Run the battle arena skybox demo'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
+}
+
+tasks.register('exportDefeatedSkinnedAsset', JavaExec) {
+    group = 'build'
+    description = 'Bake Defeated.fbx into the internal skinned model asset format'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.assets.skinned.ExportDefeatedSkinnedAsset'
+    args(
+            project.file('src/main/resources/Defeated.fbx').absolutePath,
+            'j.jpg',
+            project.file(defeatedSkinnedOutput).absolutePath,
+            '100.0'
+    )
+}
+
+tasks.register('syncDefeatedSkinnedAssetToAndroid', Copy) {
+    group = 'build'
+    description = 'Copy the baked skinned model asset into Android assets'
+    dependsOn tasks.named('exportDefeatedSkinnedAsset')
+    from(project.file(defeatedSkinnedOutput))
+    into(project.file('../android/engine-platform-android/src/main/assets/skinned'))
+    rename { 'defeated.model.json' }
 }
 
 tasks.register('stageJpackageInput', Sync) {

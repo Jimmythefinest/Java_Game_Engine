@@ -12,7 +12,12 @@ import com.njst.gaming.objects.Weighted_GameObject;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -21,6 +26,83 @@ import org.lwjgl.opengl.GL15;
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
+  private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh_1.ser";
+  private static final String EXPORTED_BONE_NAMES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bone_names.json";
+  private static final String EXPORTED_BONES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bones.ser";
+  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/defeated_animations.ser";
+
+  private void exportWeightedGeometry(WeightedGeometry geometry) throws Exception {
+    File exportFile = new File(EXPORTED_WEIGHTED_GEOMETRY_PATH);
+    ensureParentDirectory(exportFile);
+    try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(exportFile))) {
+      outputStream.writeObject(geometry);
+    }
+  }
+
+  private void exportBoneNames(ArrayList<Bone> bonesList) throws Exception {
+    File exportFile = new File(EXPORTED_BONE_NAMES_PATH);
+    ensureParentDirectory(exportFile);
+    List<String> boneNames = new ArrayList<>();
+    for (Bone bone : bonesList) {
+      boneNames.add(bone.name);
+    }
+    try (FileWriter writer = new FileWriter(exportFile)) {
+      writer.write(toJsonArray(boneNames));
+    }
+  }
+
+  private void exportBones(ArrayList<Bone> bonesList) throws Exception {
+    File exportFile = new File(EXPORTED_BONES_PATH);
+    ensureParentDirectory(exportFile);
+    try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(exportFile))) {
+      outputStream.writeObject(bonesList);
+    }
+  }
+
+  private void exportAnimations(Map<String, KeyframeAnimation> animations) throws Exception {
+    File exportFile = new File(EXPORTED_ANIMATIONS_PATH);
+    ensureParentDirectory(exportFile);
+    try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(exportFile))) {
+      outputStream.writeObject(new HashMap<>(animations));
+    }
+  }
+
+  private void ensureParentDirectory(File file) {
+    File parent = file.getParentFile();
+    if (parent != null && !parent.exists()) {
+      parent.mkdirs();
+    }
+  }
+
+  private String toJsonArray(List<String> values) {
+    StringBuilder json = new StringBuilder();
+    json.append("[\n");
+    for (int i = 0; i < values.size(); i++) {
+      json.append("  \"")
+          .append(escapeJson(values.get(i)))
+          .append("\"");
+      if (i + 1 < values.size()) {
+        json.append(',');
+      }
+      json.append('\n');
+    }
+    json.append(']');
+    return json.toString();
+  }
+
+  private String escapeJson(String value) {
+    if (value == null) {
+      return "";
+    }
+    String backslash = String.valueOf((char) 92);
+    String quote = String.valueOf((char) 34);
+    return value
+        .replace(backslash, backslash + backslash)
+        .replace(quote, backslash + quote)
+        .replace(String.valueOf((char) 10), backslash + "n")
+        .replace(String.valueOf((char) 13), backslash + "r")
+        .replace(String.valueOf((char) 9), backslash + "t");
+  }
 
   public ArrayList<Animation> anims;
   public Bone[] bones;
@@ -50,6 +132,7 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       Map<String, KeyframeAnimation> fbxanims = FBXAnimationLoader
           .extractAnimation(data.rootDirectory + "/Defeated.fbx", 3, 100);
+      exportAnimations(fbxanims);
 
       Skeleton skeleton = new Skeleton(
           FBXBoneLoader.loadBones(data.rootDirectory + "/Defeated.fbx", new HashMap<String, KeyframeAnimation>(), 100));
@@ -82,6 +165,9 @@ public class DefaultLoader implements Scene.SceneLoader {
       skeleton.root_bone.update();
 
       WeightedGeometry npcGeometry = FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f);
+      exportWeightedGeometry(npcGeometry);
+      exportBoneNames(bonesList);
+      exportBones(bonesList);
       Random rnd = new Random();
       int side = (int) Math.ceil(Math.sqrt(NPC_COUNT));
 

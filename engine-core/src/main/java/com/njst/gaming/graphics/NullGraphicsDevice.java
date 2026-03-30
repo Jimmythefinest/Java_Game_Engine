@@ -24,6 +24,16 @@ public class NullGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public String loadTextResource(String filePath) {
+        throw unsupported();
+    }
+
+    @Override
+    public byte[] loadBinaryResource(String filePath) {
+        throw unsupported();
+    }
+
+    @Override
     public int loadTexture(String texturePath) {
         throw unsupported();
     }
@@ -40,7 +50,6 @@ public class NullGraphicsDevice implements GraphicsDevice {
 
     @Override
     public void releaseTexture(int textureId) {
-        // no-op
     }
 
     @Override
@@ -75,6 +84,11 @@ public class NullGraphicsDevice implements GraphicsDevice {
 
     @Override
     public void setVertexAttribPointer(int bufferId, int location, int size) {
+        throw unsupported();
+    }
+
+    @Override
+    public void setVertexAttribIPointer(int bufferId, int location, int size) {
         throw unsupported();
     }
 

@@ -3,6 +3,7 @@ package com.njst.gaming.android;
 import android.content.Context;
 import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Scene;
@@ -14,6 +15,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
+    public static String TAG="android_renderer_engine";
     public interface StatsListener {
         void onStatsUpdated(int fps, Renderer.ProfilerSnapshot snapshot);
     }
@@ -33,21 +35,30 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES31.glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
+        Log.i(TAG, "onSurfaceCreated: initialising GL context");
+        try {
+            GLES31.glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
 
-        AndroidGraphicsDevice graphicsDevice = new AndroidGraphicsDevice(context);
-        renderer = new Renderer(graphicsDevice);
+            AndroidGraphicsDevice graphicsDevice = new AndroidGraphicsDevice(context);
+            renderer = new Renderer(graphicsDevice);
 
-        Scene scene = new Scene();
-        scene.renderer = renderer;
-        renderer.scene = scene;
-        gameConfig.configureScene(scene);
-        applyPendingInputs(scene);
+            Scene scene = new Scene();
+            scene.renderer = renderer;
+            renderer.scene = scene;
+            Log.i(TAG, "onSurfaceCreated: calling configureScene");
+            gameConfig.configureScene(scene);
+            Log.i(TAG, "onSurfaceCreated: configureScene done, applying pending inputs");
+            applyPendingInputs(scene);
 
-        fpsWindowStartMillis = System.currentTimeMillis();
-        framesThisWindow = 0;
-        notifyStats(0);
-        renderer.onSurfaceCreated();
+            fpsWindowStartMillis = System.currentTimeMillis();
+            framesThisWindow = 0;
+            notifyStats(0);
+            renderer.onSurfaceCreated();
+            Log.i(TAG, "onSurfaceCreated: complete");
+        } catch (Throwable t) {
+            Log.e(TAG, "onSurfaceCreated: FATAL error during scene initialisation", t);
+            throw t;
+        }
     }
 
     @Override

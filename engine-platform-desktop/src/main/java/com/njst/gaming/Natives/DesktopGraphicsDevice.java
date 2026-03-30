@@ -13,11 +13,11 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import com.njst.gaming.Renderer;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ImposterBakeResult;
 import com.njst.gaming.graphics.ShaderHandle;
-import com.njst.gaming.Renderer;
 import com.njst.gaming.objects.GameObject;
 
 public class DesktopGraphicsDevice implements GraphicsDevice {
@@ -36,6 +36,16 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public String loadShaderSource(String filePath) {
         return ShaderProgram.loadShader(filePath);
+    }
+
+    @Override
+    public String loadTextResource(String filePath) {
+        return ShaderProgram.loadTextResource(filePath);
+    }
+
+    @Override
+    public byte[] loadBinaryResource(String filePath) {
+        return ShaderProgram.loadBinaryResource(filePath);
     }
 
     @Override
@@ -97,6 +107,13 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     public void setVertexAttribPointer(int bufferId, int location, int size) {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
         GL20.glVertexAttribPointer(location, size, GL_FLOAT, false, 0, 0);
+        GL20.glEnableVertexAttribArray(location);
+    }
+
+    @Override
+    public void setVertexAttribIPointer(int bufferId, int location, int size) {
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
+        GL30.glVertexAttribIPointer(location, size, GL_UNSIGNED_INT, 0, 0);
         GL20.glEnableVertexAttribArray(location);
     }
 

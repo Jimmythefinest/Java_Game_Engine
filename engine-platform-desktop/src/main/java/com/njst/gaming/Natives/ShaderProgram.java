@@ -1,6 +1,7 @@
 package com.njst.gaming.Natives;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
@@ -13,12 +14,32 @@ import java.nio.file.Paths;
 
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.stb.STBImage;
+
 import com.njst.gaming.Math.Matrix4;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Utils.Utils;
 import com.njst.gaming.graphics.ShaderHandle;
 
-import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL30.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL30.GL_FALSE;
+import static org.lwjgl.opengl.GL30.GL_FLOAT;
+import static org.lwjgl.opengl.GL30.GL_FRAGMENT_SHADER;
+import static org.lwjgl.opengl.GL30.GL_LINEAR;
+import static org.lwjgl.opengl.GL30.GL_LINK_STATUS;
+import static org.lwjgl.opengl.GL30.GL_RGBA;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_WRAP_S;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_WRAP_T;
+import static org.lwjgl.opengl.GL30.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL30.GL_VERTEX_SHADER;
+import static org.lwjgl.opengl.GL30.glActiveTexture;
+import static org.lwjgl.opengl.GL30.glBindTexture;
+import static org.lwjgl.opengl.GL30.glGenTextures;
+import static org.lwjgl.opengl.GL30.glTexImage2D;
+import static org.lwjgl.opengl.GL30.glTexParameteri;
 import static org.lwjgl.system.MemoryStack.stackMallocInt;
 
 public class ShaderProgram implements ShaderHandle {
@@ -26,8 +47,8 @@ public class ShaderProgram implements ShaderHandle {
     public String log = "";
 
     public ShaderProgram(String vertexShaderSource, String fragmentShaderSource) {
-        int vertexShaderId = compileShader(GL30.GL_VERTEX_SHADER, vertexShaderSource);
-        int fragmentShaderId = compileShader(GL30.GL_FRAGMENT_SHADER, fragmentShaderSource);
+        int vertexShaderId = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
+        int fragmentShaderId = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
         programId = GL30.glCreateProgram();
         GL30.glAttachShader(programId, vertexShaderId);
@@ -42,8 +63,8 @@ public class ShaderProgram implements ShaderHandle {
     @Override
     public boolean compiled() {
         int[] status = new int[2];
-        GL30.glGetProgramiv(programId, GL30.GL_LINK_STATUS, status);
-        return status[0] != GL30.GL_FALSE;
+        GL30.glGetProgramiv(programId, GL_LINK_STATUS, status);
+        return status[0] != GL_FALSE;
     }
 
     public String getLog() {
@@ -51,6 +72,10 @@ public class ShaderProgram implements ShaderHandle {
     }
 
     public static String loadShader(String filePath) {
+        return loadTextResource(filePath);
+    }
+
+    public static String loadTextResource(String filePath) {
         String normalized = filePath.replace('\\', '/');
 
         String[] classpathCandidates;
@@ -73,23 +98,19 @@ public class ShaderProgram implements ShaderHandle {
                 if (is == null) {
                     continue;
                 }
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                    StringBuilder shaderSource = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        shaderSource.append(line).append('\n');
-                    }
-                    return shaderSource.toString();
-                }
+                return readAllText(is);
             } catch (IOException e) {
             }
         }
 
+        String resourceRelative = normalized.startsWith("resources/")
+                ? normalized.substring("resources/".length())
+                : normalized;
         Path[] fileCandidates = new Path[] {
                 Paths.get(normalized),
                 Paths.get("src", normalized),
-                Paths.get("src", "resources", normalized.startsWith("resources/") ? normalized.substring("resources/".length()) : normalized),
-                Paths.get("build", "resources", "main", normalized.startsWith("resources/") ? normalized.substring("resources/".length()) : normalized)
+                Paths.get("src", "resources", resourceRelative),
+                Paths.get("build", "resources", "main", resourceRelative)
         };
         for (Path candidate : fileCandidates) {
             if (!Files.exists(candidate)) {
@@ -101,7 +122,68 @@ public class ShaderProgram implements ShaderHandle {
             }
         }
 
-        throw new RuntimeException("Failed to load shader: " + filePath);
+        throw new RuntimeException("Failed to load text resource: " + filePath);
+    }
+
+    public static byte[] loadBinaryResource(String filePath) {
+        String normalized = filePath.replace('\\', '/');
+
+        String[] classpathCandidates;
+        if (normalized.startsWith("/")) {
+            classpathCandidates = new String[] { normalized };
+        } else if (normalized.startsWith("resources/")) {
+            classpathCandidates = new String[] {
+                    "/" + normalized,
+                    "/" + normalized.substring("resources/".length())
+            };
+        } else {
+            classpathCandidates = new String[] {
+                    "/" + normalized,
+                    "/resources/" + normalized
+            };
+        }
+
+        for (String candidate : classpathCandidates) {
+            try (InputStream is = ShaderProgram.class.getResourceAsStream(candidate)) {
+                if (is == null) {
+                    continue;
+                }
+                return is.readAllBytes();
+            } catch (IOException e) {
+            }
+        }
+
+        String resourceRelative = normalized.startsWith("resources/")
+                ? normalized.substring("resources/".length())
+                : normalized;
+        Path[] fileCandidates = new Path[] {
+                Paths.get(normalized),
+                Paths.get("src", normalized),
+                Paths.get("src", "resources", resourceRelative),
+                Paths.get("build", "resources", "main", resourceRelative)
+        };
+        for (Path candidate : fileCandidates) {
+            if (!Files.exists(candidate)) {
+                continue;
+            }
+            try {
+                return Files.readAllBytes(candidate);
+            } catch (IOException e) {
+            }
+        }
+
+        throw new RuntimeException("Failed to load binary resource: " + filePath);
+    }
+
+    private static String readAllText(InputStream inputStream) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            StringBuilder content = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append('\n');
+            }
+            return content.toString();
+        }
     }
 
     private int compileShader(int type, String source) {
@@ -117,7 +199,7 @@ public class ShaderProgram implements ShaderHandle {
         int[] compileStatus = new int[1];
         GL30.glGetShaderiv(shaderId, GL30.GL_COMPILE_STATUS, compileStatus);
 
-        if (compileStatus[0] == GL30.GL_FALSE) {
+        if (compileStatus[0] == GL_FALSE) {
             String errorLog = GL30.glGetShaderInfoLog(shaderId);
             GL30.glDeleteShader(shaderId);
             throw new RuntimeException("Error compiling shader: " + errorLog);
