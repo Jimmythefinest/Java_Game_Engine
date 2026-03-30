@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/arm64-v8a",
+  "command": "/home/nj/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/nj/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dnjst_math_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -O3 -fno-limit-debug-info  -fPIC -o CMakeFiles/njst_math.dir/src/main/cpp/njst_math.cpp.o -c /home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/src/main/cpp/njst_math.cpp",
+  "file": "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/src/main/cpp/njst_math.cpp"
+}
+]

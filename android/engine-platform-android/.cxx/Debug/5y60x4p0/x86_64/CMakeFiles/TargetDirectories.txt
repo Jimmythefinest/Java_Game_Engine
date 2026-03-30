@@ -1,0 +1,3 @@
+/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64/CMakeFiles/njst_math.dir
+/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64/CMakeFiles/edit_cache.dir
+/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64/CMakeFiles/rebuild_cache.dir

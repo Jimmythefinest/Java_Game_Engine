@@ -1,0 +1,38 @@
+{
+  "buildFiles": [
+    "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/nj/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/nj/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "njst_math::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "njst_math",
+      "output": "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/build/intermediates/cxx/Debug/5y60x4p0/obj/x86_64/libnjst_math.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/nj/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/nj/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

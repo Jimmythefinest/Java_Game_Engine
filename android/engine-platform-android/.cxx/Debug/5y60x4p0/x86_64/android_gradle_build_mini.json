@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/nj/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/nj/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/.cxx/Debug/5y60x4p0/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "njst_math::@6890427a1f51a3e7e1df": {
+      "artifactName": "njst_math",
+      "abi": "x86_64",
+      "output": "/home/nj/Documents/Java_projects/NJST_Game_engine/android/engine-platform-android/build/intermediates/cxx/Debug/5y60x4p0/obj/x86_64/libnjst_math.so",
+      "runtimeFiles": []
+    }
+  }
+}
