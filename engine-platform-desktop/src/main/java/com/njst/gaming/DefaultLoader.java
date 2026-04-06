@@ -7,8 +7,11 @@ import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Loaders.FBXAnimationLoader;
 import com.njst.gaming.Loaders.FBXBoneLoader;
 import com.njst.gaming.Natives.*;
+import com.njst.gaming.input.ActionInput;
+import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.Weighted_GameObject;
+import com.njst.gaming.ri.battlearena.BattleArenaActions;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
@@ -26,10 +29,48 @@ import org.lwjgl.opengl.GL15;
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
+  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/Jumping.fbx";
+  private static final float LOOK_SENSITIVITY = 0.0125f;
+  private static final float MIN_PITCH = -1.35f;
+  private static final float MAX_PITCH = 1.35f;
+  private static final float LOOK_DISTANCE = 1.0f;
   private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh_1.ser";
   private static final String EXPORTED_BONE_NAMES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bone_names.json";
   private static final String EXPORTED_BONES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bones.ser";
   private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/defeated_animations.ser";
+  private float cameraYaw;
+  private float cameraPitch;
+
+  private void initializeCameraControls(Camera camera) {
+    Vector3 direction = new Vector3(camera.targetPosition).sub(camera.cameraPosition).normalize();
+    cameraYaw = (float) Math.atan2(direction.x, direction.z);
+    cameraPitch = clamp((float) Math.asin(direction.y), MIN_PITCH, MAX_PITCH);
+    updateCameraLook(camera);
+  }
+
+  private void handlePointerLook(ActionInput actions, PointerState pointer) {
+    if (!actions.button(BattleArenaActions.LOOK).isDown()) {
+      return;
+    }
+    if (pointer.getDeltaX() == 0f && pointer.getDeltaY() == 0f) {
+      return;
+    }
+    cameraYaw += pointer.getDeltaX() * LOOK_SENSITIVITY;
+    cameraPitch = clamp(cameraPitch + (pointer.getDeltaY() * LOOK_SENSITIVITY), MIN_PITCH, MAX_PITCH);
+  }
+
+  private void updateCameraLook(Camera camera) {
+    float horizontalDistance = (float) Math.cos(cameraPitch) * LOOK_DISTANCE;
+    Vector3 direction = new Vector3(
+        (float) Math.sin(cameraYaw) * horizontalDistance,
+        (float) Math.sin(cameraPitch),
+        (float) Math.cos(cameraYaw) * horizontalDistance).normalize();
+    camera.targetPosition.set(camera.cameraPosition).add(direction);
+  }
+
+  private float clamp(float value, float min, float max) {
+    return Math.max(min, Math.min(max, value));
+  }
 
   private void exportWeightedGeometry(WeightedGeometry geometry) throws Exception {
     File exportFile = new File(EXPORTED_WEIGHTED_GEOMETRY_PATH);
@@ -110,6 +151,14 @@ public class DefaultLoader implements Scene.SceneLoader {
   public void load(final Scene scene) {
     try {
       anims = new ArrayList<>();
+      scene.cameraForwardAction = BattleArenaActions.FORWARD;
+      scene.cameraBackwardAction = BattleArenaActions.BACKWARD;
+      scene.cameraLeftAction = BattleArenaActions.TURN_LEFT;
+      scene.cameraRightAction = BattleArenaActions.ROTATE;
+      initializeCameraControls(scene.renderer.camera);
+      ActionInput actions = scene.actionInput;
+      scene.registerPointerInput(BattleArenaActions.LOOK_POINTER,
+          (activeScene, pointer) -> handlePointerLook(actions, pointer));
 
       int skyboxTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
       int groundTex = ShaderProgram.loadTexture(data.rootDirectory + "/WaterPlain0012_1_350.jpg");
@@ -131,7 +180,7 @@ public class DefaultLoader implements Scene.SceneLoader {
       scene.addGameObject(plane);
 
       Map<String, KeyframeAnimation> fbxanims = FBXAnimationLoader
-          .extractAnimation(data.rootDirectory + "/Defeated.fbx", 3, 100);
+          .extractAnimation(ANIMATION_SOURCE_PATH, 0, 100);
       exportAnimations(fbxanims);
 
       Skeleton skeleton = new Skeleton(
@@ -143,14 +192,14 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       ArrayList<Bone> bonesList = skeleton.get_Bone_List();
 
-      for (int[] i = { 0 }; i[0] < 6; i[0]++) {
+      for (int[] i = { 0 }; i[0] < 1; i[0]++) {
         if (scene.MOTION_ANIMATIONS.size() <= i[0]) {
           while (scene.MOTION_ANIMATIONS.size() <= i[0]) {
             scene.MOTION_ANIMATIONS.add(new ArrayList<>());
           }
         }
         Map<String, KeyframeAnimation> temp_anims = FBXAnimationLoader.extractAnimation(
-            data.rootDirectory + "/Defeated.fbx", i[0],
+            ANIMATION_SOURCE_PATH, i[0],
             100);
         Skeletal_Animation skeleton_Animation = new Skeletal_Animation();
         skeleton_Animation.set_Animation_map(temp_anims);
@@ -194,7 +243,9 @@ public class DefaultLoader implements Scene.SceneLoader {
         }
       });
 
-      skeleton.animations.get(1).start();
+      if (!skeleton.animations.isEmpty()) {
+        skeleton.animations.get(0).start();
+      }
       skeleton.root_bone.update();
 
       for (Animation anim : anims) {
@@ -222,6 +273,7 @@ public class DefaultLoader implements Scene.SceneLoader {
           bonesbbo.setData(bone_data, GL15.GL_STATIC_DRAW);
           bonesbbo.bind();
           bonesbbo.bindToShader(2);
+          updateCameraLook(scene.renderer.camera);
         }
       };
       scene.animations.add(update_Bones);

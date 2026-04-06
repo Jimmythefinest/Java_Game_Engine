@@ -5,6 +5,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.lwjgl.BufferUtils;
@@ -334,6 +335,8 @@ public class FBXBoneLoader {
         bone.name = node.mName().dataString();
         if (anims.containsKey(bone.name.replace(":", "").replace("_", ""))) {
             anims.get(bone.name.replace(":", "").replace("_", "")).bone = bone;
+        } else if (anims.containsKey(normalizeAnimationBindingName(bone.name))) {
+            anims.get(normalizeAnimationBindingName(bone.name)).bone = bone;
         } else {
             // System.out.println("failed to map:"+bone.name);
         }
@@ -374,6 +377,19 @@ public class FBXBoneLoader {
         bone.rotate(rot);
 
         return bone;
+    }
+
+    private static String normalizeAnimationBindingName(String name) {
+        if (name == null) {
+            return "";
+        }
+        String normalized = name.toLowerCase(Locale.ROOT);
+        normalized = normalized.replace("$assimpfbx$rotation", "");
+        normalized = normalized.replace("$assimpfbx$translation", "");
+        normalized = normalized.replace("$assimpfbx$scaling", "");
+        normalized = normalized.replaceFirst("^mixamorig\\d+", "mixamorig");
+        normalized = normalized.replaceAll("[^a-z0-9]", "");
+        return normalized;
     }
 
     private static void processVertices(AIMesh aiMesh, List<Float> vertices, float scale, float x, float y, float z) {

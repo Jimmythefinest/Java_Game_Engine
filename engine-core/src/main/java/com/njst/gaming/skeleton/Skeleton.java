@@ -3,6 +3,7 @@ package com.njst.gaming.skeleton;
 import com.njst.gaming.*;
 import com.njst.gaming.Animations.Animation;
 import java.util.*;
+import java.util.Locale;
 
 public class Skeleton{
 	public Bone root_bone;
@@ -44,6 +45,10 @@ public class Skeleton{
   }
   public void mapBone(ArrayList<Bone> bones, Map<String, ? extends Animation> animation_list) {
     try {
+      Map<String, Animation> normalizedAnimations = new HashMap<>();
+      for (Map.Entry<String, ? extends Animation> entry : animation_list.entrySet()) {
+        normalizedAnimations.put(normalizeAnimationBindingName(entry.getKey()), entry.getValue());
+      }
       for (Bone bone : bones) {
         if(animation_list.containsKey(bone.name)){
           animation_list.get(bone.name).bone = bone;
@@ -51,7 +56,10 @@ public class Skeleton{
         if (animation_list.containsKey(bone.name.replace(":", "").replace("_", ""))) {
             animation_list.get(bone.name.replace(":", "").replace("_", "")).bone = bone;
         }
-      
+        Animation normalizedMatch = normalizedAnimations.get(normalizeAnimationBindingName(bone.name));
+        if (normalizedMatch != null) {
+          normalizedMatch.bone = bone;
+        }
       }
     } catch (Exception e) {
       // System.out.println("faileed to map" + bone.name);
@@ -82,5 +90,18 @@ public class Skeleton{
     }
 }
 
+
+  private static String normalizeAnimationBindingName(String name) {
+    if (name == null) {
+      return "";
+    }
+    String normalized = name.toLowerCase(Locale.ROOT);
+    normalized = normalized.replace("$assimpfbx$rotation", "");
+    normalized = normalized.replace("$assimpfbx$translation", "");
+    normalized = normalized.replace("$assimpfbx$scaling", "");
+    normalized = normalized.replaceFirst("^mixamorig\\d+", "mixamorig");
+    normalized = normalized.replaceAll("[^a-z0-9]", "");
+    return normalized;
+  }
 
 }
