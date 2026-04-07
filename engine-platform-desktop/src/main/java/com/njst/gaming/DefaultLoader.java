@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL15;
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
-  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/Jumping.fbx";
+  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/Defeated.fbx";
   private static final float LOOK_SENSITIVITY = 0.0125f;
   private static final float MIN_PITCH = -1.35f;
   private static final float MAX_PITCH = 1.35f;
@@ -180,7 +180,7 @@ public class DefaultLoader implements Scene.SceneLoader {
       scene.addGameObject(plane);
 
       Map<String, KeyframeAnimation> fbxanims = FBXAnimationLoader
-          .extractAnimation(ANIMATION_SOURCE_PATH, 0, 100);
+          .extractAnimation(ANIMATION_SOURCE_PATH, 3, 100);
       exportAnimations(fbxanims);
 
       Skeleton skeleton = new Skeleton(
@@ -192,7 +192,7 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       ArrayList<Bone> bonesList = skeleton.get_Bone_List();
 
-      for (int[] i = { 0 }; i[0] < 1; i[0]++) {
+      for (int[] i = { 0 }; i[0] < 6; i[0]++) {
         if (scene.MOTION_ANIMATIONS.size() <= i[0]) {
           while (scene.MOTION_ANIMATIONS.size() <= i[0]) {
             scene.MOTION_ANIMATIONS.add(new ArrayList<>());
