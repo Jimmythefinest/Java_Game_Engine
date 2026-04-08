@@ -7,6 +7,7 @@ public final class BattleArenaActions {
     public static final String ROTATE = "rotate";
     public static final String RUN = "run";
     public static final String JUMP = "jump";
+    public static final String SNAP = "snap";
     public static final String LOOK = "look";
     public static final String LOOK_POINTER = "look_pointer";
     public static final String MOVE_POINTER = "move_pointer";
