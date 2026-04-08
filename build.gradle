@@ -9,3 +9,9 @@ tasks.register('runDemo') {
     description = 'Run desktop RotatingCube demo'
     dependsOn(':engine-platform-desktop:runDemo')
 }
+
+tasks.register('exportFbxAnimation') {
+    group = 'build'
+    description = 'Export an FBX animation into the serialized .ser animation asset format'
+    dependsOn(':engine-platform-desktop:exportFbxAnimation')
+}

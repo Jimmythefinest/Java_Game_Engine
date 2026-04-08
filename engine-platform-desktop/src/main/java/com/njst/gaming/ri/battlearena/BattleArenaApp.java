@@ -8,6 +8,8 @@ import com.njst.gaming.input.MouseButtons;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
@@ -25,6 +27,8 @@ public class BattleArenaApp extends Engine {
         bindings.bindKey(GLFW_KEY_S, BattleArenaActions.BACKWARD);
         bindings.bindKey(GLFW_KEY_A, BattleArenaActions.ROTATE);
         bindings.bindKey(GLFW_KEY_D, BattleArenaActions.TURN_LEFT );
+        bindings.bindKey(GLFW_KEY_LEFT_SHIFT, BattleArenaActions.RUN);
+        bindings.bindKey(GLFW_KEY_RIGHT_SHIFT, BattleArenaActions.RUN);
         bindings.bindKey(GLFW_KEY_SPACE, BattleArenaActions.JUMP);
         bindings.bindMouseButton(MouseButtons.LEFT, BattleArenaActions.LOOK);
         bindings.bindMousePointer(BattleArenaActions.LOOK_POINTER);

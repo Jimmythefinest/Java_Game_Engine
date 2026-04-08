@@ -33,6 +33,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String MODEL_FILE = "weighted_geometry/defeated_mesh.ser";
     private static final String BONE_FILE = "weighted_geometry/defeated_bones.ser";
     private static final String BONE_NAMES_FILE = "weighted_geometry/defeated_bone_names.json";
+    private static final String WALK_ANIMATIONS_FILE = "weighted_geometry/walking_animation.ser";
+    private static final String WALK_BACKWARD_ANIMATIONS_FILE = "weighted_geometry/walking_backwards_animation.ser";
     private static final String RUN_ANIMATIONS_FILE = "weighted_geometry/run_animation.ser";
     private static final String IDLE_ANIMATIONS_FILE = "weighted_geometry/idle_animation.ser";
     private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
@@ -40,7 +42,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String MODEL_TEXTURE_FILE = "j.jpg";
     private static final int GROUND_SIZE = 96;
     private static final float MOVE_DEADZONE = 0.12f;
-    private static final float MOVE_SPEED = 0.02f;
+    private static final float WALK_SPEED = 0.02f;
+    private static final float RUN_SPEED = 0.035f;
     private static final float TURN_SPEED_DEGREES = 3.2f;
     private static final float CAMERA_DISTANCE = 6.5f;
     private static final float CAMERA_HEIGHT = 1.2f;
@@ -68,6 +71,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private Skeleton playerSkeleton;
     private final ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> walkAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> walkBackwardAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> spawnedIdleAnimations = new ArrayList<>();
@@ -76,6 +81,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final ArrayList<Vector3> spawnedRootBasePositions = new ArrayList<>();
     private ArrayList<KeyframeAnimation> currentAnimationSet = null;
     private boolean playerMoving = false;
+    private boolean playerMovingBackward = false;
+    private boolean playerRunning = false;
     private float jumpHeight = 0f;
     private float verticalVelocity = 0f;
     private boolean jumping = false;
@@ -96,6 +103,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         playerSkeleton = null;
         currentAnimationSet = null;
         playerMoving = false;
+        playerMovingBackward = false;
+        playerRunning = false;
         jumpHeight = 0f;
         verticalVelocity = 0f;
         jumping = false;
@@ -229,16 +238,22 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         // ---- Animations ----
         activeAnimations.clear();
         idleAnimations.clear();
+        walkAnimations.clear();
+        walkBackwardAnimations.clear();
         runAnimations.clear();
         jumpAnimations.clear();
 
         playerSkeleton = new Skeleton(rootBone);
+        loadAnimationSet(graphicsDevice, scene, WALK_ANIMATIONS_FILE, walkAnimations);
+        loadAnimationSet(graphicsDevice, scene, WALK_BACKWARD_ANIMATIONS_FILE, walkBackwardAnimations);
         loadAnimationSet(graphicsDevice, scene, RUN_ANIMATIONS_FILE, runAnimations);
         loadAnimationSet(graphicsDevice, scene, resolveIdleAnimationFile(graphicsDevice), idleAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, JUMP_ANIMATIONS_FILE, jumpAnimations);
         setCurrentAnimationSet(idleAnimations);
         log("wired animation count total=" + activeAnimations.size()
                 + " idle=" + idleAnimations.size()
+                + " walk=" + walkAnimations.size()
+                + " walkBackward=" + walkBackwardAnimations.size()
                 + " run=" + runAnimations.size()
                 + " jump=" + jumpAnimations.size());
 
@@ -478,7 +493,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             }
             return;
         }
-        setCurrentAnimationSet(playerMoving ? runAnimations : idleAnimations);
+        if (!playerMoving) {
+            setCurrentAnimationSet(idleAnimations);
+            return;
+        }
+        if (playerMovingBackward) {
+            setCurrentAnimationSet(walkBackwardAnimations);
+            return;
+        }
+        setCurrentAnimationSet(playerRunning ? runAnimations : walkAnimations);
     }
 
     @SuppressWarnings("unchecked")
@@ -617,10 +640,18 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             hipBone.rotate(new Vector3());
         }
 
-        float moveAmount = forwardInput * MOVE_SPEED * sceneSpeed;
+        boolean wantsToRun = actions.button(BattleArenaActions.RUN).isDown();
+        float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
+        float moveAmount = forwardInput * movementSpeed * sceneSpeed;
         boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
-        if (isMovingNow != playerMoving) {
+        boolean isMovingBackwardNow = moveAmount < -0.0001f;
+        boolean isRunningNow = isMovingNow && wantsToRun;
+        if (isMovingNow != playerMoving
+                || isMovingBackwardNow != playerMovingBackward
+                || isRunningNow != playerRunning) {
             playerMoving = isMovingNow;
+            playerMovingBackward = isMovingBackwardNow;
+            playerRunning = isRunningNow;
             updateMovementAnimationState();
         }
         if (isMovingNow) {

@@ -102,6 +102,44 @@ tasks.register('exportDefeatedSkinnedAsset', JavaExec) {
     )
 }
 
+tasks.register('exportFbxAnimation', JavaExec) {
+    group = 'build'
+    description = 'Export an FBX animation into the serialized .ser animation asset format'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.assets.skinned.ExportFbxAnimationAsset'
+
+    def inputFbx = providers.gradleProperty('fbx')
+    def animationIndex = providers.gradleProperty('animationIndex').orElse('0')
+    def scale = providers.gradleProperty('scale').orElse('100.0')
+    def outputPath = providers.gradleProperty('out')
+
+    doFirst {
+        if (!inputFbx.present) {
+            throw new GradleException("Missing -Pfbx=/absolute/or/relative/path/to/file.fbx")
+        }
+
+        def resolvePath = { String rawPath ->
+            File candidate = new File(rawPath)
+            candidate.isAbsolute() ? candidate : rootProject.file(rawPath)
+        }
+
+        File resolvedInput = resolvePath(inputFbx.get())
+        String defaultName = resolvedInput.name.lastIndexOf('.') >= 0
+                ? resolvedInput.name.substring(0, resolvedInput.name.lastIndexOf('.')).toLowerCase() + "_animation_" + animationIndex.get() + ".ser"
+                : resolvedInput.name.toLowerCase() + "_animation_" + animationIndex.get() + ".ser"
+        File resolvedOutput = outputPath.present
+                ? resolvePath(outputPath.get())
+                : project.file("src/main/resources/weighted_geometry/${defaultName}")
+
+        args(
+                resolvedInput.absolutePath,
+                resolvedOutput.absolutePath,
+                animationIndex.get(),
+                scale.get()
+        )
+    }
+}
+
 tasks.register('syncDefeatedSkinnedAssetToAndroid', Copy) {
     group = 'build'
     description = 'Copy the baked skinned model asset into Android assets'
