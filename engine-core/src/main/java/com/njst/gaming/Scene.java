@@ -5,6 +5,8 @@ import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
+import com.njst.gaming.collision.CollisionWorld;
+import com.njst.gaming.collision.DefaultCollisionWorld;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.input.InputSystem;
@@ -40,6 +42,8 @@ public class Scene {
     public String dat = "";
     public float speed = 1;
     PhysicsEngine physics;
+    private CollisionWorld collisionWorld;
+    private long lastCollisionUpdateNanos;
     RootLogger log;
     public float[][] heightMap;
     private OpenWorldTerrainManager openWorldTerrainManager;
@@ -64,10 +68,22 @@ public class Scene {
         log = new RootLogger(data.rootDirectory + "/Scene.log");
         log.logToRootDirectory("hiisis");
         physics = new PhysicsEngine(this);
+        collisionWorld = new DefaultCollisionWorld();
+        lastCollisionUpdateNanos = 0L;
     }
 
     public Renderer getRenderer() {
         return renderer;
+    }
+
+    public CollisionWorld getCollisionWorld() {
+        return collisionWorld;
+    }
+
+    public void setCollisionWorld(CollisionWorld collisionWorld) {
+        if (collisionWorld != null) {
+            this.collisionWorld = collisionWorld;
+        }
     }
 
     public void onDrawFrame() {
@@ -80,6 +96,23 @@ public class Scene {
         for (Animation i : animations) {
             i.animate();
         }
+        if (collisionWorld != null) {
+            collisionWorld.update(computeCollisionDeltaSeconds());
+        }
+    }
+
+    private float computeCollisionDeltaSeconds() {
+        long now = System.nanoTime();
+        if (lastCollisionUpdateNanos == 0L) {
+            lastCollisionUpdateNanos = now;
+            return 1f / 60f;
+        }
+        float deltaSeconds = (now - lastCollisionUpdateNanos) / 1_000_000_000f;
+        lastCollisionUpdateNanos = now;
+        if (deltaSeconds < 0f) {
+            return 0f;
+        }
+        return Math.min(deltaSeconds, 0.1f);
     }
 
     private void updateCameraMovement() {

@@ -68,6 +68,13 @@ tasks.register('runBattleground', JavaExec) {
     mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
 }
 
+tasks.register('runCollisionDemo', JavaExec) {
+    group = 'application'
+    description = 'Run the collision box runtime demo'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.CollisionBoxDemoApp'
+}
+
 tasks.register('exportDefeatedSkinnedAsset', JavaExec) {
     group = 'build'
     description = 'Bake Defeated.fbx into the internal skinned model asset format'
