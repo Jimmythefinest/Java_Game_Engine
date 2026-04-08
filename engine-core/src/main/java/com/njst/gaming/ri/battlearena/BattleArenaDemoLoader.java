@@ -34,11 +34,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String MODEL_FILE = "weighted_geometry/defeated_mesh_1.ser";
     private static final String BONE_FILE = "weighted_geometry/defeated_bones.ser";
     private static final String BONE_NAMES_FILE = "weighted_geometry/defeated_bone_names.json";
-    private static final String ANIMATIONS_FILE = "weighted_geometry/defeated_animations.ser";
+    private static final String RUN_ANIMATIONS_FILE = "weighted_geometry/walking_animation.ser";
+    private static final String IDLE_ANIMATIONS_FILE = "weighted_geometry/idle_animation.ser";
+    private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
+    private static final String JUMP_ANIMATIONS_FILE = "weighted_geometry/jump_animation.ser";
     private static final String MODEL_TEXTURE_FILE = "j.jpg";
     private static final int GROUND_SIZE = 96;
     private static final float MOVE_DEADZONE = 0.12f;
-    private static final float MOVE_SPEED = 0.14f;
+    private static final float MOVE_SPEED = 0.02f;
     private static final float TURN_SPEED_DEGREES = 3.2f;
     private static final float CAMERA_DISTANCE = 6.5f;
     private static final float CAMERA_HEIGHT = 1.2f;
@@ -47,6 +50,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final float MAX_PITCH = 0.45f;
     private static final float PLAYER_SCALE = 1f;
     private static final float PLAYER_FOCUS_HEIGHT = 1.6f;
+    private static final float JUMP_VELOCITY = 0.22f;
+    private static final float JUMP_GRAVITY = 0.012f;
     private static final String LOG_PREFIX = "[BattleArena] ";
 
     private TerrainGeometry terrainGeometry;
@@ -64,6 +69,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private BufferHandle boneBuffer;
     private Skeleton playerSkeleton;
     private final ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
+    private ArrayList<KeyframeAnimation> currentAnimationSet = null;
+    private boolean playerMoving = false;
+    private float jumpHeight = 0f;
+    private float verticalVelocity = 0f;
+    private boolean jumping = false;
 
     @Override
     public void load(Scene scene) {
@@ -76,6 +89,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         hipBone = null;
         boneBuffer = null;
         playerSkeleton = null;
+        currentAnimationSet = null;
+        playerMoving = false;
+        jumpHeight = 0f;
+        verticalVelocity = 0f;
+        jumping = false;
         playerPosition.set(0f, 0f, 0f);
         playerHeadingDegrees = 0f;
         cameraYaw = 0f;
@@ -201,31 +219,19 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         // ---- Animations ----
         activeAnimations.clear();
-        log("loading animations asset=" + ANIMATIONS_FILE);
-        byte[] animBytes = graphicsDevice.loadBinaryResource(ANIMATIONS_FILE);
-        if (animBytes == null || animBytes.length == 0) {
-            throw new IllegalStateException(LOG_PREFIX + "Asset not found or empty: " + ANIMATIONS_FILE);
-        }
-        Map<String, KeyframeAnimation> animMap = deserializeAnimations(animBytes);
-        log("loaded animation entries=" + animMap.size());
+        idleAnimations.clear();
+        runAnimations.clear();
+        jumpAnimations.clear();
 
-        // Build a Skeleton from the deserialized bone tree so we can map by name
         playerSkeleton = new Skeleton(rootBone);
-        Skeletal_Animation skelAnim = new Skeletal_Animation();
-        skelAnim.set_Animation_map(animMap);
-        playerSkeleton.map(skelAnim);
-
-        // Collect all wired keyframe animations and start them looping
-        for (Map.Entry<String, KeyframeAnimation> entry : animMap.entrySet()) {
-            KeyframeAnimation kfa = entry.getValue();
-            if (kfa.bone != null) {
-                kfa.onfinish = () -> kfa.time = 0f;   // loop
-                kfa.start();
-                activeAnimations.add(kfa);
-                scene.KEY_ANIMATIONS.add(kfa);
-            }
-        }
-        log("wired animation count=" + activeAnimations.size());
+        loadAnimationSet(graphicsDevice, scene, RUN_ANIMATIONS_FILE, runAnimations);
+        loadAnimationSet(graphicsDevice, scene, resolveIdleAnimationFile(graphicsDevice), idleAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, JUMP_ANIMATIONS_FILE, jumpAnimations);
+        setCurrentAnimationSet(idleAnimations);
+        log("wired animation count total=" + activeAnimations.size()
+                + " idle=" + idleAnimations.size()
+                + " run=" + runAnimations.size()
+                + " jump=" + jumpAnimations.size());
 
         // Initial bone update so the bind matrices reflect the rest pose
         rootBone.update();
@@ -315,21 +321,98 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
             Object value = inputStream.readObject();
             if (!(value instanceof Map<?, ?>)) {
-                throw new IllegalStateException("Expected Map in " + ANIMATIONS_FILE + " but found "
+                throw new IllegalStateException("Expected Map in animation resource but found "
                         + (value == null ? "null" : value.getClass().getName()));
             }
             Map<?, ?> raw = (Map<?, ?>) value;
             Map<String, KeyframeAnimation> result = new HashMap<>();
             for (Map.Entry<?, ?> entry : raw.entrySet()) {
                 if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof KeyframeAnimation)) {
-                    throw new IllegalStateException("Unexpected entry type in " + ANIMATIONS_FILE);
+                    throw new IllegalStateException("Unexpected entry type in animation resource");
                 }
                 result.put((String) entry.getKey(), (KeyframeAnimation) entry.getValue());
             }
             return result;
         } catch (IOException | ClassNotFoundException e) {
-            throw new IllegalStateException("Unable to deserialize animations: " + ANIMATIONS_FILE, e);
+            throw new IllegalStateException("Unable to deserialize animations", e);
         }
+    }
+
+    private void loadAnimationSet(GraphicsDevice graphicsDevice,
+                                  Scene scene,
+                                  String animationFile,
+                                  ArrayList<KeyframeAnimation> targetList) {
+        log("loading animations asset=" + animationFile);
+        byte[] animBytes = graphicsDevice.loadBinaryResource(animationFile);
+        if (animBytes == null || animBytes.length == 0) {
+            throw new IllegalStateException(LOG_PREFIX + "Asset not found or empty: " + animationFile);
+        }
+        Map<String, KeyframeAnimation> animMap = deserializeAnimations(animBytes);
+        log("loaded animation entries file=" + animationFile + " count=" + animMap.size());
+
+        Skeletal_Animation skeletalAnimation = new Skeletal_Animation();
+        skeletalAnimation.set_Animation_map(animMap);
+        playerSkeleton.map(skeletalAnimation);
+
+        for (Map.Entry<String, KeyframeAnimation> entry : animMap.entrySet()) {
+            KeyframeAnimation kfa = entry.getValue();
+            if (kfa.bone == null) {
+                continue;
+            }
+            kfa.onfinish = () -> kfa.time = 0f;
+            kfa.stop();
+            kfa.time = 0f;
+            targetList.add(kfa);
+            activeAnimations.add(kfa);
+            scene.KEY_ANIMATIONS.add(kfa);
+        }
+    }
+
+    private void loadOptionalAnimationSet(GraphicsDevice graphicsDevice,
+                                          Scene scene,
+                                          String animationFile,
+                                          ArrayList<KeyframeAnimation> targetList) {
+        byte[] animBytes = graphicsDevice.loadBinaryResource(animationFile);
+        if (animBytes == null || animBytes.length == 0) {
+            log("optional animation asset missing=" + animationFile);
+            return;
+        }
+        loadAnimationSet(graphicsDevice, scene, animationFile, targetList);
+    }
+
+    private String resolveIdleAnimationFile(GraphicsDevice graphicsDevice) {
+        byte[] idleBytes = graphicsDevice.loadBinaryResource(IDLE_ANIMATIONS_FILE);
+        if (idleBytes != null && idleBytes.length > 0) {
+            return IDLE_ANIMATIONS_FILE;
+        }
+        return IDLE_ANIMATIONS_FALLBACK_FILE;
+    }
+
+    private void setCurrentAnimationSet(ArrayList<KeyframeAnimation> nextAnimationSet) {
+        if (nextAnimationSet == null || nextAnimationSet.isEmpty() || currentAnimationSet == nextAnimationSet) {
+            return;
+        }
+        if (currentAnimationSet != null) {
+            for (KeyframeAnimation animation : currentAnimationSet) {
+                animation.stop();
+                animation.time = 0f;
+            }
+        }
+        for (KeyframeAnimation animation : nextAnimationSet) {
+            animation.time = 0f;
+            animation.start();
+        }
+        currentAnimationSet = nextAnimationSet;
+    }
+
+    private void updateMovementAnimationState() {
+        if (jumping) {
+            if (!jumpAnimations.isEmpty()) {
+                setCurrentAnimationSet(jumpAnimations);
+            }
+            return;
+        }
+        setCurrentAnimationSet(playerMoving ? runAnimations : idleAnimations);
     }
 
     @SuppressWarnings("unchecked")
@@ -453,6 +536,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             turnInput += 1f;
         }
 
+        if (actions.button(BattleArenaActions.JUMP).pressed() && !jumping) {
+            jumping = true;
+            verticalVelocity = JUMP_VELOCITY * sceneSpeed;
+            updateMovementAnimationState();
+        }
+
         forwardInput = clamp(forwardInput);
         turnInput = clamp(turnInput);
         float turnAmount = turnInput * TURN_SPEED_DEGREES * sceneSpeed;
@@ -463,16 +552,39 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         }
 
         float moveAmount = forwardInput * MOVE_SPEED * sceneSpeed;
-        if (Math.abs(moveAmount) > 0.0001f) {
+        boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
+        if (isMovingNow != playerMoving) {
+            playerMoving = isMovingNow;
+            updateMovementAnimationState();
+        }
+        if (isMovingNow) {
             float headingRadians = (float) Math.toRadians(playerHeadingDegrees);
             playerPosition.x += (float) Math.sin(headingRadians) * moveAmount;
             playerPosition.z += (float) Math.cos(headingRadians) * moveAmount;
         }
+        updateJumpPhysics(sceneSpeed);
         snapPlayerToGround();
     }
 
+    private void updateJumpPhysics(float sceneSpeed) {
+        if (!jumping) {
+            jumpHeight = 0f;
+            verticalVelocity = 0f;
+            return;
+        }
+
+        jumpHeight += verticalVelocity;
+        verticalVelocity -= JUMP_GRAVITY * sceneSpeed;
+        if (jumpHeight <= 0f && verticalVelocity <= 0f) {
+            jumpHeight = 0f;
+            verticalVelocity = 0f;
+            jumping = false;
+            updateMovementAnimationState();
+        }
+    }
+
     private void snapPlayerToGround() {
-        playerPosition.y = sampleTerrainHeight(playerPosition.x, playerPosition.z);
+        playerPosition.y = sampleTerrainHeight(playerPosition.x, playerPosition.z) + jumpHeight;
     }
 
     private float sampleTerrainHeight(float worldX, float worldZ) {
