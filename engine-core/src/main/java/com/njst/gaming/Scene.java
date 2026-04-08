@@ -7,6 +7,8 @@ import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
 import com.njst.gaming.collision.CollisionWorld;
 import com.njst.gaming.collision.DefaultCollisionWorld;
+import com.njst.gaming.graphics.BufferHandle;
+import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.input.InputSystem;
@@ -17,6 +19,7 @@ import com.njst.gaming.objects.GameObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -54,6 +57,8 @@ public class Scene {
     public boolean object_should_move = false;
     public boolean camera_should_move = false;
     public boolean camera_should_move_up = false;
+    private final ArrayList<List<Bone>> skeletons = new ArrayList<>();
+    private BufferHandle skeletonBuffer;
 
     public Scene() {
         objects = new CopyOnWriteArrayList<>();
@@ -193,6 +198,47 @@ public class Scene {
             }
         }
         objects.add(r);
+    }
+
+    public int registerSkeleton(List<Bone> bones) {
+        if (bones == null || bones.isEmpty()) {
+            return 0;
+        }
+        int startIndex = 0;
+        for (List<Bone> skeleton : skeletons) {
+            startIndex += skeleton.size();
+        }
+        skeletons.add(bones);
+        return startIndex;
+    }
+
+    public void uploadSkeletonBuffer(GraphicsDevice graphicsDevice) {
+        if (graphicsDevice == null || skeletons.isEmpty()) {
+            return;
+        }
+        if (skeletonBuffer == null) {
+            skeletonBuffer = graphicsDevice.createShaderStorageBuffer();
+        }
+        float[] boneData = createPackedBoneData();
+        skeletonBuffer.setData(boneData, graphicsDevice.dynamicDrawUsage());
+        skeletonBuffer.bind();
+        skeletonBuffer.bindToShader(2);
+    }
+
+    private float[] createPackedBoneData() {
+        int totalBones = 0;
+        for (List<Bone> skeleton : skeletons) {
+            totalBones += skeleton.size();
+        }
+        float[] boneData = new float[totalBones * 16];
+        int offset = 0;
+        for (List<Bone> skeleton : skeletons) {
+            for (Bone bone : skeleton) {
+                System.arraycopy(bone.getAnimationMatrix().r, 0, boneData, offset, 16);
+                offset += 16;
+            }
+        }
+        return boneData;
     }
 
     public boolean removeGameObject(GameObject obj) {

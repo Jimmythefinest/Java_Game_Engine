@@ -10,6 +10,7 @@ public class Weighted_GameObject extends GameObject {
 
     public WeightedGeometry geo;
     ShaderHandle program1;
+    public int boneBufferStartIndex = 0;
 
     public Weighted_GameObject(WeightedGeometry geo, int t) {
         super(geo, t);
@@ -49,6 +50,7 @@ public class Weighted_GameObject extends GameObject {
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         program1.setUniformMatrix4fv("uMMatrix", modelMatrix);
+        program1.setUniformInt("boneStartIndex", boneBufferStartIndex);
         program1.activateTexture(textureHandle, texture);
 
         graphicsDevice.bindVertexArray(vaoIds[0]);

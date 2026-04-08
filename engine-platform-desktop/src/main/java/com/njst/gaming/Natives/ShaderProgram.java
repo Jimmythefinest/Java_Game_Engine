@@ -241,6 +241,11 @@ public class ShaderProgram implements ShaderHandle {
     }
 
     @Override
+    public void setUniformInt(String name, int value) {
+        GL30.glUniform1i(getUniformLocation(name), value);
+    }
+
+    @Override
     public void setUniformMatrix4fv(String name, float[] matrix) {
         GL30.glUniformMatrix4fv(getUniformLocation(name), false, matrix);
     }

@@ -12,6 +12,8 @@ public interface ShaderHandle {
 
     void setUniformVector3(String name, Vector3 vector3f);
 
+    void setUniformInt(String name, int value);
+
     void setUniformMatrix4fv(String name, float[] matrix);
 
     void setUniformMatrix4fv(String name, Matrix4 matrix);

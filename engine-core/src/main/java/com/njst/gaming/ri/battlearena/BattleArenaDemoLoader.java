@@ -9,7 +9,6 @@ import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Scene;
-import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
@@ -66,7 +65,6 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private Bone hipBone;
     private Vector3 rootBasePosition = new Vector3(0f, 0f, 0f);
     private Vector3 rootBaseRotation = new Vector3(0f, 0f, 0f);
-    private BufferHandle boneBuffer;
     private Skeleton playerSkeleton;
     private final ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
@@ -87,7 +85,6 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         activeAnimations.clear();
         rootBone = null;
         hipBone = null;
-        boneBuffer = null;
         playerSkeleton = null;
         currentAnimationSet = null;
         playerMoving = false;
@@ -239,8 +236,6 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             bone.calculate_bind_matrix();
         }
 
-        boneBuffer = graphicsDevice.createShaderStorageBuffer();
-        updateBoneBuffer(graphicsDevice);
         log("loaded bones names=" + boneNames.size() + " runtimeBones=" + playerBones.size()
                 + " root=" + rootBone.name);
 
@@ -257,6 +252,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         meshObject.shininess = 18f;
         meshObject.ambientlight_multiplier = 1.2f;
         meshObject.setScale(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE);
+        meshObject.boneBufferStartIndex = scene.registerSkeleton(playerBones);
        scene.addGameObject(meshObject);
         playerMeshes.add(meshObject);
         log("spawned weighted mesh name=" + meshObject.name + " scale=" + PLAYER_SCALE);
@@ -274,33 +270,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         rootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
         rootBone.update();
         rootBone.rotate(new Vector3());
-        updateBoneBuffer(null);
         // for (GameObject mesh : playerMeshes) {
             // mesh.setPosition(0f, 0f, 0f);
             // mesh.setRotation(0f, 0f, 0f);
         // }
-    }
-
-    private void updateBoneBuffer(GraphicsDevice graphicsDevice) {
-        if (boneBuffer == null || playerBones.isEmpty()) {
-            return;
-        }
-        float[] boneData = createBoneData();
-        if (graphicsDevice != null) {
-            boneBuffer.setData(boneData, graphicsDevice.dynamicDrawUsage());
-        } else {
-            boneBuffer.updateData(boneData);
-        }
-        boneBuffer.bind();
-        boneBuffer.bindToShader(2);
-    }
-
-    private float[] createBoneData() {
-        float[] boneData = new float[playerBones.size() * 16];
-        for (int i = 0; i < playerBones.size(); i++) {
-            System.arraycopy(playerBones.get(i).getAnimationMatrix().r, 0, boneData, i * 16, 16);
-        }
-        return boneData;
     }
 
     private WeightedGeometry deserializeWeightedGeometry(byte[] modelBytes) {

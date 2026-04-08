@@ -21,6 +21,7 @@ layout(std430, binding = 2) buffer BoneData {
 };
 
 uniform mat4 uMMatrix;
+uniform int boneStartIndex;
 
 void main() {
     vec4 skinnedPosition = vec4(0.0);
@@ -30,7 +31,7 @@ void main() {
         if (weight <= 0.0) {
             continue;
         }
-        mat4 boneMatrix = bone[bones[i]];
+        mat4 boneMatrix = bone[boneStartIndex + bones[i]];
         skinnedPosition += (boneMatrix * vec4(position, 1.0)) * weight;
         skinnedNormal += (mat3(boneMatrix) * normal) * weight;
     }

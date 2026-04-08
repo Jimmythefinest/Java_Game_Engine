@@ -135,6 +135,7 @@ public class Renderer {
             long updateStart = System.nanoTime();
             scene.onDrawFrame();
             long updateEnd = System.nanoTime();
+            scene.uploadSkeletonBuffer(graphicsDevice);
 
             long skyboxNanos = 0L;
             if (skybox != null) {
@@ -206,6 +207,7 @@ public class Renderer {
         ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
+        scene.uploadSkeletonBuffer(graphicsDevice);
         ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
         activeShader.use();
         activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
