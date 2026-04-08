@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import com.njst.gaming.Math.*;
+import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.NullGraphicsDevice;
@@ -184,23 +185,48 @@ public class Renderer {
     }
 
     public void renderObjectLikeMainPass(GameObject object) {
+        renderObjectWithCameraAndLight(object, camera, new Vector3(0f, 0f, 100f));
+    }
+
+    public void renderObjectWithCamera(GameObject object, Camera renderCamera) {
+        renderObjectWithCameraAndLight(object, renderCamera, new Vector3(0f, 0f, 100f));
+    }
+
+    public void renderObjectWithCameraAndLight(GameObject object, Camera renderCamera, Vector3 lightPosition) {
         if (hasError || object == null) {
             return;
         }
+        Camera activeCamera = renderCamera != null ? renderCamera : camera;
+        Vector3 activeLight = lightPosition != null ? lightPosition : new Vector3(0f, 0f, 100f);
         float[] consts = new float[39];
-        System.arraycopy(camera.getProjectionMatrix().r, 0, consts, 0, 16);
-        System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
-        System.arraycopy(camera.cameraPosition.toArray(), 0, consts, 32, 3);
-        System.arraycopy(new float[] { 0, 0, 100, 0 }, 0, consts, 35, 4);
+        System.arraycopy(activeCamera.getProjectionMatrix().r, 0, consts, 0, 16);
+        System.arraycopy(activeCamera.getViewMatrix().r, 0, consts, 16, 16);
+        System.arraycopy(activeCamera.cameraPosition.toArray(), 0, consts, 32, 3);
+        System.arraycopy(new float[] { activeLight.x, activeLight.y, activeLight.z, 0 }, 0, consts, 35, 4);
         ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
         ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
         activeShader.use();
-        activeShader.setUniformVector3("eyepos1", camera.cameraPosition);
+        activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
         object.setGraphicsDevice(graphicsDevice);
         object.updateModelMatrix();
         object.render(activeShader, textureHandle);
+    }
+
+    public SphericalHeightmapShape bakeSphericalHeightmap(GameObject object, int width, int height) {
+        Vector3 defaultCenter = new Vector3(
+                (object.localMin.x + object.localMax.x) * 0.5f,
+                (object.localMin.y + object.localMax.y) * 0.5f,
+                (object.localMin.z + object.localMax.z) * 0.5f);
+        return bakeSphericalHeightmap(object, width, height, defaultCenter);
+    }
+
+    public SphericalHeightmapShape bakeSphericalHeightmap(GameObject object, int width, int height, Vector3 localCenter) {
+        if (object == null || width <= 0 || height <= 0) {
+            return null;
+        }
+        return graphicsDevice.bakeSphericalHeightmap(this, object, width, height, localCenter);
     }
 
     int frame = 0;

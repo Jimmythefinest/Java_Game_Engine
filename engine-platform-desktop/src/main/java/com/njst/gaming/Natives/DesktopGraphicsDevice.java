@@ -14,6 +14,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import com.njst.gaming.Renderer;
+import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ImposterBakeResult;
@@ -22,6 +24,7 @@ import com.njst.gaming.objects.GameObject;
 
 public class DesktopGraphicsDevice implements GraphicsDevice {
     private final DesktopImposterBaker imposterBaker = new DesktopImposterBaker();
+    private int whiteTextureId;
 
     @Override
     public ShaderHandle createShaderProgram(String vertexShaderSource, String fragmentShaderSource) {
@@ -50,6 +53,9 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
 
     @Override
     public int loadTexture(String texturePath) {
+        if (texturePath == null || texturePath.isEmpty() || texturePath.startsWith("generated:")) {
+            return getWhiteTexture();
+        }
         return ShaderProgram.loadTexture(texturePath);
     }
 
@@ -64,8 +70,18 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public SphericalHeightmapShape bakeSphericalHeightmap(Renderer renderer, GameObject object, int width, int height,
+            Vector3 localCenter) {
+        return com.njst.gaming.Utils.GameObjectRenderUtil.bakeSphericalHeightmap(renderer, object, width, height,
+                localCenter);
+    }
+
+    @Override
     public void releaseTexture(int textureId) {
         imposterBaker.releaseTexture(textureId);
+        if (textureId == whiteTextureId) {
+            whiteTextureId = 0;
+        }
     }
 
     @Override
@@ -163,5 +179,15 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public int dynamicDrawUsage() {
         return GL15.GL_DYNAMIC_DRAW;
+    }
+
+    private int getWhiteTexture() {
+        if (whiteTextureId != 0) {
+            return whiteTextureId;
+        }
+        whiteTextureId = ShaderProgram.createTextureRGBA(1, 1, new byte[] {
+                (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF
+        });
+        return whiteTextureId;
     }
 }

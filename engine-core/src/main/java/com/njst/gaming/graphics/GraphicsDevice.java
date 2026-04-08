@@ -1,6 +1,8 @@
 package com.njst.gaming.graphics;
 
 import com.njst.gaming.Renderer;
+import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.objects.GameObject;
 
 public interface GraphicsDevice {
@@ -19,6 +21,9 @@ public interface GraphicsDevice {
     int createTextureRGBA(int width, int height, byte[] rgbaPixels);
 
     ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height);
+
+    SphericalHeightmapShape bakeSphericalHeightmap(Renderer renderer, GameObject object, int width, int height,
+            Vector3 localCenter);
 
     void releaseTexture(int textureId);
 

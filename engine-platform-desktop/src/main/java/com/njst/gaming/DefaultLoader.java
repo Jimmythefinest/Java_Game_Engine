@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL15;
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
-  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/Defeated.fbx";
+  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/jump.fbx";
   private static final float LOOK_SENSITIVITY = 0.0125f;
   private static final float MIN_PITCH = -1.35f;
   private static final float MAX_PITCH = 1.35f;
@@ -180,7 +180,7 @@ public class DefaultLoader implements Scene.SceneLoader {
       scene.addGameObject(plane);
 
       Map<String, KeyframeAnimation> fbxanims = FBXAnimationLoader
-          .extractAnimation(ANIMATION_SOURCE_PATH, 3, 100);
+          .extractAnimation(ANIMATION_SOURCE_PATH, 0, 100);
       exportAnimations(fbxanims);
 
       Skeleton skeleton = new Skeleton(
@@ -198,9 +198,9 @@ public class DefaultLoader implements Scene.SceneLoader {
             scene.MOTION_ANIMATIONS.add(new ArrayList<>());
           }
         }
-        Map<String, KeyframeAnimation> temp_anims = FBXAnimationLoader.extractAnimation(
-            ANIMATION_SOURCE_PATH, i[0],
-            100);
+        Map<String, KeyframeAnimation> temp_anims =fbxanims;// FBXAnimationLoader.extractAnimation(
+            // ANIMATION_SOURCE_PATH, i[0],
+            // 100);
         Skeletal_Animation skeleton_Animation = new Skeletal_Animation();
         skeleton_Animation.set_Animation_map(temp_anims);
         skeleton.map(skeleton_Animation);

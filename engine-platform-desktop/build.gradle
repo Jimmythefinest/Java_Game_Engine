@@ -75,6 +75,20 @@ tasks.register('runCollisionDemo', JavaExec) {
     mainClass = 'com.njst.gaming.CollisionBoxDemoApp'
 }
 
+tasks.register('runCubeHeightmapBake', JavaExec) {
+    group = 'application'
+    description = 'Bake a cube into a spherical heightmap PNG'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.CubeHeightmapBakeApp'
+}
+
+tasks.register('runHeightmapPreview', JavaExec) {
+    group = 'application'
+    description = 'Render the baked spherical heightmap PNG as geometry'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.HeightmapPreviewApp'
+}
+
 tasks.register('exportDefeatedSkinnedAsset', JavaExec) {
     group = 'build'
     description = 'Bake Defeated.fbx into the internal skinned model asset format'

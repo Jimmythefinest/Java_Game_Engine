@@ -51,6 +51,38 @@ This gives the engine a stable seam now, while leaving room for:
 - collision layers and masks
 - separate response/solver systems
 
+## Optional Spherical Heightmap Extension
+
+For workflows that bake object surfaces into radial height data, the collision package can be extended with:
+
+- `SphericalHeightmapShape`
+- `GameObjectSphericalHeightmapColliderAdapter`
+- `SphericalHeightmapPairCollisionAlgorithm`
+
+This is intended as an optional narrow-phase path rather than a default engine feature.
+
+The algorithm currently compares two baked surfaces along the center-to-center direction:
+
+1. find each collider center in world space
+2. convert the opposing direction into each collider's local space
+3. sample local surface radius from the baked spherical heightmap
+4. transform those two sampled surface points back into world space
+5. compare center distance to sampled world radii and build a manifold
+
+That makes it a practical first detector for roughly star-shaped baked objects.
+
+Recommended setup:
+
+```java
+CollisionDispatcher dispatcher = new CollisionDispatcher();
+dispatcher.registerFirst(new SphericalHeightmapPairCollisionAlgorithm());
+dispatcher.register(new AabbVsAabbCollisionAlgorithm());
+
+scene.setCollisionWorld(new DefaultCollisionWorld(new NaiveBroadphase(), dispatcher));
+```
+
+Each baked object then registers a `GameObjectSphericalHeightmapColliderAdapter` that references its own `SphericalHeightmapShape`.
+
 ## How Scene Should Use It
 
 `Scene` should own a `CollisionWorld` instance and treat it as an engine service.

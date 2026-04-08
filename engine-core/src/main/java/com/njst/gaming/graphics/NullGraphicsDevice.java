@@ -1,6 +1,8 @@
 package com.njst.gaming.graphics;
 
 import com.njst.gaming.Renderer;
+import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.objects.GameObject;
 
 public class NullGraphicsDevice implements GraphicsDevice {
@@ -45,6 +47,12 @@ public class NullGraphicsDevice implements GraphicsDevice {
 
     @Override
     public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
+        return null;
+    }
+
+    @Override
+    public SphericalHeightmapShape bakeSphericalHeightmap(Renderer renderer, GameObject object, int width, int height,
+            Vector3 localCenter) {
         return null;
     }
 

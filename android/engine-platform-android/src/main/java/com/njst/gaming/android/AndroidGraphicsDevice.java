@@ -10,6 +10,8 @@ import android.opengl.GLUtils;
 import android.util.Log;
 
 import com.njst.gaming.Renderer;
+import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ImposterBakeResult;
@@ -187,6 +189,13 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
     @Override
     public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
         return new ImposterBakeResult(0, width, height);
+    }
+
+    @Override
+    public SphericalHeightmapShape bakeSphericalHeightmap(Renderer renderer, GameObject object, int width, int height,
+            Vector3 localCenter) {
+        Log.w(TAG, "Spherical heightmap baking is not implemented on Android yet.");
+        return null;
     }
 
     @Override

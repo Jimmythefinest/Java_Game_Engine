@@ -12,6 +12,12 @@ public class CollisionDispatcher {
         }
     }
 
+    public void registerFirst(CollisionAlgorithm algorithm) {
+        if (algorithm != null) {
+            algorithms.add(0, algorithm);
+        }
+    }
+
     public CollisionManifold test(Collider first, Collider second) {
         for (CollisionAlgorithm algorithm : algorithms) {
             if (algorithm.supports(first.getShape(), second.getShape())) {
