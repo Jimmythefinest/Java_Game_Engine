@@ -64,7 +64,7 @@ public class KeyframeAnimation extends Animation implements Serializable {
             //Vector3 temp=bone.global_position.clone();
            // bone.translate(new Vector3().sub(temp));
           //  bone.translate(interpolatedPosition);
-            bone.position_to_parent = interpolatedPosition;
+            // bone.position_to_parent = interpolatedPosition;
             bone.rotate( interpolatedRotation.sub(bone.rotation));
           //  bone.rotate(new Vector3(0,0,1));
 

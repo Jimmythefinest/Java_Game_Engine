@@ -30,10 +30,10 @@ import java.util.Map;
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
     private static final String GROUND_FILE = "stone.jpeg";
-    private static final String MODEL_FILE = "weighted_geometry/defeated_mesh_1.ser";
+    private static final String MODEL_FILE = "weighted_geometry/defeated_mesh.ser";
     private static final String BONE_FILE = "weighted_geometry/defeated_bones.ser";
     private static final String BONE_NAMES_FILE = "weighted_geometry/defeated_bone_names.json";
-    private static final String RUN_ANIMATIONS_FILE = "weighted_geometry/walking_animation.ser";
+    private static final String RUN_ANIMATIONS_FILE = "weighted_geometry/run_animation.ser";
     private static final String IDLE_ANIMATIONS_FILE = "weighted_geometry/idle_animation.ser";
     private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
     private static final String JUMP_ANIMATIONS_FILE = "weighted_geometry/jump_animation.ser";
@@ -70,6 +70,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
     private final ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
+    private final ArrayList<KeyframeAnimation> spawnedIdleAnimations = new ArrayList<>();
+    private final ArrayList<Bone> spawnedRootBones = new ArrayList<>();
+    private final ArrayList<Vector3> spawnedPositions = new ArrayList<>();
+    private final ArrayList<Vector3> spawnedRootBasePositions = new ArrayList<>();
     private ArrayList<KeyframeAnimation> currentAnimationSet = null;
     private boolean playerMoving = false;
     private float jumpHeight = 0f;
@@ -83,6 +87,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         playerMeshes.clear();
         playerBones.clear();
         activeAnimations.clear();
+        spawnedIdleAnimations.clear();
+        spawnedRootBones.clear();
+        spawnedPositions.clear();
+        spawnedRootBasePositions.clear();
         rootBone = null;
         hipBone = null;
         playerSkeleton = null;
@@ -145,7 +153,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 if (rootBone != null) {
                     rootBone.update();
                 }
+                for (Bone spawnedRootBone : spawnedRootBones) {
+                    spawnedRootBone.update();
+                }
                 syncPlayerRig();
+                syncSpawnedRigs();
                 updateCamera(scene.renderer.camera);
             }
         });
@@ -256,6 +268,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
        scene.addGameObject(meshObject);
         playerMeshes.add(meshObject);
         log("spawned weighted mesh name=" + meshObject.name + " scale=" + PLAYER_SCALE);
+
+        spawnIdleModel(scene, graphicsDevice, weightedGeometry, texture, boneNames);
     }
 
     private void syncPlayerRig() {
@@ -274,6 +288,23 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             // mesh.setPosition(0f, 0f, 0f);
             // mesh.setRotation(0f, 0f, 0f);
         // }
+    }
+
+    private void syncSpawnedRigs() {
+        for (int i = 0; i < spawnedRootBones.size(); i++) {
+            Bone spawnedRootBone = spawnedRootBones.get(i);
+            Vector3 spawnedPosition = spawnedPositions.get(i);
+            Vector3 spawnedRootBasePosition = spawnedRootBasePositions.get(i);
+            spawnedPosition.y = sampleTerrainHeight(spawnedPosition.x, spawnedPosition.z);
+            spawnedRootBone.position_to_parent.set(
+                    spawnedRootBasePosition.x + spawnedPosition.x,
+                    spawnedRootBasePosition.y + spawnedPosition.y,
+                    spawnedRootBasePosition.z + spawnedPosition.z);
+            spawnedRootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
+            spawnedRootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
+            spawnedRootBone.update();
+            spawnedRootBone.rotate(new Vector3());
+        }
     }
 
     private WeightedGeometry deserializeWeightedGeometry(byte[] modelBytes) {
@@ -351,6 +382,68 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             return;
         }
         loadAnimationSet(graphicsDevice, scene, animationFile, targetList);
+    }
+
+    private void spawnIdleModel(Scene scene,
+                                GraphicsDevice graphicsDevice,
+                                WeightedGeometry weightedGeometry,
+                                int texture,
+                                List<String> boneNames) {
+        byte[] boneBytes = graphicsDevice.loadBinaryResource(BONE_FILE);
+        if (boneBytes == null || boneBytes.length == 0) {
+            throw new IllegalStateException(LOG_PREFIX + "Asset not found or empty: " + BONE_FILE);
+        }
+        ArrayList<Bone> spawnedBones = deserializeBoneList(boneBytes);
+        applyBoneNames(spawnedBones, boneNames);
+        Bone spawnedRootBone = findRootBone(spawnedBones);
+        if (spawnedRootBone == null) {
+            throw new IllegalStateException(LOG_PREFIX + "No root bone found for spawned model in " + BONE_FILE);
+        }
+        Vector3 spawnedRootBasePosition = spawnedRootBone.position_to_parent.clone();
+        spawnedRootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
+        spawnedRootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
+        spawnedRootBone.update();
+        for (Bone bone : spawnedBones) {
+            bone.calculate_bind_matrix();
+        }
+
+        String idleAnimationFile = resolveIdleAnimationFile(graphicsDevice);
+        byte[] animBytes = graphicsDevice.loadBinaryResource(idleAnimationFile);
+        if (animBytes == null || animBytes.length == 0) {
+            throw new IllegalStateException(LOG_PREFIX + "Asset not found or empty: " + idleAnimationFile);
+        }
+        Map<String, KeyframeAnimation> idleAnimMap = deserializeAnimations(animBytes);
+        Skeleton spawnedSkeleton = new Skeleton(spawnedRootBone);
+        Skeletal_Animation skeletalAnimation = new Skeletal_Animation();
+        skeletalAnimation.set_Animation_map(idleAnimMap);
+        spawnedSkeleton.map(skeletalAnimation);
+
+        for (Map.Entry<String, KeyframeAnimation> entry : idleAnimMap.entrySet()) {
+            KeyframeAnimation kfa = entry.getValue();
+            if (kfa.bone == null) {
+                continue;
+            }
+            kfa.onfinish = () -> kfa.time = 0f;
+            kfa.time = 0f;
+            kfa.start();
+            spawnedIdleAnimations.add(kfa);
+            activeAnimations.add(kfa);
+            scene.KEY_ANIMATIONS.add(kfa);
+        }
+
+        Weighted_GameObject spawnedMeshObject = new Weighted_GameObject(weightedGeometry, texture);
+        spawnedMeshObject.name = "BattleArenaIdleNpc";
+        spawnedMeshObject.shininess = 18f;
+        spawnedMeshObject.ambientlight_multiplier = 1.2f;
+        spawnedMeshObject.setScale(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE);
+        spawnedMeshObject.boneBufferStartIndex = scene.registerSkeleton(spawnedBones);
+        scene.addGameObject(spawnedMeshObject);
+        playerMeshes.add(spawnedMeshObject);
+        spawnedRootBones.add(spawnedRootBone);
+        spawnedPositions.add(new Vector3(2.5f, 0f, 0f));
+        spawnedRootBasePositions.add(spawnedRootBasePosition);
+        syncSpawnedRigs();
+        log("spawned idle npc name=" + spawnedMeshObject.name + " bones=" + spawnedBones.size());
     }
 
     private String resolveIdleAnimationFile(GraphicsDevice graphicsDevice) {

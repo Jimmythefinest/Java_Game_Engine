@@ -32,7 +32,7 @@ public class BattleArenaApp extends Engine {
 
     @Override
     protected void onInit() {
-        scene.loader =loader;//new DefaultLoader();
+        scene.loader =loader;
     }
 
     @Override

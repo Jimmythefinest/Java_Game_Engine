@@ -34,10 +34,10 @@ public class DefaultLoader implements Scene.SceneLoader {
   private static final float MIN_PITCH = -1.35f;
   private static final float MAX_PITCH = 1.35f;
   private static final float LOOK_DISTANCE = 1.0f;
-  private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh_1.ser";
+  private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh.ser";
   private static final String EXPORTED_BONE_NAMES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bone_names.json";
   private static final String EXPORTED_BONES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bones.ser";
-  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/defeated_animations.ser";
+  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/jump_animation.ser";
   private float cameraYaw;
   private float cameraPitch;
 
@@ -213,7 +213,7 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       skeleton.root_bone.update();
 
-      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel_invert_xz(data.rootDirectory + "/a.fbx", bonesList, 1, 100.0f);
+      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f);
       exportWeightedGeometry(npcGeometry);
       exportBoneNames(bonesList);
       exportBones(bonesList);
