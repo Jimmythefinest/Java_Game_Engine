@@ -18,6 +18,7 @@ final class BattleArenaCharacterRuntime {
     final Bone hipBone;
     final Vector3 rootBasePosition;
     final Weighted_GameObject meshObject;
+    final BattleArenaCharacterDefinition definition;
     final Map<String, ArrayList<KeyframeAnimation>> animationSets;
     final Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions;
     final ArrayList<Collider> hitboxColliders;
@@ -31,6 +32,7 @@ final class BattleArenaCharacterRuntime {
         this.hipBone = assembly.hipBone;
         this.rootBasePosition = assembly.rootBasePosition;
         this.meshObject = assembly.meshObject;
+        this.definition = definition;
         this.animationSets = createAnimationSets(assembly);
         this.eventDefinitions = createEventDefinitions(definition);
         this.hitboxColliders = createHitboxColliders();
@@ -49,8 +51,15 @@ final class BattleArenaCharacterRuntime {
         return controller.isPunching();
     }
 
-    void onHitTaken() {
-        controller.triggerHitReact();
+    boolean isAnimationActive(String animationKey) {
+        if (BattleArenaCharacterController.ANIM_PUNCH.equals(animationKey)) {
+            return controller.isPunching();
+        }
+        return false;
+    }
+
+    void onHitTaken(String hitboxName, String onHitAnimation) {
+        controller.triggerHitReact(hitboxName, onHitAnimation);
     }
 
     List<Collider> getHitboxColliders() {
@@ -86,6 +95,19 @@ final class BattleArenaCharacterRuntime {
         return new ArrayList<>(source);
     }
 
+    private Bone findBone(String nameFragment) {
+        if (nameFragment == null) {
+            return null;
+        }
+        String needle = nameFragment.toLowerCase();
+        for (Bone bone : bones) {
+            if (bone.name != null && bone.name.toLowerCase().contains(needle)) {
+                return bone;
+            }
+        }
+        return null;
+    }
+
     private Map<String, ArrayList<KeyframeAnimation>> createAnimationSets(BattleArenaCharacterAssembly assembly) {
         LinkedHashMap<String, ArrayList<KeyframeAnimation>> sets = new LinkedHashMap<>();
         sets.put(BattleArenaCharacterController.ANIM_IDLE, copy(assembly.idleAnimations));
@@ -109,18 +131,35 @@ final class BattleArenaCharacterRuntime {
 
     private ArrayList<Collider> createHitboxColliders() {
         ArrayList<Collider> colliders = new ArrayList<>();
-        colliders.add(new BattleArenaHitboxCollider(
-                this,
-                BattleArenaHitboxCollider.Type.BODY,
-                meshObject.name + "_BodyHurtbox",
-                new Vector3(0f, 1.0f, 0f),
-                new Vector3(0.45f, 1.0f, 0.35f)));
-        colliders.add(new BattleArenaHitboxCollider(
-                this,
-                BattleArenaHitboxCollider.Type.PUNCH,
-                meshObject.name + "_PunchHitbox",
-                new Vector3(0f, 1.1f, 0.85f),
-                new Vector3(0.35f, 0.35f, 0.45f)));
+        if (definition == null || definition.hitboxes == null) {
+            return colliders;
+        }
+
+        for (Map.Entry<String, BattleArenaCharacterDefinition.HitboxDefinition> entry : definition.hitboxes.entrySet()) {
+            BattleArenaCharacterDefinition.HitboxDefinition hitboxDefinition = entry.getValue();
+            if (hitboxDefinition == null || hitboxDefinition.halfExtents == null || hitboxDefinition.halfExtents.length < 3) {
+                continue;
+            }
+
+            Bone anchorBone = findBone(hitboxDefinition.followsBone);
+            Vector3 center = hitboxDefinition.center != null && hitboxDefinition.center.length >= 3
+                    ? new Vector3(hitboxDefinition.center)
+                    : new Vector3(0f, 0f, 0f);
+            Vector3 halfExtents = new Vector3(hitboxDefinition.halfExtents);
+            BattleArenaHitboxCollider.Type type = BattleArenaCharacterDefinition.HITBOX_KIND_HITBOX.equals(hitboxDefinition.kind)
+                    ? BattleArenaHitboxCollider.Type.HITBOX
+                    : BattleArenaHitboxCollider.Type.HURTBOX;
+
+            colliders.add(new BattleArenaHitboxCollider(
+                    this,
+                    type,
+                    entry.getKey(),
+                    hitboxDefinition.activeWhen,
+                    hitboxDefinition.onHitAnimation,
+                    anchorBone,
+                    center,
+                    halfExtents));
+        }
         return colliders;
     }
 }

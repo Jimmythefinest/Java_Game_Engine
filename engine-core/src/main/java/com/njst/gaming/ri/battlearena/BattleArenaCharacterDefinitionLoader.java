@@ -34,6 +34,9 @@ final class BattleArenaCharacterDefinitionLoader {
         require(animation(definition, BattleArenaCharacterController.ANIM_WALK), "animations.walk", definitionFile);
         require(animation(definition, BattleArenaCharacterController.ANIM_WALK_BACKWARD), "animations.walk_backward", definitionFile);
         require(animation(definition, BattleArenaCharacterController.ANIM_RUN), "animations.run", definitionFile);
+        if (definition.hitboxes == null || definition.hitboxes.isEmpty()) {
+            throw new IllegalStateException("Missing hitboxes in character definition: " + definitionFile);
+        }
     }
 
     String animation(BattleArenaCharacterDefinition definition, String animationKey) {

@@ -1,6 +1,7 @@
 package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.Bone;
 import com.njst.gaming.collision.AabbShape;
 import com.njst.gaming.collision.Bounds3;
 import com.njst.gaming.collision.Collider;
@@ -11,8 +12,8 @@ final class BattleArenaHitboxCollider implements Collider {
     static final int LAYER_HITBOX = 1 << 1;
 
     enum Type {
-        BODY,
-        PUNCH
+        HURTBOX,
+        HITBOX
     }
 
     private static final Bounds3 INACTIVE_BOUNDS =
@@ -21,6 +22,9 @@ final class BattleArenaHitboxCollider implements Collider {
     private final BattleArenaCharacterRuntime character;
     private final Type type;
     private final String name;
+    private final String activeWhen;
+    private final String onHitAnimation;
+    private final Bone anchorBone;
     private final Vector3 localCenter;
     private final Vector3 halfExtents;
     private final CollisionShape shape;
@@ -28,11 +32,17 @@ final class BattleArenaHitboxCollider implements Collider {
     BattleArenaHitboxCollider(BattleArenaCharacterRuntime character,
                               Type type,
                               String name,
+                              String activeWhen,
+                              String onHitAnimation,
+                              Bone anchorBone,
                               Vector3 localCenter,
                               Vector3 halfExtents) {
         this.character = character;
         this.type = type;
         this.name = name;
+        this.activeWhen = activeWhen;
+        this.onHitAnimation = onHitAnimation;
+        this.anchorBone = anchorBone;
         this.localCenter = new Vector3(localCenter);
         this.halfExtents = new Vector3(halfExtents);
         this.shape = new AabbShape(new Vector3(localCenter).sub(new Vector3(halfExtents)),
@@ -49,6 +59,14 @@ final class BattleArenaHitboxCollider implements Collider {
 
     String getName() {
         return name;
+    }
+
+    String getOnHitAnimation() {
+        return onHitAnimation;
+    }
+
+    boolean isDebugVisible() {
+        return isEnabled();
     }
 
     @Override
@@ -80,6 +98,11 @@ final class BattleArenaHitboxCollider implements Collider {
     }
 
     Vector3 getWorldCenter() {
+        if (anchorBone != null) {
+            Vector3 base = new Vector3(anchorBone.global_position);
+            Vector3 rotatedOffset = localCenter.rotateY((float) Math.toRadians(character.getHeadingDegrees()));
+            return base.add(rotatedOffset);
+        }
         Vector3 base = character.getPosition().clone();
         Vector3 rotatedOffset = localCenter.rotateY((float) Math.toRadians(character.getHeadingDegrees()));
         return base.add(rotatedOffset);
@@ -87,7 +110,7 @@ final class BattleArenaHitboxCollider implements Collider {
 
     @Override
     public int getLayer() {
-        return type == Type.PUNCH ? LAYER_HITBOX : LAYER_HURTBOX;
+        return type == Type.HITBOX ? LAYER_HITBOX : LAYER_HURTBOX;
     }
 
     @Override
@@ -95,7 +118,7 @@ final class BattleArenaHitboxCollider implements Collider {
         if (!isEnabled()) {
             return 0;
         }
-        return type == Type.PUNCH ? LAYER_HURTBOX : LAYER_HITBOX;
+        return type == Type.HITBOX ? LAYER_HURTBOX : LAYER_HITBOX;
     }
 
     @Override
@@ -127,9 +150,12 @@ final class BattleArenaHitboxCollider implements Collider {
     }
 
     private boolean isEnabled() {
-        if (type == Type.BODY) {
+        if (type == Type.HURTBOX) {
             return true;
         }
-        return character.isPunching();
+        if (activeWhen == null || activeWhen.trim().isEmpty()) {
+            return true;
+        }
+        return character.isAnimationActive(activeWhen);
     }
 }

@@ -27,14 +27,25 @@
     }
   },
   "hitboxes": {
-    "body": {
-      "center": [0.0, 1.0, 0.0],
-      "halfExtents": [0.45, 1.0, 0.35]
+    "head": {
+      "kind": "hurtbox",
+      "followsBone": "head",
+      "center": [0.0, 0.08, 0.0],
+      "halfExtents": [0.18, 0.18, 0.18],
+      "onHitAnimation": "take_hit"
+    },
+    "torso": {
+      "kind": "hurtbox",
+      "followsBone": "spine2",
+      "center": [0.0, -0.15, 0.0],
+      "halfExtents": [0.28, 0.38, 0.2],
+      "onHitAnimation": "take_hit"
     },
     "punch": {
-      "center": [0.0, 1.1, 0.85],
-      "halfExtents": [0.35, 0.35, 0.45],
-      "activeWhen": "punch"
+      "kind": "hitbox",
+      "followsBone": "righthand",
+      "center": [0.05, 0.0, 0.08],
+      "halfExtents": [0.12, 0.12, 0.12]
     }
   }
 }

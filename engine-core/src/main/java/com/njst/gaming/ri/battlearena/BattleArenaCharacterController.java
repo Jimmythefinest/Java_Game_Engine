@@ -158,14 +158,18 @@ final class BattleArenaCharacterController {
         return punching;
     }
 
-    void triggerHitReact() {
-        if (takingHit || animationSet(ANIM_TAKE_HIT).isEmpty()) {
+    void triggerHitReact(String hitboxName, String animationKey) {
+        String resolvedAnimationKey = animationKey;
+        if (resolvedAnimationKey == null || resolvedAnimationKey.trim().isEmpty()) {
+            BattleArenaCharacterDefinition.EventDefinition eventDefinition = eventDefinitions.get(EVENT_HIT_TAKEN);
+            resolvedAnimationKey = eventDefinition != null ? eventDefinition.play : ANIM_TAKE_HIT;
+        }
+        ArrayList<KeyframeAnimation> hitAnimations = animationSet(resolvedAnimationKey);
+        if (takingHit || hitAnimations.isEmpty()) {
             return;
         }
-        triggerConfiguredEvent(
-                EVENT_HIT_TAKEN,
-                () -> takingHit = true,
-                this::finishHitReact);
+        takingHit = true;
+        setCurrentAnimationSet(hitAnimations, resolveBaseAnimationSet(), this::finishHitReact);
     }
 
     void setPlayerPosition(float x, float y, float z) {

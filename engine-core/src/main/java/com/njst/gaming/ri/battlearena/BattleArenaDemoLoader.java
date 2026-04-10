@@ -40,6 +40,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private TerrainGeometry terrainGeometry;
     private Vector3 terrainOrigin;
     private final List<GameObject> playerMeshes = new ArrayList<>();
+    private final List<BattleArenaHitboxDebugGameObject> debugHitboxes = new ArrayList<>();
     private final BattleArenaCharacterController characterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterController secondaryCharacterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterAssembler characterAssembler = new BattleArenaCharacterAssembler();
@@ -49,6 +50,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private BattleArenaCharacterRuntime activeCharacter;
     private float cameraYaw = 0f;
     private float cameraPitch = -0.18f;
+    private boolean debugHitboxesVisible = false;
     private final ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
 
     @Override
@@ -56,6 +58,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         GraphicsDevice graphicsDevice = scene.renderer.getGraphicsDevice();
         log("load start root=" + com.njst.gaming.data.rootDirectory);
         playerMeshes.clear();
+        debugHitboxes.clear();
         activeAnimations.clear();
         primaryCharacter = null;
         secondaryCharacter = null;
@@ -64,6 +67,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         activeCharacter = null;
         cameraYaw = 0f;
         cameraPitch = -0.18f;
+        debugHitboxesVisible = false;
 
         String skyboxPath = resolveTexturePath(SKYBOX_FILE);
         String groundPath = resolveTexturePath(GROUND_FILE);
@@ -112,6 +116,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             public void animate() {
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     toggleActiveCharacter();
+                }
+                if (actions.button(BattleArenaActions.TOGGLE_HITBOXES).pressed()) {
+                    toggleHitboxDebug();
                 }
                 activeCharacter.controller.update(actions, movementPointer, scene.speed);
                 primaryCharacter.applyHeadingToRig();
@@ -200,6 +207,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private void registerCharacterHitboxes(Scene scene, BattleArenaCharacterRuntime character) {
         for (Collider collider : character.getHitboxColliders()) {
             scene.getCollisionWorld().addCollider(collider);
+            if (collider instanceof BattleArenaHitboxCollider) {
+                BattleArenaHitboxDebugGameObject debugObject =
+                        new BattleArenaHitboxDebugGameObject((BattleArenaHitboxCollider) collider, character.meshObject.texture);
+                debugObject.setEnabled(debugHitboxesVisible);
+                debugHitboxes.add(debugObject);
+                scene.addGameObject(debugObject);
+            }
         }
         log("registered hitboxes for " + character.meshObject.name + " count=" + character.getHitboxColliders().size());
     }
@@ -216,16 +230,16 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         BattleArenaHitboxCollider first = (BattleArenaHitboxCollider) event.getFirst();
         BattleArenaHitboxCollider second = (BattleArenaHitboxCollider) event.getSecond();
 
-        if (first.getType() == BattleArenaHitboxCollider.Type.PUNCH
-                && second.getType() == BattleArenaHitboxCollider.Type.BODY) {
+        if (first.getType() == BattleArenaHitboxCollider.Type.HITBOX
+                && second.getType() == BattleArenaHitboxCollider.Type.HURTBOX) {
             logHit(first, second, event);
-            second.getCharacter().onHitTaken();
+            second.getCharacter().onHitTaken(second.getName(), second.getOnHitAnimation());
             return;
         }
-        if (second.getType() == BattleArenaHitboxCollider.Type.PUNCH
-                && first.getType() == BattleArenaHitboxCollider.Type.BODY) {
+        if (second.getType() == BattleArenaHitboxCollider.Type.HITBOX
+                && first.getType() == BattleArenaHitboxCollider.Type.HURTBOX) {
             logHit(second, first, event);
-            first.getCharacter().onHitTaken();
+            first.getCharacter().onHitTaken(first.getName(), first.getOnHitAnimation());
         }
     }
 
@@ -236,6 +250,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + attacker.getCharacter().meshObject.name
                 + " -> "
                 + defender.getCharacter().meshObject.name
+                + " hitbox=" + defender.getName()
                 + " contact=" + event.getManifold().getContactPoint());
     }
 
@@ -243,6 +258,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         activeCharacter = activeCharacter == primaryCharacter ? secondaryCharacter : primaryCharacter;
         Vector3 activePosition = activeCharacter.getPosition();
         log("active character switched to x=" + activePosition.x + " z=" + activePosition.z);
+    }
+
+    private void toggleHitboxDebug() {
+        debugHitboxesVisible = !debugHitboxesVisible;
+        for (BattleArenaHitboxDebugGameObject debugHitbox : debugHitboxes) {
+            debugHitbox.setEnabled(debugHitboxesVisible);
+        }
+        log("hitbox debug visible=" + debugHitboxesVisible);
     }
 
     private int loadCharacterTexture(GraphicsDevice graphicsDevice, BattleArenaCharacterDefinition definition) {
