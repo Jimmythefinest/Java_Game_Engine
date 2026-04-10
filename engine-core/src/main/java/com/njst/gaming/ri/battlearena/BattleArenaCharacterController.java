@@ -11,6 +11,7 @@ import java.util.Map;
 
 final class BattleArenaCharacterController {
     static final String EVENT_PUNCH_STARTED = "punch_started";
+    static final String EVENT_KICK_STARTED = "kick_started";
     static final String EVENT_HIT_TAKEN = "hit_taken";
     static final String THEN_RESUME_BASE = "resume_base";
 
@@ -20,6 +21,7 @@ final class BattleArenaCharacterController {
     static final String ANIM_RUN = "run";
     static final String ANIM_JUMP = "jump";
     static final String ANIM_PUNCH = "punch";
+    static final String ANIM_KICK = "kick";
     static final String ANIM_TAKE_HIT = "take_hit";
 
     private static final float MOVE_DEADZONE = 0.12f;
@@ -46,6 +48,7 @@ final class BattleArenaCharacterController {
     private float verticalVelocity = 0f;
     private boolean jumping = false;
     private boolean punching = false;
+    private boolean kicking = false;
     private boolean takingHit = false;
 
     void configureCharacterData(Map<String, ArrayList<KeyframeAnimation>> animationSets,
@@ -73,6 +76,7 @@ final class BattleArenaCharacterController {
         verticalVelocity = 0f;
         jumping = false;
         punching = false;
+        kicking = false;
         takingHit = false;
     }
 
@@ -85,7 +89,15 @@ final class BattleArenaCharacterController {
                     this::finishPunch);
         }
 
-        if (punching || takingHit) {
+        if (actions.button(BattleArenaActions.KICK).pressed() && !kicking
+                && !animationSet(ANIM_KICK).isEmpty()) {
+            triggerConfiguredEvent(
+                    EVENT_KICK_STARTED,
+                    () -> kicking = true,
+                    this::finishKick);
+        }
+
+        if (punching || kicking || takingHit) {
             updateJumpPhysics(sceneSpeed);
             snapPlayerToGround();
             return;
@@ -156,6 +168,10 @@ final class BattleArenaCharacterController {
 
     boolean isPunching() {
         return punching;
+    }
+
+    boolean isKicking() {
+        return kicking;
     }
 
     void triggerHitReact(String hitboxName, String animationKey) {
@@ -239,6 +255,7 @@ final class BattleArenaCharacterController {
     private void updateMovementAnimationState() {
         ArrayList<KeyframeAnimation> takeHitAnimations = animationSet(ANIM_TAKE_HIT);
         ArrayList<KeyframeAnimation> punchAnimations = animationSet(ANIM_PUNCH);
+        ArrayList<KeyframeAnimation> kickAnimations = animationSet(ANIM_KICK);
         ArrayList<KeyframeAnimation> jumpAnimations = animationSet(ANIM_JUMP);
         if (takingHit) {
             setCurrentAnimationSet(takeHitAnimations);
@@ -246,6 +263,10 @@ final class BattleArenaCharacterController {
         }
         if (punching) {
             setCurrentAnimationSet(punchAnimations);
+            return;
+        }
+        if (kicking) {
+            setCurrentAnimationSet(kickAnimations);
             return;
         }
         if (jumping) {
@@ -274,6 +295,10 @@ final class BattleArenaCharacterController {
 
     private void finishPunch() {
         punching = false;
+    }
+
+    private void finishKick() {
+        kicking = false;
     }
 
     private void finishHitReact() {

@@ -21,5 +21,6 @@ final class BattleArenaCharacterAssembly {
     ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
     ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
     ArrayList<KeyframeAnimation> punchAnimations = new ArrayList<>();
+    ArrayList<KeyframeAnimation> kickAnimations = new ArrayList<>();
     ArrayList<KeyframeAnimation> takeHitAnimations = new ArrayList<>();
 }

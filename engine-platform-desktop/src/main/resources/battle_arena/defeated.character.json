@@ -12,6 +12,7 @@
     "run": "weighted_geometry/run_animation.ser",
     "jump": "weighted_geometry/jump_animation.ser",
     "punch": "weighted_geometry/punching_animation_0.ser",
+    "kick": "weighted_geometry/kick_animation_0.ser",
     "take_hit": "weighted_geometry/taking punch_animation_0.ser"
   },
   "events": {
@@ -22,6 +23,11 @@
     },
     "punch_started": {
       "play": "punch",
+      "then": "idle",
+      "interrupts": true
+    },
+    "kick_started": {
+      "play": "kick",
       "then": "idle",
       "interrupts": true
     }
@@ -46,6 +52,12 @@
       "followsBone": "righthand",
       "center": [0.05, 0.0, 0.08],
       "halfExtents": [0.12, 0.12, 0.12]
+    },
+    "feet": {
+      "kind": "hitbox",
+      "followsBone": "leftfoot",
+      "center": [0.0, -0.02, 0.12],
+      "halfExtents": [0.14, 0.1, 0.24]
     }
   }
 }

@@ -51,9 +51,16 @@ final class BattleArenaCharacterRuntime {
         return controller.isPunching();
     }
 
+    boolean isKicking() {
+        return controller.isKicking();
+    }
+
     boolean isAnimationActive(String animationKey) {
         if (BattleArenaCharacterController.ANIM_PUNCH.equals(animationKey)) {
             return controller.isPunching();
+        }
+        if (BattleArenaCharacterController.ANIM_KICK.equals(animationKey)) {
+            return controller.isKicking();
         }
         return false;
     }
@@ -116,6 +123,7 @@ final class BattleArenaCharacterRuntime {
         sets.put(BattleArenaCharacterController.ANIM_RUN, copy(assembly.runAnimations));
         sets.put(BattleArenaCharacterController.ANIM_JUMP, copy(assembly.jumpAnimations));
         sets.put(BattleArenaCharacterController.ANIM_PUNCH, copy(assembly.punchAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_KICK, copy(assembly.kickAnimations));
         sets.put(BattleArenaCharacterController.ANIM_TAKE_HIT, copy(assembly.takeHitAnimations));
         return sets;
     }

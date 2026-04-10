@@ -8,6 +8,7 @@ public final class BattleArenaActions {
     public static final String RUN = "run";
     public static final String JUMP = "jump";
     public static final String PUNCH = "punch";
+    public static final String KICK = "kick";
     public static final String SNAP = "snap";
     public static final String TOGGLE_HITBOXES = "toggle_hitboxes";
     public static final String LOOK = "look";

@@ -63,6 +63,7 @@ final class BattleArenaCharacterAssembler {
                 definitionAnimation(definition, BattleArenaCharacterController.ANIM_RUN),
                 definitionAnimation(definition, BattleArenaCharacterController.ANIM_JUMP),
                 definitionAnimation(definition, BattleArenaCharacterController.ANIM_PUNCH),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_KICK),
                 definitionAnimation(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
                 meshName,
@@ -81,6 +82,7 @@ final class BattleArenaCharacterAssembler {
                                                    String runAnimationFile,
                                                    String jumpAnimationFile,
                                                    String punchAnimationFile,
+                                                   String kickAnimationFile,
                                                    String takeHitAnimationFile,
                                                    int texture,
                                                    String meshName,
@@ -113,6 +115,7 @@ final class BattleArenaCharacterAssembler {
         loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, assembly.idleAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, assembly.jumpAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, assembly.punchAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, kickAnimationFile, assembly.kickAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, assembly.takeHitAnimations, activeAnimations);
 
         assembly.rootBone.update();
