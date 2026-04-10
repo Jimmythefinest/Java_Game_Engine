@@ -97,6 +97,24 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
         }
 
         Log.i(TAG, "Loading texture asset: " + normalized);
+        try (InputStream externalStream = AndroidAssetLoader.openExternalStream(texturePath)) {
+            if (externalStream != null) {
+                Bitmap bitmap = BitmapFactory.decodeStream(externalStream);
+                if (bitmap == null) {
+                    Log.e(TAG, "Bitmap decode returned null for external texture asset: " + normalized);
+                    return getWhiteTexture();
+                }
+                int width = bitmap.getWidth();
+                int height = bitmap.getHeight();
+                int textureId = createTextureFromBitmap(bitmap);
+                Log.i(TAG, "Loaded external texture asset: " + normalized + " -> id=" + textureId
+                        + " size=" + width + "x" + height);
+                bitmap.recycle();
+                return textureId;
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load external texture asset: " + normalized, e);
+        }
         try (InputStream inputStream = assetManager.open(normalized)) {
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
             if (bitmap == null) {

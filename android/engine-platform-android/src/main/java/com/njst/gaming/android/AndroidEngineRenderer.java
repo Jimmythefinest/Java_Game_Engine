@@ -39,6 +39,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
         try {
             GLES31.glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
 
+            AndroidAssetLoader.setExternalRoot(gameConfig.getExternalAssetRoot());
             AndroidGraphicsDevice graphicsDevice = new AndroidGraphicsDevice(context);
             renderer = new Renderer(graphicsDevice);
 

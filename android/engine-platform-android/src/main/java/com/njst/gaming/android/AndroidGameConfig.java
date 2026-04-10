@@ -21,4 +21,8 @@ public interface AndroidGameConfig {
     default String getLookHintLabel() {
         return "LOOK";
     }
+
+    default String getExternalAssetRoot() {
+        return null;
+    }
 }

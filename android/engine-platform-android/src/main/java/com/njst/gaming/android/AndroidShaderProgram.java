@@ -78,6 +78,11 @@ public class AndroidShaderProgram implements ShaderHandle {
     }
 
     @Override
+    public void setUniformInt(String name, int value) {
+        GLES31.glUniform1i(getUniformLocation(name), value);
+    }
+
+    @Override
     public void setUniformMatrix4fv(String name, float[] matrix) {
         GLES31.glUniformMatrix4fv(getUniformLocation(name), 1, false, matrix, 0);
     }

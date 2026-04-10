@@ -17,7 +17,8 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
 
     @Override
     public List<AndroidActionButton> getActionButtons() {
-        return Collections.emptyList();
+        return Collections.singletonList(
+                new AndroidActionButton("Punch", BattleArenaActions.PUNCH));
     }
 
     @Override
@@ -32,5 +33,10 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
     @Override
     public String getVirtualJoystickPointerId() {
         return BattleArenaActions.MOVE_POINTER;
+    }
+
+    @Override
+    public String getExternalAssetRoot() {
+        return "/sdcard/Documents/battlearena";
     }
 }
