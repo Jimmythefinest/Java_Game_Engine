@@ -11,6 +11,7 @@ import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -41,6 +42,32 @@ final class BattleArenaCharacterAssembler {
         List<String> boneNames = parseJsonArray(boneNamesJson);
         log("parsed bone names count=" + boneNames.size());
         return boneNames;
+    }
+
+    BattleArenaCharacterAssembly assembleCharacter(Scene scene,
+                                                   GraphicsDevice graphicsDevice,
+                                                   WeightedGeometry weightedGeometry,
+                                                   BattleArenaCharacterDefinition definition,
+                                                   String meshName,
+                                                   float playerScale,
+                                                   ArrayList<KeyframeAnimation> activeAnimations) {
+        return assembleCharacter(
+                scene,
+                graphicsDevice,
+                weightedGeometry,
+                definition.model.bones,
+                loadBoneNames(graphicsDevice, definition.model.boneNames),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_IDLE),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_WALK),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_WALK_BACKWARD),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_RUN),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_JUMP),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_PUNCH),
+                definitionAnimation(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
+                graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
+                meshName,
+                playerScale,
+                activeAnimations);
     }
 
     BattleArenaCharacterAssembly assembleCharacter(Scene scene,
@@ -314,5 +341,20 @@ final class BattleArenaCharacterAssembler {
 
     private static void log(String message) {
         System.out.println(LOG_PREFIX + message);
+    }
+
+    private String definitionAnimation(BattleArenaCharacterDefinition definition, String key) {
+        if (definition == null || definition.animations == null) {
+            return null;
+        }
+        return definition.animations.get(key);
+    }
+
+    private String resolveTexturePath(String textureFile) {
+        File file = new File(textureFile);
+        if (file.isAbsolute()) {
+            return file.getAbsolutePath();
+        }
+        return com.njst.gaming.data.rootDirectory + "/" + textureFile;
     }
 }

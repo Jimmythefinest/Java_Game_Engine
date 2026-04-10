@@ -19,9 +19,12 @@ final class BattleArenaCharacterRuntime {
     final Vector3 rootBasePosition;
     final Weighted_GameObject meshObject;
     final Map<String, ArrayList<KeyframeAnimation>> animationSets;
+    final Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions;
     final ArrayList<Collider> hitboxColliders;
 
-    BattleArenaCharacterRuntime(BattleArenaCharacterController controller, BattleArenaCharacterAssembly assembly) {
+    BattleArenaCharacterRuntime(BattleArenaCharacterController controller,
+                                BattleArenaCharacterAssembly assembly,
+                                BattleArenaCharacterDefinition definition) {
         this.controller = controller;
         this.bones = assembly.bones;
         this.rootBone = assembly.rootBone;
@@ -29,8 +32,9 @@ final class BattleArenaCharacterRuntime {
         this.rootBasePosition = assembly.rootBasePosition;
         this.meshObject = assembly.meshObject;
         this.animationSets = createAnimationSets(assembly);
+        this.eventDefinitions = createEventDefinitions(definition);
         this.hitboxColliders = createHitboxColliders();
-        controller.configureAnimationSets(animationSets);
+        controller.configureCharacterData(animationSets, eventDefinitions);
     }
 
     Vector3 getPosition() {
@@ -92,6 +96,15 @@ final class BattleArenaCharacterRuntime {
         sets.put(BattleArenaCharacterController.ANIM_PUNCH, copy(assembly.punchAnimations));
         sets.put(BattleArenaCharacterController.ANIM_TAKE_HIT, copy(assembly.takeHitAnimations));
         return sets;
+    }
+
+    private Map<String, BattleArenaCharacterDefinition.EventDefinition> createEventDefinitions(
+            BattleArenaCharacterDefinition definition) {
+        LinkedHashMap<String, BattleArenaCharacterDefinition.EventDefinition> events = new LinkedHashMap<>();
+        if (definition != null && definition.events != null) {
+            events.putAll(definition.events);
+        }
+        return events;
     }
 
     private ArrayList<Collider> createHitboxColliders() {

@@ -25,18 +25,7 @@ import java.util.List;
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
     private static final String GROUND_FILE = "stone.jpeg";
-    private static final String MODEL_FILE = "weighted_geometry/defeated_mesh.ser";
-    private static final String BONE_FILE = "weighted_geometry/defeated_bones.ser";
-    private static final String BONE_NAMES_FILE = "weighted_geometry/defeated_bone_names.json";
-    private static final String WALK_ANIMATIONS_FILE = "weighted_geometry/walking_animation.ser";
-    private static final String WALK_BACKWARD_ANIMATIONS_FILE = "weighted_geometry/walking_backwards_animation.ser";
-    private static final String RUN_ANIMATIONS_FILE = "weighted_geometry/run_animation.ser";
-    private static final String IDLE_ANIMATIONS_FILE = "weighted_geometry/idle_animation.ser";
-    private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
-    private static final String JUMP_ANIMATIONS_FILE = "weighted_geometry/jump_animation.ser";
-    private static final String PUNCH_ANIMATIONS_FILE = "weighted_geometry/punching_animation_0.ser";
-    private static final String TAKE_HIT_ANIMATIONS_FILE = "weighted_geometry/taking punch_animation_0.ser";
-    private static final String MODEL_TEXTURE_FILE = "j.jpg";
+    private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
     private static final int GROUND_SIZE = 96;
     private static final float CAMERA_DISTANCE = 6.5f;
     private static final float CAMERA_HEIGHT = 1.2f;
@@ -54,6 +43,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final BattleArenaCharacterController characterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterController secondaryCharacterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterAssembler characterAssembler = new BattleArenaCharacterAssembler();
+    private final BattleArenaCharacterDefinitionLoader characterDefinitionLoader = new BattleArenaCharacterDefinitionLoader();
     private BattleArenaCharacterRuntime primaryCharacter;
     private BattleArenaCharacterRuntime secondaryCharacter;
     private BattleArenaCharacterRuntime activeCharacter;
@@ -147,7 +137,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     }
 
     private void loadPlayer(Scene scene, GraphicsDevice graphicsDevice) {
-        WeightedGeometry weightedGeometry = characterAssembler.loadWeightedGeometry(graphicsDevice, MODEL_FILE);
+        BattleArenaCharacterDefinition definition = characterDefinitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
+        WeightedGeometry weightedGeometry = characterAssembler.loadWeightedGeometry(graphicsDevice, definition.model.mesh);
         int vertexCount = weightedGeometry.getVertices() != null ? weightedGeometry.getVertices().length / 3 : 0;
         int normalCount = weightedGeometry.getNormals() != null ? weightedGeometry.getNormals().length / 3 : 0;
         int uvCount = weightedGeometry.getTextureCoordinates() != null ? weightedGeometry.getTextureCoordinates().length / 2 : 0;
@@ -161,27 +152,16 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " weights=" + weightCount
                 + " boneIds=" + boneIdCount);
 
-        List<String> boneNames = characterAssembler.loadBoneNames(graphicsDevice, BONE_NAMES_FILE);
-
         activeAnimations.clear();
         BattleArenaCharacterAssembly primaryAssembly = characterAssembler.assembleCharacter(
                 scene,
                 graphicsDevice,
                 weightedGeometry,
-                BONE_FILE,
-                boneNames,
-                resolveIdleAnimationFile(graphicsDevice),
-                WALK_ANIMATIONS_FILE,
-                WALK_BACKWARD_ANIMATIONS_FILE,
-                RUN_ANIMATIONS_FILE,
-                JUMP_ANIMATIONS_FILE,
-                PUNCH_ANIMATIONS_FILE,
-                TAKE_HIT_ANIMATIONS_FILE,
-                loadCharacterTexture(graphicsDevice),
+                definition,
                 "BattleArenaPlayerMesh",
                 PLAYER_SCALE,
                 activeAnimations);
-        primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly);
+        primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly, definition);
         activeCharacter = primaryCharacter;
         log("wired animation count total=" + activeAnimations.size()
                 + " idle=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
@@ -192,10 +172,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " punch=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
                 + " hit=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
 
-        log("loaded bones names=" + boneNames.size() + " runtimeBones=" + primaryCharacter.bones.size()
+        log("loaded bones runtimeBones=" + primaryCharacter.bones.size()
                 + " root=" + primaryCharacter.rootBone.name);
 
-        Bone_object boneobj=new Bone_object(new CubeGeometry(),loadCharacterTexture(graphicsDevice));
+        Bone_object boneobj=new Bone_object(new CubeGeometry(), loadCharacterTexture(graphicsDevice, definition));
         boneobj.bone=primaryCharacter.rootBone;
         boneobj.scale=new float[]{0.1f,0.1f,0.1f};
         // scene.addGameObject(boneobj);
@@ -206,20 +186,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 scene,
                 graphicsDevice,
                 weightedGeometry,
-                BONE_FILE,
-                boneNames,
-                resolveIdleAnimationFile(graphicsDevice),
-                WALK_ANIMATIONS_FILE,
-                WALK_BACKWARD_ANIMATIONS_FILE,
-                RUN_ANIMATIONS_FILE,
-                JUMP_ANIMATIONS_FILE,
-                PUNCH_ANIMATIONS_FILE,
-                TAKE_HIT_ANIMATIONS_FILE,
-                loadCharacterTexture(graphicsDevice),
+                definition,
                 "BattleArenaSecondCharacter",
                 PLAYER_SCALE,
                 activeAnimations);
-        secondaryCharacter = new BattleArenaCharacterRuntime(secondaryCharacterController, secondaryAssembly);
+        secondaryCharacter = new BattleArenaCharacterRuntime(secondaryCharacterController, secondaryAssembly, definition);
         playerMeshes.add(secondaryCharacter.meshObject);
         log("spawned second character name=" + secondaryCharacter.meshObject.name + " bones=" + secondaryCharacter.bones.size());
         secondaryCharacterController.setPlayerPosition(SECOND_CHARACTER_START_X, 0f, 0f);
@@ -268,22 +239,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " contact=" + event.getManifold().getContactPoint());
     }
 
-    private String resolveIdleAnimationFile(GraphicsDevice graphicsDevice) {
-        byte[] idleBytes = graphicsDevice.loadBinaryResource(IDLE_ANIMATIONS_FILE);
-        if (idleBytes != null && idleBytes.length > 0) {
-            return IDLE_ANIMATIONS_FILE;
-        }
-        return IDLE_ANIMATIONS_FALLBACK_FILE;
-    }
-
     private void toggleActiveCharacter() {
         activeCharacter = activeCharacter == primaryCharacter ? secondaryCharacter : primaryCharacter;
         Vector3 activePosition = activeCharacter.getPosition();
         log("active character switched to x=" + activePosition.x + " z=" + activePosition.z);
     }
 
-    private int loadCharacterTexture(GraphicsDevice graphicsDevice) {
-        String texturePath = resolveTexturePath(MODEL_TEXTURE_FILE);
+    private int loadCharacterTexture(GraphicsDevice graphicsDevice, BattleArenaCharacterDefinition definition) {
+        String texturePath = resolveTexturePath(definition.model.texture);
         int texture = graphicsDevice.loadTexture(texturePath);
         log("model texture path=" + texturePath + " textureId=" + texture);
         return texture;

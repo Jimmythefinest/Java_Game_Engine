@@ -1,0 +1,40 @@
+{
+  "model": {
+    "mesh": "weighted_geometry/defeated_mesh.ser",
+    "bones": "weighted_geometry/defeated_bones.ser",
+    "boneNames": "weighted_geometry/defeated_bone_names.json",
+    "texture": "j.jpg"
+  },
+  "animations": {
+    "idle": "weighted_geometry/idle_animation.ser",
+    "walk": "weighted_geometry/walking_animation.ser",
+    "walk_backward": "weighted_geometry/walking_backwards_animation.ser",
+    "run": "weighted_geometry/run_animation.ser",
+    "jump": "weighted_geometry/jump_animation.ser",
+    "punch": "weighted_geometry/punching_animation_0.ser",
+    "take_hit": "weighted_geometry/taking punch_animation_0.ser"
+  },
+  "events": {
+    "hit_taken": {
+      "play": "take_hit",
+      "then": "idle",
+      "interrupts": true
+    },
+    "punch_started": {
+      "play": "punch",
+      "then": "idle",
+      "interrupts": true
+    }
+  },
+  "hitboxes": {
+    "body": {
+      "center": [0.0, 1.0, 0.0],
+      "halfExtents": [0.45, 1.0, 0.35]
+    },
+    "punch": {
+      "center": [0.0, 1.1, 0.85],
+      "halfExtents": [0.35, 0.35, 0.45],
+      "activeWhen": "punch"
+    }
+  }
+}

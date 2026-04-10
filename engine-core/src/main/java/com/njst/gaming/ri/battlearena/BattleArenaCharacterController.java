@@ -10,6 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 final class BattleArenaCharacterController {
+    static final String EVENT_PUNCH_STARTED = "punch_started";
+    static final String EVENT_HIT_TAKEN = "hit_taken";
+    static final String THEN_RESUME_BASE = "resume_base";
+
     static final String ANIM_IDLE = "idle";
     static final String ANIM_WALK = "walk";
     static final String ANIM_WALK_BACKWARD = "walk_backward";
@@ -32,6 +36,7 @@ final class BattleArenaCharacterController {
     private final Vector3 playerPosition = new Vector3(0f, 0f, 0f);
     private float playerHeadingDegrees = 0f;
     private Map<String, ArrayList<KeyframeAnimation>> animationSets = new HashMap<>();
+    private Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions = new HashMap<>();
     private ArrayList<KeyframeAnimation> currentAnimationSet = null;
     private TerrainHeightSampler terrainHeightSampler = (x, z) -> 0f;
     private boolean playerMoving = false;
@@ -43,8 +48,12 @@ final class BattleArenaCharacterController {
     private boolean punching = false;
     private boolean takingHit = false;
 
-    void configureAnimationSets(Map<String, ArrayList<KeyframeAnimation>> animationSets) {
+    void configureCharacterData(Map<String, ArrayList<KeyframeAnimation>> animationSets,
+                                Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions) {
         this.animationSets = animationSets != null ? new HashMap<>(animationSets) : new HashMap<String, ArrayList<KeyframeAnimation>>();
+        this.eventDefinitions = eventDefinitions != null
+                ? new HashMap<String, BattleArenaCharacterDefinition.EventDefinition>(eventDefinitions)
+                : new HashMap<String, BattleArenaCharacterDefinition.EventDefinition>();
         currentAnimationSet = null;
         updateMovementAnimationState();
     }
@@ -70,7 +79,10 @@ final class BattleArenaCharacterController {
     void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
         if (actions.button(BattleArenaActions.PUNCH).pressed() && !punching
                 && !animationSet(ANIM_PUNCH).isEmpty()) {
-            startPunch();
+            triggerConfiguredEvent(
+                    EVENT_PUNCH_STARTED,
+                    () -> punching = true,
+                    this::finishPunch);
         }
 
         if (punching || takingHit) {
@@ -147,12 +159,13 @@ final class BattleArenaCharacterController {
     }
 
     void triggerHitReact() {
-        ArrayList<KeyframeAnimation> takeHitAnimations = animationSet(ANIM_TAKE_HIT);
-        if (takingHit || takeHitAnimations.isEmpty()) {
+        if (takingHit || animationSet(ANIM_TAKE_HIT).isEmpty()) {
             return;
         }
-        takingHit = true;
-        setCurrentAnimationSet(takeHitAnimations, resolveBaseAnimationSet(), this::finishHitReact);
+        triggerConfiguredEvent(
+                EVENT_HIT_TAKEN,
+                () -> takingHit = true,
+                this::finishHitReact);
     }
 
     void setPlayerPosition(float x, float y, float z) {
@@ -255,12 +268,6 @@ final class BattleArenaCharacterController {
         return clamp(value);
     }
 
-    private void startPunch() {
-        ArrayList<KeyframeAnimation> punchAnimations = animationSet(ANIM_PUNCH);
-        punching = true;
-        setCurrentAnimationSet(punchAnimations, resolveBaseAnimationSet(), this::finishPunch);
-    }
-
     private void finishPunch() {
         punching = false;
     }
@@ -310,6 +317,33 @@ final class BattleArenaCharacterController {
     private ArrayList<KeyframeAnimation> animationSet(String key) {
         ArrayList<KeyframeAnimation> animations = animationSets.get(key);
         return animations != null ? animations : new ArrayList<KeyframeAnimation>();
+    }
+
+    private void triggerConfiguredEvent(String eventName, Runnable onEventStarted, Runnable onEventFinished) {
+        BattleArenaCharacterDefinition.EventDefinition eventDefinition = eventDefinitions.get(eventName);
+        if (eventDefinition == null || eventDefinition.play == null || eventDefinition.play.trim().isEmpty()) {
+            return;
+        }
+
+        ArrayList<KeyframeAnimation> eventAnimationSet = animationSet(eventDefinition.play);
+        if (eventAnimationSet.isEmpty()) {
+            return;
+        }
+
+        if (onEventStarted != null) {
+            onEventStarted.run();
+        }
+        setCurrentAnimationSet(
+                eventAnimationSet,
+                resolveFollowupAnimationSet(eventDefinition.then),
+                onEventFinished);
+    }
+
+    private ArrayList<KeyframeAnimation> resolveFollowupAnimationSet(String followupKey) {
+        if (followupKey == null || followupKey.trim().isEmpty() || THEN_RESUME_BASE.equals(followupKey)) {
+            return resolveBaseAnimationSet();
+        }
+        return animationSet(followupKey);
     }
 
     private float clamp(float value) {
