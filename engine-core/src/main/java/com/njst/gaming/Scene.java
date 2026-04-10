@@ -47,6 +47,7 @@ public class Scene {
     PhysicsEngine physics;
     private CollisionWorld collisionWorld;
     private long lastCollisionUpdateNanos;
+    private long lastFrameUpdateNanos;
     RootLogger log;
     public float[][] heightMap;
     private OpenWorldTerrainManager openWorldTerrainManager;
@@ -75,6 +76,7 @@ public class Scene {
         physics = new PhysicsEngine(this);
         collisionWorld = new DefaultCollisionWorld();
         lastCollisionUpdateNanos = 0L;
+        lastFrameUpdateNanos = 0L;
     }
 
     public Renderer getRenderer() {
@@ -92,6 +94,7 @@ public class Scene {
     }
 
     public void onDrawFrame() {
+        float animationDeltaSeconds = computeFrameDeltaSeconds() * speed;
         if (openWorldTerrainManager != null && renderer != null && renderer.camera != null) {
             openWorldTerrainManager.update(renderer.camera.cameraPosition);
         }
@@ -99,11 +102,25 @@ public class Scene {
             updateCameraMovement();
         }
         for (Animation i : animations) {
-            i.animate();
+            i.animate(animationDeltaSeconds);
         }
         if (collisionWorld != null) {
             collisionWorld.update(computeCollisionDeltaSeconds());
         }
+    }
+
+    private float computeFrameDeltaSeconds() {
+        long now = System.nanoTime();
+        if (lastFrameUpdateNanos == 0L) {
+            lastFrameUpdateNanos = now;
+            return 1f / 60f;
+        }
+        float deltaSeconds = (now - lastFrameUpdateNanos) / 1_000_000_000f;
+        lastFrameUpdateNanos = now;
+        if (deltaSeconds < 0f) {
+            return 0f;
+        }
+        return Math.min(deltaSeconds, 0.1f);
     }
 
     private float computeCollisionDeltaSeconds() {

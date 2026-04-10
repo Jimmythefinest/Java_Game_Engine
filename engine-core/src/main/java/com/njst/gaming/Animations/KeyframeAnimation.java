@@ -12,6 +12,7 @@ import java.util.List;
 
 public class KeyframeAnimation extends Animation implements Serializable {
     private static final long serialVersionUID = 2L;
+    private static final float LEGACY_FRAMES_PER_SECOND = 60f;
     public List<Keyframe> keyframes; // List of keyframes for the animation
     // private float duration; // Total duration of the animation
     // private boolean active; // Is the animation currently active?
@@ -32,12 +33,19 @@ public class KeyframeAnimation extends Animation implements Serializable {
    public  float time;
    public float speed=1;
     public void animate() {
-  //  bone.translate(new Vector3(0,0.01f,0));
-          
-        if (!active) return;
-        time+=speed;
-        // Update the animation based on the current time
-        float currentTime = time;//(System.currentTimeMillis() / 1000.0f) % duration; // Example of getting current time
+        animate(1f / LEGACY_FRAMES_PER_SECOND);
+    }
+
+    @Override
+    public void animate(float deltaSeconds) {
+        if (!active || bone == null || keyframes == null || keyframes.isEmpty()) {
+            return;
+        }
+        if (deltaSeconds < 0f) {
+            deltaSeconds = 0f;
+        }
+        time += deltaSeconds * LEGACY_FRAMES_PER_SECOND * speed;
+        float currentTime = time;
         Keyframe previousKeyframe = null;
         Keyframe nextKeyframe = null;
 
@@ -50,8 +58,14 @@ public class KeyframeAnimation extends Animation implements Serializable {
                 break;
             }
         }
-        if(nextKeyframe==null &&onfinish!=null){
-          onfinish.run();
+        if (nextKeyframe == null) {
+            if (previousKeyframe != null) {
+                bone.rotate(previousKeyframe.rotation.sub(bone.rotation));
+            }
+            if (onfinish != null) {
+                onfinish.run();
+            }
+            return;
         }
 
         if (previousKeyframe != null && nextKeyframe != null) {
@@ -69,7 +83,6 @@ public class KeyframeAnimation extends Animation implements Serializable {
           //  bone.rotate(new Vector3(0,0,1));
 
         }
-        
     }
 
     

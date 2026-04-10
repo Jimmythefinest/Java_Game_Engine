@@ -47,6 +47,12 @@ public class AnimationGroup extends Animation{
             anim.animate();
         }
     }
+    public void animate(float deltaSeconds){
+        if(!active)return;
+        for(Animation anim:animations){
+            anim.animate(deltaSeconds);
+        }
+    }
     public void add_animation(Animation anim){
         if(this.animations.contains(anim))return;
         this.animations.add(anim);

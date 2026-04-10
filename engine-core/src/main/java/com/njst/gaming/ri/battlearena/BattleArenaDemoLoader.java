@@ -113,7 +113,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         scene.animations.add(new Animation() {
             @Override
-            public void animate() {
+            public void animate(float deltaSeconds) {
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     toggleActiveCharacter();
                 }
@@ -123,9 +123,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 activeCharacter.controller.update(actions, movementPointer, scene.speed);
                 primaryCharacter.applyHeadingToRig();
                 secondaryCharacter.applyHeadingToRig();
-                // drive keyframe animations each frame
+                // Drive battle arena keyframes with elapsed time instead of frame count.
                 for (KeyframeAnimation anim : activeAnimations) {
-                    anim.animate();
+                    anim.animate(deltaSeconds);
                 }
                 primaryCharacter.rootBone.update();
                 secondaryCharacter.rootBone.update();

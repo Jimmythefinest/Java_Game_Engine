@@ -13,6 +13,11 @@ public  class Animation implements Serializable {
     public  void animate(){
 
     };
+
+    public void animate(float deltaSeconds) {
+        animate();
+
+    };
     public void start(){
         
     }
