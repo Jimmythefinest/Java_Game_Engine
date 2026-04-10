@@ -9,6 +9,9 @@ import com.njst.gaming.Geometries.TerrainGeometry;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Scene;
+import com.njst.gaming.collision.CollisionEvent;
+import com.njst.gaming.collision.CollisionEventType;
+import com.njst.gaming.collision.Collider;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
@@ -32,6 +35,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
     private static final String JUMP_ANIMATIONS_FILE = "weighted_geometry/jump_animation.ser";
     private static final String PUNCH_ANIMATIONS_FILE = "weighted_geometry/punching_animation_0.ser";
+    private static final String TAKE_HIT_ANIMATIONS_FILE = "weighted_geometry/taking punch_animation_0.ser";
     private static final String MODEL_TEXTURE_FILE = "j.jpg";
     private static final int GROUND_SIZE = 96;
     private static final float CAMERA_DISTANCE = 6.5f;
@@ -104,6 +108,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         }
         log("player meshes loaded=" + playerMeshes.size() + " bones=" + primaryCharacter.bones.size());
         primaryCharacter.syncRig();
+        registerCharacterHitboxes(scene, primaryCharacter);
+        registerCharacterHitboxes(scene, secondaryCharacter);
+        scene.getCollisionWorld().addListener(this::handleHitboxCollision);
 
         ActionInput actions = scene.actionInput;
         PointerState movementPointer = scene.pointer(BattleArenaActions.MOVE_POINTER);
@@ -169,6 +176,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 RUN_ANIMATIONS_FILE,
                 JUMP_ANIMATIONS_FILE,
                 PUNCH_ANIMATIONS_FILE,
+                TAKE_HIT_ANIMATIONS_FILE,
                 loadCharacterTexture(graphicsDevice),
                 "BattleArenaPlayerMesh",
                 PLAYER_SCALE,
@@ -176,12 +184,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly);
         activeCharacter = primaryCharacter;
         log("wired animation count total=" + activeAnimations.size()
-                + " idle=" + primaryCharacter.idleAnimations.size()
-                + " walk=" + primaryCharacter.walkAnimations.size()
-                + " walkBackward=" + primaryCharacter.walkBackwardAnimations.size()
-                + " run=" + primaryCharacter.runAnimations.size()
-                + " jump=" + primaryCharacter.jumpAnimations.size()
-                + " punch=" + primaryCharacter.punchAnimations.size());
+                + " idle=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
+                + " walk=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
+                + " walkBackward=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_WALK_BACKWARD).size()
+                + " run=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_RUN).size()
+                + " jump=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_JUMP).size()
+                + " punch=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
+                + " hit=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
 
         log("loaded bones names=" + boneNames.size() + " runtimeBones=" + primaryCharacter.bones.size()
                 + " root=" + primaryCharacter.rootBone.name);
@@ -205,6 +214,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 RUN_ANIMATIONS_FILE,
                 JUMP_ANIMATIONS_FILE,
                 PUNCH_ANIMATIONS_FILE,
+                TAKE_HIT_ANIMATIONS_FILE,
                 loadCharacterTexture(graphicsDevice),
                 "BattleArenaSecondCharacter",
                 PLAYER_SCALE,
@@ -214,6 +224,48 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         log("spawned second character name=" + secondaryCharacter.meshObject.name + " bones=" + secondaryCharacter.bones.size());
         secondaryCharacterController.setPlayerPosition(SECOND_CHARACTER_START_X, 0f, 0f);
         secondaryCharacter.syncRig();
+    }
+
+    private void registerCharacterHitboxes(Scene scene, BattleArenaCharacterRuntime character) {
+        for (Collider collider : character.getHitboxColliders()) {
+            scene.getCollisionWorld().addCollider(collider);
+        }
+        log("registered hitboxes for " + character.meshObject.name + " count=" + character.getHitboxColliders().size());
+    }
+
+    private void handleHitboxCollision(CollisionEvent event) {
+        if (event == null || event.getType() != CollisionEventType.ENTER) {
+            return;
+        }
+        if (!(event.getFirst() instanceof BattleArenaHitboxCollider)
+                || !(event.getSecond() instanceof BattleArenaHitboxCollider)) {
+            return;
+        }
+
+        BattleArenaHitboxCollider first = (BattleArenaHitboxCollider) event.getFirst();
+        BattleArenaHitboxCollider second = (BattleArenaHitboxCollider) event.getSecond();
+
+        if (first.getType() == BattleArenaHitboxCollider.Type.PUNCH
+                && second.getType() == BattleArenaHitboxCollider.Type.BODY) {
+            logHit(first, second, event);
+            second.getCharacter().onHitTaken();
+            return;
+        }
+        if (second.getType() == BattleArenaHitboxCollider.Type.PUNCH
+                && first.getType() == BattleArenaHitboxCollider.Type.BODY) {
+            logHit(second, first, event);
+            first.getCharacter().onHitTaken();
+        }
+    }
+
+    private void logHit(BattleArenaHitboxCollider attacker,
+                        BattleArenaHitboxCollider defender,
+                        CollisionEvent event) {
+        log("HIT "
+                + attacker.getCharacter().meshObject.name
+                + " -> "
+                + defender.getCharacter().meshObject.name
+                + " contact=" + event.getManifold().getContactPoint());
     }
 
     private String resolveIdleAnimationFile(GraphicsDevice graphicsDevice) {

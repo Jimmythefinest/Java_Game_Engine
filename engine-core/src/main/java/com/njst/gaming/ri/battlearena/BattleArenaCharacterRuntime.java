@@ -3,9 +3,13 @@ package com.njst.gaming.ri.battlearena;
 import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Bone;
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.collision.Collider;
 import com.njst.gaming.objects.Weighted_GameObject;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 final class BattleArenaCharacterRuntime {
     final BattleArenaCharacterController controller;
@@ -14,12 +18,8 @@ final class BattleArenaCharacterRuntime {
     final Bone hipBone;
     final Vector3 rootBasePosition;
     final Weighted_GameObject meshObject;
-    final ArrayList<KeyframeAnimation> idleAnimations;
-    final ArrayList<KeyframeAnimation> walkAnimations;
-    final ArrayList<KeyframeAnimation> walkBackwardAnimations;
-    final ArrayList<KeyframeAnimation> runAnimations;
-    final ArrayList<KeyframeAnimation> jumpAnimations;
-    final ArrayList<KeyframeAnimation> punchAnimations;
+    final Map<String, ArrayList<KeyframeAnimation>> animationSets;
+    final ArrayList<Collider> hitboxColliders;
 
     BattleArenaCharacterRuntime(BattleArenaCharacterController controller, BattleArenaCharacterAssembly assembly) {
         this.controller = controller;
@@ -28,19 +28,9 @@ final class BattleArenaCharacterRuntime {
         this.hipBone = assembly.hipBone;
         this.rootBasePosition = assembly.rootBasePosition;
         this.meshObject = assembly.meshObject;
-        this.idleAnimations = copy(assembly.idleAnimations);
-        this.walkAnimations = copy(assembly.walkAnimations);
-        this.walkBackwardAnimations = copy(assembly.walkBackwardAnimations);
-        this.runAnimations = copy(assembly.runAnimations);
-        this.jumpAnimations = copy(assembly.jumpAnimations);
-        this.punchAnimations = copy(assembly.punchAnimations);
-        controller.configureAnimationSets(
-                idleAnimations,
-                walkAnimations,
-                walkBackwardAnimations,
-                runAnimations,
-                jumpAnimations,
-                punchAnimations);
+        this.animationSets = createAnimationSets(assembly);
+        this.hitboxColliders = createHitboxColliders();
+        controller.configureAnimationSets(animationSets);
     }
 
     Vector3 getPosition() {
@@ -49,6 +39,23 @@ final class BattleArenaCharacterRuntime {
 
     float getHeadingDegrees() {
         return controller.getPlayerHeadingDegrees();
+    }
+
+    boolean isPunching() {
+        return controller.isPunching();
+    }
+
+    void onHitTaken() {
+        controller.triggerHitReact();
+    }
+
+    List<Collider> getHitboxColliders() {
+        return hitboxColliders;
+    }
+
+    ArrayList<KeyframeAnimation> animationSet(String key) {
+        ArrayList<KeyframeAnimation> animations = animationSets.get(key);
+        return animations != null ? animations : new ArrayList<KeyframeAnimation>();
     }
 
     void syncRig() {
@@ -73,5 +80,34 @@ final class BattleArenaCharacterRuntime {
 
     private ArrayList<KeyframeAnimation> copy(ArrayList<KeyframeAnimation> source) {
         return new ArrayList<>(source);
+    }
+
+    private Map<String, ArrayList<KeyframeAnimation>> createAnimationSets(BattleArenaCharacterAssembly assembly) {
+        LinkedHashMap<String, ArrayList<KeyframeAnimation>> sets = new LinkedHashMap<>();
+        sets.put(BattleArenaCharacterController.ANIM_IDLE, copy(assembly.idleAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_WALK, copy(assembly.walkAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_WALK_BACKWARD, copy(assembly.walkBackwardAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_RUN, copy(assembly.runAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_JUMP, copy(assembly.jumpAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_PUNCH, copy(assembly.punchAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_TAKE_HIT, copy(assembly.takeHitAnimations));
+        return sets;
+    }
+
+    private ArrayList<Collider> createHitboxColliders() {
+        ArrayList<Collider> colliders = new ArrayList<>();
+        colliders.add(new BattleArenaHitboxCollider(
+                this,
+                BattleArenaHitboxCollider.Type.BODY,
+                meshObject.name + "_BodyHurtbox",
+                new Vector3(0f, 1.0f, 0f),
+                new Vector3(0.45f, 1.0f, 0.35f)));
+        colliders.add(new BattleArenaHitboxCollider(
+                this,
+                BattleArenaHitboxCollider.Type.PUNCH,
+                meshObject.name + "_PunchHitbox",
+                new Vector3(0f, 1.1f, 0.85f),
+                new Vector3(0.35f, 0.35f, 0.45f)));
+        return colliders;
     }
 }

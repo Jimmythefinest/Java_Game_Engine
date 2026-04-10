@@ -6,8 +6,18 @@ import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 final class BattleArenaCharacterController {
+    static final String ANIM_IDLE = "idle";
+    static final String ANIM_WALK = "walk";
+    static final String ANIM_WALK_BACKWARD = "walk_backward";
+    static final String ANIM_RUN = "run";
+    static final String ANIM_JUMP = "jump";
+    static final String ANIM_PUNCH = "punch";
+    static final String ANIM_TAKE_HIT = "take_hit";
+
     private static final float MOVE_DEADZONE = 0.12f;
     private static final float WALK_SPEED = 0.02f;
     private static final float RUN_SPEED = 0.035f;
@@ -21,12 +31,7 @@ final class BattleArenaCharacterController {
 
     private final Vector3 playerPosition = new Vector3(0f, 0f, 0f);
     private float playerHeadingDegrees = 0f;
-    private ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
-    private ArrayList<KeyframeAnimation> walkAnimations = new ArrayList<>();
-    private ArrayList<KeyframeAnimation> walkBackwardAnimations = new ArrayList<>();
-    private ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
-    private ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
-    private ArrayList<KeyframeAnimation> punchAnimations = new ArrayList<>();
+    private Map<String, ArrayList<KeyframeAnimation>> animationSets = new HashMap<>();
     private ArrayList<KeyframeAnimation> currentAnimationSet = null;
     private TerrainHeightSampler terrainHeightSampler = (x, z) -> 0f;
     private boolean playerMoving = false;
@@ -36,19 +41,10 @@ final class BattleArenaCharacterController {
     private float verticalVelocity = 0f;
     private boolean jumping = false;
     private boolean punching = false;
+    private boolean takingHit = false;
 
-    void configureAnimationSets(ArrayList<KeyframeAnimation> idleAnimations,
-                                ArrayList<KeyframeAnimation> walkAnimations,
-                                ArrayList<KeyframeAnimation> walkBackwardAnimations,
-                                ArrayList<KeyframeAnimation> runAnimations,
-                                ArrayList<KeyframeAnimation> jumpAnimations,
-                                ArrayList<KeyframeAnimation> punchAnimations) {
-        this.idleAnimations = idleAnimations;
-        this.walkAnimations = walkAnimations;
-        this.walkBackwardAnimations = walkBackwardAnimations;
-        this.runAnimations = runAnimations;
-        this.jumpAnimations = jumpAnimations;
-        this.punchAnimations = punchAnimations;
+    void configureAnimationSets(Map<String, ArrayList<KeyframeAnimation>> animationSets) {
+        this.animationSets = animationSets != null ? new HashMap<>(animationSets) : new HashMap<String, ArrayList<KeyframeAnimation>>();
         currentAnimationSet = null;
         updateMovementAnimationState();
     }
@@ -68,18 +64,16 @@ final class BattleArenaCharacterController {
         verticalVelocity = 0f;
         jumping = false;
         punching = false;
+        takingHit = false;
     }
 
     void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
-        if (punching && isPunchFinished()) {
-            finishPunch();
-        }
-
-        if (actions.button(BattleArenaActions.PUNCH).pressed() && !punching && !punchAnimations.isEmpty()) {
+        if (actions.button(BattleArenaActions.PUNCH).pressed() && !punching
+                && !animationSet(ANIM_PUNCH).isEmpty()) {
             startPunch();
         }
 
-        if (punching) {
+        if (punching || takingHit) {
             updateJumpPhysics(sceneSpeed);
             snapPlayerToGround();
             return;
@@ -148,6 +142,19 @@ final class BattleArenaCharacterController {
         return playerHeadingDegrees;
     }
 
+    boolean isPunching() {
+        return punching;
+    }
+
+    void triggerHitReact() {
+        ArrayList<KeyframeAnimation> takeHitAnimations = animationSet(ANIM_TAKE_HIT);
+        if (takingHit || takeHitAnimations.isEmpty()) {
+            return;
+        }
+        takingHit = true;
+        setCurrentAnimationSet(takeHitAnimations, resolveBaseAnimationSet(), this::finishHitReact);
+    }
+
     void setPlayerPosition(float x, float y, float z) {
         playerPosition.set(x, y, z);
         snapPlayerToGround();
@@ -195,7 +202,31 @@ final class BattleArenaCharacterController {
         currentAnimationSet = nextAnimationSet;
     }
 
+    private void setCurrentAnimationSet(ArrayList<KeyframeAnimation> nextAnimationSet,
+                                        ArrayList<KeyframeAnimation> nextAnimationSetOnFinish,
+                                        Runnable onAnimationSetFinished) {
+        if (nextAnimationSet == null || nextAnimationSet.isEmpty()) {
+            return;
+        }
+        setCurrentAnimationSet(nextAnimationSet);
+        for (KeyframeAnimation animation : nextAnimationSet) {
+            animation.speed = 1f;
+            animation.onfinish = () -> onAnimationFinished(
+                    animation,
+                    nextAnimationSet,
+                    nextAnimationSetOnFinish,
+                    onAnimationSetFinished);
+        }
+    }
+
     private void updateMovementAnimationState() {
+        ArrayList<KeyframeAnimation> takeHitAnimations = animationSet(ANIM_TAKE_HIT);
+        ArrayList<KeyframeAnimation> punchAnimations = animationSet(ANIM_PUNCH);
+        ArrayList<KeyframeAnimation> jumpAnimations = animationSet(ANIM_JUMP);
+        if (takingHit) {
+            setCurrentAnimationSet(takeHitAnimations);
+            return;
+        }
         if (punching) {
             setCurrentAnimationSet(punchAnimations);
             return;
@@ -207,14 +238,14 @@ final class BattleArenaCharacterController {
             return;
         }
         if (!playerMoving) {
-            setCurrentAnimationSet(idleAnimations);
+            setCurrentAnimationSet(animationSet(ANIM_IDLE));
             return;
         }
         if (playerMovingBackward) {
-            setCurrentAnimationSet(walkBackwardAnimations);
+            setCurrentAnimationSet(animationSet(ANIM_WALK_BACKWARD));
             return;
         }
-        setCurrentAnimationSet(playerRunning ? runAnimations : walkAnimations);
+        setCurrentAnimationSet(playerRunning ? animationSet(ANIM_RUN) : animationSet(ANIM_WALK));
     }
 
     private float applyDeadzone(float value) {
@@ -225,31 +256,60 @@ final class BattleArenaCharacterController {
     }
 
     private void startPunch() {
+        ArrayList<KeyframeAnimation> punchAnimations = animationSet(ANIM_PUNCH);
         punching = true;
-        for (KeyframeAnimation animation : punchAnimations) {
-            animation.speed = 1f;
-            animation.onfinish = () -> {
-                animation.stop();
-            };
-        }
-        updateMovementAnimationState();
-    }
-
-    private boolean isPunchFinished() {
-        if (!punching || currentAnimationSet != punchAnimations || punchAnimations.isEmpty()) {
-            return true;
-        }
-        for (KeyframeAnimation animation : punchAnimations) {
-            if (animation.isActive()) {
-                return false;
-            }
-        }
-        return true;
+        setCurrentAnimationSet(punchAnimations, resolveBaseAnimationSet(), this::finishPunch);
     }
 
     private void finishPunch() {
         punching = false;
+    }
+
+    private void finishHitReact() {
+        takingHit = false;
+    }
+
+    private void onAnimationFinished(KeyframeAnimation finishedAnimation,
+                                     ArrayList<KeyframeAnimation> sourceAnimationSet,
+                                     ArrayList<KeyframeAnimation> nextAnimationSetOnFinish,
+                                     Runnable onAnimationSetFinished) {
+        finishedAnimation.stop();
+        finishedAnimation.time = 0f;
+        if (currentAnimationSet != sourceAnimationSet) {
+            return;
+        }
+        for (KeyframeAnimation animation : sourceAnimationSet) {
+            if (animation.isActive()) {
+                return;
+            }
+        }
+        if (onAnimationSetFinished != null) {
+            onAnimationSetFinished.run();
+        }
+        if (nextAnimationSetOnFinish != null && !nextAnimationSetOnFinish.isEmpty()) {
+            setCurrentAnimationSet(nextAnimationSetOnFinish);
+            return;
+        }
         updateMovementAnimationState();
+    }
+
+    private ArrayList<KeyframeAnimation> resolveBaseAnimationSet() {
+        ArrayList<KeyframeAnimation> jumpAnimations = animationSet(ANIM_JUMP);
+        if (jumping && !jumpAnimations.isEmpty()) {
+            return jumpAnimations;
+        }
+        if (!playerMoving) {
+            return animationSet(ANIM_IDLE);
+        }
+        if (playerMovingBackward) {
+            return animationSet(ANIM_WALK_BACKWARD);
+        }
+        return playerRunning ? animationSet(ANIM_RUN) : animationSet(ANIM_WALK);
+    }
+
+    private ArrayList<KeyframeAnimation> animationSet(String key) {
+        ArrayList<KeyframeAnimation> animations = animationSets.get(key);
+        return animations != null ? animations : new ArrayList<KeyframeAnimation>();
     }
 
     private float clamp(float value) {

@@ -54,6 +54,7 @@ final class BattleArenaCharacterAssembler {
                                                    String runAnimationFile,
                                                    String jumpAnimationFile,
                                                    String punchAnimationFile,
+                                                   String takeHitAnimationFile,
                                                    int texture,
                                                    String meshName,
                                                    float playerScale,
@@ -85,6 +86,7 @@ final class BattleArenaCharacterAssembler {
         loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, assembly.idleAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, assembly.jumpAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, assembly.punchAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, assembly.takeHitAnimations, activeAnimations);
 
         assembly.rootBone.update();
         for (Bone bone : assembly.bones) {
