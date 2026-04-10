@@ -20,4 +20,5 @@ final class BattleArenaCharacterAssembly {
     ArrayList<KeyframeAnimation> walkBackwardAnimations = new ArrayList<>();
     ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
     ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
+    ArrayList<KeyframeAnimation> punchAnimations = new ArrayList<>();
 }

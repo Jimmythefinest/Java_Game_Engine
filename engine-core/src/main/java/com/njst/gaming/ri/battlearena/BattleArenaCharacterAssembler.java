@@ -53,6 +53,7 @@ final class BattleArenaCharacterAssembler {
                                                    String walkBackwardAnimationFile,
                                                    String runAnimationFile,
                                                    String jumpAnimationFile,
+                                                   String punchAnimationFile,
                                                    int texture,
                                                    String meshName,
                                                    float playerScale,
@@ -83,6 +84,7 @@ final class BattleArenaCharacterAssembler {
         loadAnimationSet(graphicsDevice, scene, assembly.skeleton, runAnimationFile, assembly.runAnimations, activeAnimations);
         loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, assembly.idleAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, assembly.jumpAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, assembly.punchAnimations, activeAnimations);
 
         assembly.rootBone.update();
         for (Bone bone : assembly.bones) {
@@ -169,9 +171,11 @@ final class BattleArenaCharacterAssembler {
             if (animation.bone == null) {
                 continue;
             }
+            normalizeAnimationTiming(animation);
             animation.onfinish = () -> animation.time = 0f;
             animation.stop();
             animation.time = 0f;
+            animation.speed = 1f;
             targetList.add(animation);
             activeAnimations.add(animation);
             scene.KEY_ANIMATIONS.add(animation);
@@ -222,6 +226,20 @@ final class BattleArenaCharacterAssembler {
         for (int i = 0; i < bones.size(); i++) {
             bones.get(i).name = names.get(i);
         }
+    }
+
+    private void normalizeAnimationTiming(KeyframeAnimation animation) {
+        if (animation.keyframes == null || animation.keyframes.isEmpty()) {
+            animation.duration = 0f;
+            return;
+        }
+        float maxTime = 0f;
+        for (KeyframeAnimation.Keyframe keyframe : animation.keyframes) {
+            if (keyframe != null) {
+                maxTime = Math.max(maxTime, keyframe.time);
+            }
+        }
+        animation.duration = maxTime;
     }
 
     private Bone findRootBone(ArrayList<Bone> bones) {

@@ -20,6 +20,7 @@ import java.util.*;
  * @version 1.0
  */
 public class FBXAnimationLoader {
+    private static final float TARGET_FPS = 60.0f;
 
     /**
      * Extracts animation data from an FBX file at the specified path.
@@ -45,9 +46,13 @@ public class FBXAnimationLoader {
         }
 
         PointerBuffer anims = scene.mAnimations();
+        if (id < 0 || id >= scene.mNumAnimations()) {
+            Assimp.aiReleaseImport(scene);
+            throw new RuntimeException("Animation index out of range: " + id + " for " + path);
+        }
 
-        // for (int i = 0; i < numAnimations&&i<1; i++) {
         AIAnimation aiAnim = AIAnimation.create(anims.get(id));
+        float timeScale = resolveTimeScale(aiAnim);
         PointerBuffer channels = aiAnim.mChannels();
         System.out.println(aiAnim.mName().dataString());
 
@@ -60,35 +65,38 @@ public class FBXAnimationLoader {
             AIVectorKey.Buffer poskeys = channel.mPositionKeys();
             for (int k = 0; k < channel.mNumPositionKeys(); k++) {
                 AIVectorKey key = poskeys.get(k);
+                float normalizedTime = normalizeKeyTime(key.mTime(), timeScale);
                 Vector3 position = new Vector3(
                         key.mValue().x() / scale,
                         key.mValue().y() / scale,
                         key.mValue().z() / scale);
-                if (frames.containsKey((float) key.mTime() * 10.0f)) {
-                    frames.get((float) key.mTime() * 10).position = position;
+                if (frames.containsKey(normalizedTime)) {
+                    frames.get(normalizedTime).position = position;
                 } else {
-                    frames.put((float) key.mTime() * 10,
-                            new Keyframe((float) key.mTime() * 5, position, new Vector3()));
+                    frames.put(normalizedTime,
+                            new Keyframe(normalizedTime, position, new Vector3()));
                 }
             }
 
             AIQuatKey.Buffer rotkeys = channel.mRotationKeys();
-            for (int k = 0; k < channel.mNumPositionKeys(); k++) {
+            for (int k = 0; k < channel.mNumRotationKeys(); k++) {
                 AIQuatKey key = rotkeys.get(k);
+                float normalizedTime = normalizeKeyTime(key.mTime(), timeScale);
                 Vector3 rotation = new Vector3(quaternionToEulerXYZDegrees(
                         key.mValue().x(),
                         key.mValue().y(),
                         key.mValue().z(),
                         key.mValue().w()));
-                if (frames.containsKey((float) key.mTime() * 10)) {
-                    frames.get((float) key.mTime() * 10).rotation = rotation;
+                if (frames.containsKey(normalizedTime)) {
+                    frames.get(normalizedTime).rotation = rotation;
                 } else {
-                    frames.put((float) key.mTime() * 10, new Keyframe((float) key.mTime(), new Vector3(), rotation));
+                    frames.put(normalizedTime, new Keyframe(normalizedTime, new Vector3(), rotation));
                 }
             }
 
             frames.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(frame -> {
-                keyframes.keyframes.add(frame.getValue());
+                Keyframe mergedFrame = frame.getValue();
+                keyframes.addKeyframe(mergedFrame.time, mergedFrame.position, mergedFrame.rotation);
             });
 
             animationData.put(boneName.replace(":", "").replace("_", ""), keyframes);
@@ -97,6 +105,18 @@ public class FBXAnimationLoader {
 
         Assimp.aiReleaseImport(scene);
         return animationData;
+    }
+
+    private static float resolveTimeScale(AIAnimation aiAnim) {
+        double ticksPerSecond = aiAnim.mTicksPerSecond();
+        if (ticksPerSecond > 0.0) {
+            return (float) (TARGET_FPS / ticksPerSecond);
+        }
+        return 1.0f;
+    }
+
+    private static float normalizeKeyTime(double keyTime, float timeScale) {
+        return (float) keyTime * timeScale;
     }
 
     /**

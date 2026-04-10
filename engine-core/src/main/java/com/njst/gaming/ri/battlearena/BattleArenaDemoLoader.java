@@ -31,6 +31,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String IDLE_ANIMATIONS_FILE = "weighted_geometry/idle_animation.ser";
     private static final String IDLE_ANIMATIONS_FALLBACK_FILE = "weighted_geometry/indle_animation.ser";
     private static final String JUMP_ANIMATIONS_FILE = "weighted_geometry/jump_animation.ser";
+    private static final String PUNCH_ANIMATIONS_FILE = "weighted_geometry/punching_animation_0.ser";
     private static final String MODEL_TEXTURE_FILE = "j.jpg";
     private static final int GROUND_SIZE = 96;
     private static final float CAMERA_DISTANCE = 6.5f;
@@ -167,6 +168,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 WALK_BACKWARD_ANIMATIONS_FILE,
                 RUN_ANIMATIONS_FILE,
                 JUMP_ANIMATIONS_FILE,
+                PUNCH_ANIMATIONS_FILE,
                 loadCharacterTexture(graphicsDevice),
                 "BattleArenaPlayerMesh",
                 PLAYER_SCALE,
@@ -178,7 +180,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " walk=" + primaryCharacter.walkAnimations.size()
                 + " walkBackward=" + primaryCharacter.walkBackwardAnimations.size()
                 + " run=" + primaryCharacter.runAnimations.size()
-                + " jump=" + primaryCharacter.jumpAnimations.size());
+                + " jump=" + primaryCharacter.jumpAnimations.size()
+                + " punch=" + primaryCharacter.punchAnimations.size());
 
         log("loaded bones names=" + boneNames.size() + " runtimeBones=" + primaryCharacter.bones.size()
                 + " root=" + primaryCharacter.rootBone.name);
@@ -201,6 +204,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 WALK_BACKWARD_ANIMATIONS_FILE,
                 RUN_ANIMATIONS_FILE,
                 JUMP_ANIMATIONS_FILE,
+                PUNCH_ANIMATIONS_FILE,
                 loadCharacterTexture(graphicsDevice),
                 "BattleArenaSecondCharacter",
                 PLAYER_SCALE,

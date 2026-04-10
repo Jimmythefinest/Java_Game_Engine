@@ -26,6 +26,7 @@ final class BattleArenaCharacterController {
     private ArrayList<KeyframeAnimation> walkBackwardAnimations = new ArrayList<>();
     private ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
     private ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
+    private ArrayList<KeyframeAnimation> punchAnimations = new ArrayList<>();
     private ArrayList<KeyframeAnimation> currentAnimationSet = null;
     private TerrainHeightSampler terrainHeightSampler = (x, z) -> 0f;
     private boolean playerMoving = false;
@@ -34,17 +35,20 @@ final class BattleArenaCharacterController {
     private float jumpHeight = 0f;
     private float verticalVelocity = 0f;
     private boolean jumping = false;
+    private boolean punching = false;
 
     void configureAnimationSets(ArrayList<KeyframeAnimation> idleAnimations,
                                 ArrayList<KeyframeAnimation> walkAnimations,
                                 ArrayList<KeyframeAnimation> walkBackwardAnimations,
                                 ArrayList<KeyframeAnimation> runAnimations,
-                                ArrayList<KeyframeAnimation> jumpAnimations) {
+                                ArrayList<KeyframeAnimation> jumpAnimations,
+                                ArrayList<KeyframeAnimation> punchAnimations) {
         this.idleAnimations = idleAnimations;
         this.walkAnimations = walkAnimations;
         this.walkBackwardAnimations = walkBackwardAnimations;
         this.runAnimations = runAnimations;
         this.jumpAnimations = jumpAnimations;
+        this.punchAnimations = punchAnimations;
         currentAnimationSet = null;
         updateMovementAnimationState();
     }
@@ -63,9 +67,24 @@ final class BattleArenaCharacterController {
         jumpHeight = 0f;
         verticalVelocity = 0f;
         jumping = false;
+        punching = false;
     }
 
     void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
+        if (punching && isPunchFinished()) {
+            finishPunch();
+        }
+
+        if (actions.button(BattleArenaActions.PUNCH).pressed() && !punching && !punchAnimations.isEmpty()) {
+            startPunch();
+        }
+
+        if (punching) {
+            updateJumpPhysics(sceneSpeed);
+            snapPlayerToGround();
+            return;
+        }
+
         float forwardInput = 0f;
         float turnInput = 0f;
 
@@ -177,6 +196,10 @@ final class BattleArenaCharacterController {
     }
 
     private void updateMovementAnimationState() {
+        if (punching) {
+            setCurrentAnimationSet(punchAnimations);
+            return;
+        }
         if (jumping) {
             if (!jumpAnimations.isEmpty()) {
                 setCurrentAnimationSet(jumpAnimations);
@@ -199,6 +222,34 @@ final class BattleArenaCharacterController {
             return 0f;
         }
         return clamp(value);
+    }
+
+    private void startPunch() {
+        punching = true;
+        for (KeyframeAnimation animation : punchAnimations) {
+            animation.speed = 1f;
+            animation.onfinish = () -> {
+                animation.stop();
+            };
+        }
+        updateMovementAnimationState();
+    }
+
+    private boolean isPunchFinished() {
+        if (!punching || currentAnimationSet != punchAnimations || punchAnimations.isEmpty()) {
+            return true;
+        }
+        for (KeyframeAnimation animation : punchAnimations) {
+            if (animation.isActive()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void finishPunch() {
+        punching = false;
+        updateMovementAnimationState();
     }
 
     private float clamp(float value) {

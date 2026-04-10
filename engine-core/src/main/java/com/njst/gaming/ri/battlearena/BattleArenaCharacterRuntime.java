@@ -19,6 +19,7 @@ final class BattleArenaCharacterRuntime {
     final ArrayList<KeyframeAnimation> walkBackwardAnimations;
     final ArrayList<KeyframeAnimation> runAnimations;
     final ArrayList<KeyframeAnimation> jumpAnimations;
+    final ArrayList<KeyframeAnimation> punchAnimations;
 
     BattleArenaCharacterRuntime(BattleArenaCharacterController controller, BattleArenaCharacterAssembly assembly) {
         this.controller = controller;
@@ -32,12 +33,14 @@ final class BattleArenaCharacterRuntime {
         this.walkBackwardAnimations = copy(assembly.walkBackwardAnimations);
         this.runAnimations = copy(assembly.runAnimations);
         this.jumpAnimations = copy(assembly.jumpAnimations);
+        this.punchAnimations = copy(assembly.punchAnimations);
         controller.configureAnimationSets(
                 idleAnimations,
                 walkAnimations,
                 walkBackwardAnimations,
                 runAnimations,
-                jumpAnimations);
+                jumpAnimations,
+                punchAnimations);
     }
 
     Vector3 getPosition() {
