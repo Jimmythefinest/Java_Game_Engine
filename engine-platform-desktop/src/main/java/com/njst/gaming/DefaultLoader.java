@@ -1,12 +1,27 @@
 package com.njst.gaming;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.lwjgl.opengl.GL15;
+
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
-import com.njst.gaming.Geometries.*;
-import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.Geometries.CubeGeometry;
+import com.njst.gaming.Geometries.SphereGeometry;
+import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Loaders.FBXAnimationLoader;
 import com.njst.gaming.Loaders.FBXBoneLoader;
-import com.njst.gaming.Natives.*;
+import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.Natives.SSBO;
+import com.njst.gaming.Natives.ShaderProgram;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
@@ -15,21 +30,10 @@ import com.njst.gaming.ri.battlearena.BattleArenaActions;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import org.lwjgl.opengl.GL15;
-
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
-  private static final String ANIMATION_SOURCE_PATH = data.rootDirectory + "/jump.fbx";
+  private static final String ANIMATION_SOURCE_PATH = "/home/jimmy/Downloads/Punching.fbx";
   private static final float LOOK_SENSITIVITY = 0.0125f;
   private static final float MIN_PITCH = -1.35f;
   private static final float MAX_PITCH = 1.35f;
@@ -37,7 +41,7 @@ public class DefaultLoader implements Scene.SceneLoader {
   private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh.ser";
   private static final String EXPORTED_BONE_NAMES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bone_names.json";
   private static final String EXPORTED_BONES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bones.ser";
-  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/jump_animation.ser";
+  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/jump_animation00.ser";
   private float cameraYaw;
   private float cameraPitch;
 

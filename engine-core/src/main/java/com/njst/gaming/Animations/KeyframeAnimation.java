@@ -13,6 +13,8 @@ import java.util.List;
 public class KeyframeAnimation extends Animation implements Serializable {
     private static final long serialVersionUID = 2L;
     private static final float LEGACY_FRAMES_PER_SECOND = 60f;
+    private transient Vector3 restPosition;
+    private transient Vector3 restRotation;
     public List<Keyframe> keyframes; // List of keyframes for the animation
     // private float duration; // Total duration of the animation
     // private boolean active; // Is the animation currently active?
@@ -96,16 +98,41 @@ public class KeyframeAnimation extends Animation implements Serializable {
     }
     
     public void start() {
+        cacheRestPose();
         active = true;
     }
 
     public void stop() {
         active = false;
+        restoreRestPose();
     }
 
     public boolean isActive() {
         return active;
     }
+
+    private void cacheRestPose() {
+        if (bone == null || restPosition != null || restRotation != null) {
+            return;
+        }
+        restPosition = bone.position_to_parent.clone();
+        restRotation = bone.rotation.clone();
+    }
+
+    private void restoreRestPose() {
+        if (bone == null) {
+            return;
+        }
+        if (restPosition != null) {
+            bone.position_to_parent.set(restPosition);
+        }
+        if (restRotation != null) {
+            bone.setRotation(restRotation.clone());
+            return;
+        }
+        bone.update();
+    }
+
     public static class Keyframe implements Serializable {
     private static final long serialVersionUID = 3L;
     public float time; // Time at which this keyframe occurs
