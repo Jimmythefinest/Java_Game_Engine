@@ -71,6 +71,8 @@ final class BattleArenaCharacterAssembler {
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_PUNCH),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_KICK),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_KICK),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
@@ -98,6 +100,8 @@ final class BattleArenaCharacterAssembler {
                                                    float punchFramesPerSecond,
                                                    String kickAnimationFile,
                                                    float kickFramesPerSecond,
+                                                   String leftsideStepAnimationFile,
+                                                   float leftsideStepFramesPerSecond,
                                                    String takeHitAnimationFile,
                                                    float takeHitFramesPerSecond,
                                                    int texture,
@@ -132,6 +136,7 @@ final class BattleArenaCharacterAssembler {
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, jumpFramesPerSecond, assembly.jumpAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, punchFramesPerSecond, assembly.punchAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, kickAnimationFile, kickFramesPerSecond, assembly.kickAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, leftsideStepAnimationFile, leftsideStepFramesPerSecond, assembly.leftsideStepAnimations, activeAnimations);
         loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, takeHitFramesPerSecond, assembly.takeHitAnimations, activeAnimations);
 
         assembly.rootBone.update();
@@ -239,6 +244,10 @@ final class BattleArenaCharacterAssembler {
                                           float framesPerSecond,
                                           ArrayList<KeyframeAnimation> targetList,
                                           ArrayList<KeyframeAnimation> activeAnimations) {
+        if (animationFile == null || animationFile.trim().isEmpty()) {
+            log("optional animation asset missing path");
+            return;
+        }
         byte[] animBytes = graphicsDevice.loadBinaryResource(animationFile);
         if (animBytes == null || animBytes.length == 0) {
             log("optional animation asset missing=" + animationFile);

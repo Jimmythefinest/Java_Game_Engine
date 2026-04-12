@@ -27,6 +27,9 @@ final class AndroidAssetLoader {
     }
 
     static String normalizeResourcePath(String filePath) {
+        if (filePath == null || filePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Resource path must not be null or empty.");
+        }
         String normalized = filePath.replace('\\', '/');
         if (normalized.startsWith("/")) {
             normalized = normalized.substring(1);

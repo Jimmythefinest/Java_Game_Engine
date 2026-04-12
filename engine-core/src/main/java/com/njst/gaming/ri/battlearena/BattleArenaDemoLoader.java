@@ -126,6 +126,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 primaryCharacter.controller.update(actions, movementPointer, scene.speed);
                 secondaryCharacterAi.update(secondaryCharacter, primaryCharacter, aiControls, deltaSeconds);
                 secondaryCharacter.controller.update(aiControls, scene.speed);
+                updateSideStepFacing(primaryCharacter, secondaryCharacter);
+                updateSideStepFacing(secondaryCharacter, primaryCharacter);
                 primaryCharacter.applyHeadingToRig();
                 secondaryCharacter.applyHeadingToRig();
                 // Drive battle arena keyframes with elapsed time instead of frame count.
@@ -223,6 +225,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         log("registered hitboxes for " + character.meshObject.name + " count=" + character.getHitboxColliders().size());
     }
 
+    private void updateSideStepFacing(BattleArenaCharacterRuntime self, BattleArenaCharacterRuntime opponent) {
+        if (self == null || opponent == null || !self.isSideSteppingLeft()) {
+            return;
+        }
+        self.faceTowards(opponent);
+    }
+
     private void handleHitboxCollision(CollisionEvent event) {
         if (event == null || event.getType() != CollisionEventType.ENTER) {
             return;
@@ -238,13 +247,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         if (first.getType() == BattleArenaHitboxCollider.Type.HITBOX
                 && second.getType() == BattleArenaHitboxCollider.Type.HURTBOX) {
             logHit(first, second, event);
-            second.getCharacter().onHitTaken(second.getName(), second.getOnHitAnimation());
+            second.getCharacter().onHitTaken(first.getCharacter(), second.getName(), second.getOnHitAnimation());
             return;
         }
         if (second.getType() == BattleArenaHitboxCollider.Type.HITBOX
                 && first.getType() == BattleArenaHitboxCollider.Type.HURTBOX) {
             logHit(second, first, event);
-            first.getCharacter().onHitTaken(first.getName(), first.getOnHitAnimation());
+            first.getCharacter().onHitTaken(second.getCharacter(), first.getName(), first.getOnHitAnimation());
         }
     }
 

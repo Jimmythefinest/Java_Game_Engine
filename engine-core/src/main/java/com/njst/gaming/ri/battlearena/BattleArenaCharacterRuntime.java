@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 final class BattleArenaCharacterRuntime {
+    private static final float PUNCH_RECOIL_STRENGTH = 0.22f;
+    private static final float KICK_RECOIL_STRENGTH = 0.32f;
+    private static final float DEFAULT_RECOIL_STRENGTH = 0.18f;
+
     final BattleArenaCharacterController controller;
     final ArrayList<Bone> bones;
     final Bone rootBone;
@@ -55,6 +59,10 @@ final class BattleArenaCharacterRuntime {
         return controller.isKicking();
     }
 
+    boolean isSideSteppingLeft() {
+        return controller.isSideSteppingLeft();
+    }
+
     boolean isAnimationActive(String animationKey) {
         if (BattleArenaCharacterController.ANIM_PUNCH.equals(animationKey)) {
             return controller.isPunching();
@@ -67,6 +75,11 @@ final class BattleArenaCharacterRuntime {
 
     void onHitTaken(String hitboxName, String onHitAnimation) {
         controller.triggerHitReact(hitboxName, onHitAnimation);
+    }
+
+    void onHitTaken(BattleArenaCharacterRuntime attacker, String hitboxName, String onHitAnimation) {
+        controller.triggerHitReact(hitboxName, onHitAnimation);
+        controller.applyHitRecoil(resolveHitDirection(attacker), resolveRecoilStrength(attacker));
     }
 
     List<Collider> getHitboxColliders() {
@@ -98,6 +111,51 @@ final class BattleArenaCharacterRuntime {
         hipBone.rotate(new Vector3());
     }
 
+    void faceTowards(BattleArenaCharacterRuntime other) {
+        if (other == null) {
+            return;
+        }
+        Vector3 toOther = other.getPosition().clone().sub(getPosition());
+        toOther.y = 0f;
+        if (toOther.length() <= 0.0001f) {
+            return;
+        }
+        controller.setPlayerHeadingDegrees((float) Math.toDegrees(Math.atan2(toOther.x, toOther.z)));
+    }
+
+    private Vector3 resolveHitDirection(BattleArenaCharacterRuntime attacker) {
+        if (attacker == null) {
+            return facingDirection();
+        }
+        Vector3 direction = getPosition().clone().sub(attacker.getPosition());
+        direction.y = 0f;
+        if (direction.length() > 0.0001f) {
+            return direction;
+        }
+        return attacker.facingDirection();
+    }
+
+    private Vector3 facingDirection() {
+        float headingRadians = (float) Math.toRadians(getHeadingDegrees());
+        return new Vector3(
+                (float) Math.sin(headingRadians),
+                0f,
+                (float) Math.cos(headingRadians));
+    }
+
+    private float resolveRecoilStrength(BattleArenaCharacterRuntime attacker) {
+        if (attacker == null) {
+            return DEFAULT_RECOIL_STRENGTH;
+        }
+        if (attacker.isKicking()) {
+            return KICK_RECOIL_STRENGTH;
+        }
+        if (attacker.isPunching()) {
+            return PUNCH_RECOIL_STRENGTH;
+        }
+        return DEFAULT_RECOIL_STRENGTH;
+    }
+
     private ArrayList<KeyframeAnimation> copy(ArrayList<KeyframeAnimation> source) {
         return new ArrayList<>(source);
     }
@@ -124,6 +182,7 @@ final class BattleArenaCharacterRuntime {
         sets.put(BattleArenaCharacterController.ANIM_JUMP, copy(assembly.jumpAnimations));
         sets.put(BattleArenaCharacterController.ANIM_PUNCH, copy(assembly.punchAnimations));
         sets.put(BattleArenaCharacterController.ANIM_KICK, copy(assembly.kickAnimations));
+        sets.put(BattleArenaCharacterController.ANIM_LEFTSIDE_STEP, copy(assembly.leftsideStepAnimations));
         sets.put(BattleArenaCharacterController.ANIM_TAKE_HIT, copy(assembly.takeHitAnimations));
         return sets;
     }

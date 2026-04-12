@@ -12,6 +12,7 @@ final class BattleArenaCharacterControlState {
     boolean jumpPressed;
     boolean punchPressed;
     boolean kickPressed;
+    boolean stepLeftPressed;
 
     void clear() {
         forwardInput = 0f;
@@ -20,6 +21,7 @@ final class BattleArenaCharacterControlState {
         jumpPressed = false;
         punchPressed = false;
         kickPressed = false;
+        stepLeftPressed = false;
     }
 
     void capturePlayerInput(ActionInput actions, PointerState movementPointer) {
@@ -44,6 +46,7 @@ final class BattleArenaCharacterControlState {
         jumpPressed = actions.button(BattleArenaActions.JUMP).pressed();
         punchPressed = actions.button(BattleArenaActions.PUNCH).pressed();
         kickPressed = actions.button(BattleArenaActions.KICK).pressed();
+        stepLeftPressed = actions.button(BattleArenaActions.STEP_LEFT).pressed();
         forwardInput = clamp(forwardInput);
         turnInput = clamp(turnInput);
     }
