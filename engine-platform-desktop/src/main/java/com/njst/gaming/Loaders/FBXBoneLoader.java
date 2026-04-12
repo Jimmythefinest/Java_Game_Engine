@@ -137,6 +137,7 @@ public class FBXBoneLoader {
             System.out.println(Bones.get(i) + ":" + vertices.get(i));
         }
         System.err.println("Number of vertices:" + (vertices.size() / 3));
+        System.err.println("Number of faces:" + (indices.size() / 3));
         aiReleaseImport(scene);
         return new WeightedGeometry(
                 list_to_array(vertices),
@@ -231,7 +232,7 @@ public class FBXBoneLoader {
         // for(int i=0;i<num_meshes;i++){
         AIMesh mesh = AIMesh.create(scene.mMeshes().get(id));
         processVertices_invert_xz(mesh, vertices, scale, 1, 1, 1);
-        proccessNormals(mesh, normals);
+        processNormalsInvertXZ(mesh, normals);
         proccessIndices(mesh, indices);
         proccessTextureCoordinates(mesh, texture_coords);
         proccessWeights(mesh, weights, Bones);
@@ -308,7 +309,8 @@ public class FBXBoneLoader {
         for (int i = 0; i < 10; i++) {
             System.out.println(Bones.get(i) + ":" + vertices.get(i));
         }
-        System.err.println("Number of vertices:" + (vertices.size() / 3));
+        System.out.println("Number of vertices:" + (vertices.size() / 3));
+        System.out.println("Number of faces:" + (indices.size() / 3));
 
         return new WeightedGeometry(
                 list_to_array(vertices),
@@ -423,6 +425,9 @@ public class FBXBoneLoader {
 
     private static void proccessNormals(AIMesh aiMesh, List<Float> vertices) {
         AIVector3D.Buffer aiVertices = aiMesh.mNormals();
+        if(aiVertices==null){
+            return;
+        }
         while (aiVertices.remaining() > 0) {
             AIVector3D aiVertex = aiVertices.get();
             vertices.add(aiVertex.x());
@@ -431,12 +436,33 @@ public class FBXBoneLoader {
         }
     }
 
-    private static void proccessTextureCoordinates(AIMesh aiMesh, List<Float> vertices) {
-        AIVector3D.Buffer aiVertices = aiMesh.mVertices();
+    private static void processNormalsInvertXZ(AIMesh aiMesh, List<Float> vertices) {
+        AIVector3D.Buffer aiVertices = aiMesh.mNormals();
+        if (aiVertices == null) {
+            return;
+        }
         while (aiVertices.remaining() > 0) {
             AIVector3D aiVertex = aiVertices.get();
             vertices.add(aiVertex.x());
             vertices.add(aiVertex.y());
+            vertices.add(aiVertex.z());
+        }
+    }
+
+    private static void proccessTextureCoordinates(AIMesh aiMesh, List<Float> vertices) {
+        AIVector3D.Buffer textureCoords = aiMesh.mTextureCoords(0);
+        if (textureCoords == null) {
+            int vertexCount = aiMesh.mNumVertices();
+            for (int i = 0; i < vertexCount; i++) {
+                vertices.add(0f);
+                vertices.add(0f);
+            }
+            return;
+        }
+        while (textureCoords.remaining() > 0) {
+            AIVector3D uv = textureCoords.get();
+            vertices.add(uv.x());
+            vertices.add(uv.y());
         }
     }
 
