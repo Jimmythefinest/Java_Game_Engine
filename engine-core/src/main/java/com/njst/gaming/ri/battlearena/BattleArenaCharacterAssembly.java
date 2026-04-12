@@ -7,6 +7,8 @@ import com.njst.gaming.objects.Weighted_GameObject;
 import com.njst.gaming.skeleton.Skeleton;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 final class BattleArenaCharacterAssembly {
     ArrayList<Bone> bones = new ArrayList<>();
@@ -15,13 +17,14 @@ final class BattleArenaCharacterAssembly {
     Vector3 rootBasePosition = new Vector3(0f, 0f, 0f);
     Skeleton skeleton;
     Weighted_GameObject meshObject;
-    ArrayList<KeyframeAnimation> idleAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> walkAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> walkBackwardAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> runAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> jumpAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> punchAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> kickAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> leftsideStepAnimations = new ArrayList<>();
-    ArrayList<KeyframeAnimation> takeHitAnimations = new ArrayList<>();
+    Map<String, ArrayList<KeyframeAnimation>> animationSets = new LinkedHashMap<>();
+
+    ArrayList<KeyframeAnimation> animationSet(String key) {
+        ArrayList<KeyframeAnimation> animations = animationSets.get(key);
+        if (animations == null) {
+            animations = new ArrayList<>();
+            animationSets.put(key, animations);
+        }
+        return animations;
+    }
 }

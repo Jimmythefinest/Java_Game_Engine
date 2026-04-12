@@ -17,11 +17,25 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 final class BattleArenaCharacterAssembler {
     private static final String LOG_PREFIX = "[BattleArena] ";
+    private static final String[] REQUIRED_ANIMATION_KEYS = {
+            BattleArenaCharacterController.ANIM_WALK,
+            BattleArenaCharacterController.ANIM_WALK_BACKWARD,
+            BattleArenaCharacterController.ANIM_RUN,
+            BattleArenaCharacterController.ANIM_IDLE
+    };
+    private static final String[] OPTIONAL_ANIMATION_KEYS = {
+            BattleArenaCharacterController.ANIM_JUMP,
+            BattleArenaCharacterController.ANIM_PUNCH,
+            BattleArenaCharacterController.ANIM_KICK,
+            BattleArenaCharacterController.ANIM_LEFTSIDE_STEP,
+            BattleArenaCharacterController.ANIM_TAKE_HIT
+    };
 
     WeightedGeometry loadWeightedGeometry(GraphicsDevice graphicsDevice, String modelFile) {
         log("loading model asset=" + modelFile);
@@ -129,15 +143,17 @@ final class BattleArenaCharacterAssembler {
         }
 
         assembly.skeleton = new Skeleton(assembly.rootBone);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkAnimationFile, walkFramesPerSecond, assembly.walkAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkBackwardAnimationFile, walkBackwardFramesPerSecond, assembly.walkBackwardAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, runAnimationFile, runFramesPerSecond, assembly.runAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, idleFramesPerSecond, assembly.idleAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, jumpFramesPerSecond, assembly.jumpAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, punchFramesPerSecond, assembly.punchAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, kickAnimationFile, kickFramesPerSecond, assembly.kickAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, leftsideStepAnimationFile, leftsideStepFramesPerSecond, assembly.leftsideStepAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, takeHitFramesPerSecond, assembly.takeHitAnimations, activeAnimations);
+        Map<String, AnimationAssetSpec> animationSpecs = new LinkedHashMap<>();
+        animationSpecs.put(BattleArenaCharacterController.ANIM_WALK, new AnimationAssetSpec(walkAnimationFile, walkFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_WALK_BACKWARD, new AnimationAssetSpec(walkBackwardAnimationFile, walkBackwardFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_RUN, new AnimationAssetSpec(runAnimationFile, runFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_IDLE, new AnimationAssetSpec(idleAnimationFile, idleFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_JUMP, new AnimationAssetSpec(jumpAnimationFile, jumpFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_PUNCH, new AnimationAssetSpec(punchAnimationFile, punchFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_KICK, new AnimationAssetSpec(kickAnimationFile, kickFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_LEFTSIDE_STEP, new AnimationAssetSpec(leftsideStepAnimationFile, leftsideStepFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_TAKE_HIT, new AnimationAssetSpec(takeHitAnimationFile, takeHitFramesPerSecond));
+        loadAnimationSets(graphicsDevice, scene, assembly, animationSpecs, activeAnimations);
 
         assembly.rootBone.update();
         for (Bone bone : assembly.bones) {
@@ -152,6 +168,41 @@ final class BattleArenaCharacterAssembler {
         assembly.meshObject.boneBufferStartIndex = scene.registerSkeleton(assembly.bones);
         scene.addGameObject(assembly.meshObject);
         return assembly;
+    }
+
+    private void loadAnimationSets(GraphicsDevice graphicsDevice,
+                                   Scene scene,
+                                   BattleArenaCharacterAssembly assembly,
+                                   Map<String, AnimationAssetSpec> animationSpecs,
+                                   ArrayList<KeyframeAnimation> activeAnimations) {
+        for (String animationKey : REQUIRED_ANIMATION_KEYS) {
+            AnimationAssetSpec spec = animationSpecs.get(animationKey);
+            if (spec == null) {
+                throw new IllegalStateException("Missing required animation spec for key=" + animationKey);
+            }
+            loadAnimationSet(
+                    graphicsDevice,
+                    scene,
+                    assembly.skeleton,
+                    spec.path,
+                    spec.framesPerSecond,
+                    assembly.animationSet(animationKey),
+                    activeAnimations);
+        }
+        for (String animationKey : OPTIONAL_ANIMATION_KEYS) {
+            AnimationAssetSpec spec = animationSpecs.get(animationKey);
+            if (spec == null) {
+                continue;
+            }
+            loadOptionalAnimationSet(
+                    graphicsDevice,
+                    scene,
+                    assembly.skeleton,
+                    spec.path,
+                    spec.framesPerSecond,
+                    assembly.animationSet(animationKey),
+                    activeAnimations);
+        }
     }
 
     private ArrayList<Bone> loadBones(GraphicsDevice graphicsDevice, String boneFile, List<String> boneNames) {
@@ -397,5 +448,15 @@ final class BattleArenaCharacterAssembler {
             return file.getAbsolutePath();
         }
         return com.njst.gaming.data.rootDirectory + "/" + textureFile;
+    }
+
+    private static final class AnimationAssetSpec {
+        final String path;
+        final float framesPerSecond;
+
+        private AnimationAssetSpec(String path, float framesPerSecond) {
+            this.path = path;
+            this.framesPerSecond = framesPerSecond;
+        }
     }
 }

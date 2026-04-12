@@ -175,15 +175,9 @@ final class BattleArenaCharacterRuntime {
 
     private Map<String, ArrayList<KeyframeAnimation>> createAnimationSets(BattleArenaCharacterAssembly assembly) {
         LinkedHashMap<String, ArrayList<KeyframeAnimation>> sets = new LinkedHashMap<>();
-        sets.put(BattleArenaCharacterController.ANIM_IDLE, copy(assembly.idleAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_WALK, copy(assembly.walkAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_WALK_BACKWARD, copy(assembly.walkBackwardAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_RUN, copy(assembly.runAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_JUMP, copy(assembly.jumpAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_PUNCH, copy(assembly.punchAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_KICK, copy(assembly.kickAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_LEFTSIDE_STEP, copy(assembly.leftsideStepAnimations));
-        sets.put(BattleArenaCharacterController.ANIM_TAKE_HIT, copy(assembly.takeHitAnimations));
+        for (Map.Entry<String, ArrayList<KeyframeAnimation>> entry : assembly.animationSets.entrySet()) {
+            sets.put(entry.getKey(), copy(entry.getValue()));
+        }
         return sets;
     }
 
