@@ -57,14 +57,22 @@ final class BattleArenaCharacterAssembler {
                 weightedGeometry,
                 definition.model.bones,
                 loadBoneNames(graphicsDevice, definition.model.boneNames),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_IDLE),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_WALK),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_WALK_BACKWARD),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_RUN),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_JUMP),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_PUNCH),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_KICK),
-                definitionAnimation(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_IDLE),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_IDLE),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_WALK),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_WALK),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_WALK_BACKWARD),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_WALK_BACKWARD),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_RUN),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_RUN),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_JUMP),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_JUMP),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_PUNCH),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_PUNCH),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_KICK),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_KICK),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
                 meshName,
                 playerScale,
@@ -77,13 +85,21 @@ final class BattleArenaCharacterAssembler {
                                                    String boneFile,
                                                    List<String> boneNames,
                                                    String idleAnimationFile,
+                                                   float idleFramesPerSecond,
                                                    String walkAnimationFile,
+                                                   float walkFramesPerSecond,
                                                    String walkBackwardAnimationFile,
+                                                   float walkBackwardFramesPerSecond,
                                                    String runAnimationFile,
+                                                   float runFramesPerSecond,
                                                    String jumpAnimationFile,
+                                                   float jumpFramesPerSecond,
                                                    String punchAnimationFile,
+                                                   float punchFramesPerSecond,
                                                    String kickAnimationFile,
+                                                   float kickFramesPerSecond,
                                                    String takeHitAnimationFile,
+                                                   float takeHitFramesPerSecond,
                                                    int texture,
                                                    String meshName,
                                                    float playerScale,
@@ -109,14 +125,14 @@ final class BattleArenaCharacterAssembler {
         }
 
         assembly.skeleton = new Skeleton(assembly.rootBone);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkAnimationFile, assembly.walkAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkBackwardAnimationFile, assembly.walkBackwardAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, runAnimationFile, assembly.runAnimations, activeAnimations);
-        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, assembly.idleAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, assembly.jumpAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, assembly.punchAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, kickAnimationFile, assembly.kickAnimations, activeAnimations);
-        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, assembly.takeHitAnimations, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkAnimationFile, walkFramesPerSecond, assembly.walkAnimations, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, walkBackwardAnimationFile, walkBackwardFramesPerSecond, assembly.walkBackwardAnimations, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, runAnimationFile, runFramesPerSecond, assembly.runAnimations, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, assembly.skeleton, idleAnimationFile, idleFramesPerSecond, assembly.idleAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, jumpAnimationFile, jumpFramesPerSecond, assembly.jumpAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, punchAnimationFile, punchFramesPerSecond, assembly.punchAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, kickAnimationFile, kickFramesPerSecond, assembly.kickAnimations, activeAnimations);
+        loadOptionalAnimationSet(graphicsDevice, scene, assembly.skeleton, takeHitAnimationFile, takeHitFramesPerSecond, assembly.takeHitAnimations, activeAnimations);
 
         assembly.rootBone.update();
         for (Bone bone : assembly.bones) {
@@ -184,6 +200,7 @@ final class BattleArenaCharacterAssembler {
                                   Scene scene,
                                   Skeleton skeleton,
                                   String animationFile,
+                                  float framesPerSecond,
                                   ArrayList<KeyframeAnimation> targetList,
                                   ArrayList<KeyframeAnimation> activeAnimations) {
         log("loading animations asset=" + animationFile);
@@ -204,6 +221,7 @@ final class BattleArenaCharacterAssembler {
                 continue;
             }
             normalizeAnimationTiming(animation);
+            animation.framesPerSecond = framesPerSecond;
             animation.onfinish = () -> animation.time = 0f;
             animation.stop();
             animation.time = 0f;
@@ -218,6 +236,7 @@ final class BattleArenaCharacterAssembler {
                                           Scene scene,
                                           Skeleton skeleton,
                                           String animationFile,
+                                          float framesPerSecond,
                                           ArrayList<KeyframeAnimation> targetList,
                                           ArrayList<KeyframeAnimation> activeAnimations) {
         byte[] animBytes = graphicsDevice.loadBinaryResource(animationFile);
@@ -225,7 +244,7 @@ final class BattleArenaCharacterAssembler {
             log("optional animation asset missing=" + animationFile);
             return;
         }
-        loadAnimationSet(graphicsDevice, scene, skeleton, animationFile, targetList, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, skeleton, animationFile, framesPerSecond, targetList, activeAnimations);
     }
 
     @SuppressWarnings("unchecked")
@@ -346,7 +365,17 @@ final class BattleArenaCharacterAssembler {
         System.out.println(LOG_PREFIX + message);
     }
 
-    private String definitionAnimation(BattleArenaCharacterDefinition definition, String key) {
+    private String definitionAnimationAsset(BattleArenaCharacterDefinition definition, String key) {
+        BattleArenaCharacterDefinition.AnimationDefinition animation = definitionAnimation(definition, key);
+        return animation != null ? animation.assetPath() : null;
+    }
+
+    private float definitionAnimationFramesPerSecond(BattleArenaCharacterDefinition definition, String key) {
+        BattleArenaCharacterDefinition.AnimationDefinition animation = definitionAnimation(definition, key);
+        return animation != null ? animation.resolvedFramesPerSecond() : BattleArenaCharacterDefinition.DEFAULT_ANIMATION_FPS;
+    }
+
+    private BattleArenaCharacterDefinition.AnimationDefinition definitionAnimation(BattleArenaCharacterDefinition definition, String key) {
         if (definition == null || definition.animations == null) {
             return null;
         }

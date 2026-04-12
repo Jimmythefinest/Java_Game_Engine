@@ -45,6 +45,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final BattleArenaCharacterController secondaryCharacterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterAssembler characterAssembler = new BattleArenaCharacterAssembler();
     private final BattleArenaCharacterDefinitionLoader characterDefinitionLoader = new BattleArenaCharacterDefinitionLoader();
+    private final BattleArenaCharacterControlState aiControls = new BattleArenaCharacterControlState();
+    private final BattleArenaCharacterBrain secondaryCharacterAi = new BattleArenaSimpleChaseAi();
     private BattleArenaCharacterRuntime primaryCharacter;
     private BattleArenaCharacterRuntime secondaryCharacter;
     private BattleArenaCharacterRuntime activeCharacter;
@@ -65,6 +67,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         characterController.reset();
         secondaryCharacterController.reset();
         activeCharacter = null;
+        aiControls.clear();
         cameraYaw = 0f;
         cameraPitch = -0.18f;
         debugHitboxesVisible = false;
@@ -120,7 +123,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 if (actions.button(BattleArenaActions.TOGGLE_HITBOXES).pressed()) {
                     toggleHitboxDebug();
                 }
-                activeCharacter.controller.update(actions, movementPointer, scene.speed);
+                primaryCharacter.controller.update(actions, movementPointer, scene.speed);
+                secondaryCharacterAi.update(secondaryCharacter, primaryCharacter, aiControls, deltaSeconds);
+                secondaryCharacter.controller.update(aiControls, scene.speed);
                 primaryCharacter.applyHeadingToRig();
                 secondaryCharacter.applyHeadingToRig();
                 // Drive battle arena keyframes with elapsed time instead of frame count.
@@ -257,7 +262,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private void toggleActiveCharacter() {
         activeCharacter = activeCharacter == primaryCharacter ? secondaryCharacter : primaryCharacter;
         Vector3 activePosition = activeCharacter.getPosition();
-        log("active character switched to x=" + activePosition.x + " z=" + activePosition.z);
+        log("camera target switched to " + activeCharacter.meshObject.name
+                + " x=" + activePosition.x + " z=" + activePosition.z);
     }
 
     private void toggleHitboxDebug() {

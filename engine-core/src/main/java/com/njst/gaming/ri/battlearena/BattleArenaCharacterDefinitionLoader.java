@@ -2,6 +2,9 @@ package com.njst.gaming.ri.battlearena;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.njst.gaming.graphics.GraphicsDevice;
 
 final class BattleArenaCharacterDefinitionLoader {
@@ -17,6 +20,7 @@ final class BattleArenaCharacterDefinitionLoader {
         if (definition == null) {
             throw new IllegalStateException("Unable to parse character definition: " + definitionFile);
         }
+        populateAnimationDefinitions(definition, json, definitionFile);
         validate(definition, definitionFile);
         return definition;
     }
@@ -40,10 +44,66 @@ final class BattleArenaCharacterDefinitionLoader {
     }
 
     String animation(BattleArenaCharacterDefinition definition, String animationKey) {
+        BattleArenaCharacterDefinition.AnimationDefinition animation = animationDefinition(definition, animationKey);
+        return animation != null ? animation.assetPath() : null;
+    }
+
+    BattleArenaCharacterDefinition.AnimationDefinition animationDefinition(BattleArenaCharacterDefinition definition,
+                                                                           String animationKey) {
         if (definition == null || definition.animations == null) {
             return null;
         }
         return definition.animations.get(animationKey);
+    }
+
+    private void populateAnimationDefinitions(BattleArenaCharacterDefinition definition,
+                                              String json,
+                                              String definitionFile) {
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonObject animationsObject = root.getAsJsonObject("animations");
+        if (animationsObject == null) {
+            definition.animations = new java.util.LinkedHashMap<String, BattleArenaCharacterDefinition.AnimationDefinition>();
+            return;
+        }
+
+        java.util.LinkedHashMap<String, BattleArenaCharacterDefinition.AnimationDefinition> animations =
+                new java.util.LinkedHashMap<String, BattleArenaCharacterDefinition.AnimationDefinition>();
+        for (java.util.Map.Entry<String, JsonElement> entry : animationsObject.entrySet()) {
+            JsonElement value = entry.getValue();
+            BattleArenaCharacterDefinition.AnimationDefinition animation =
+                    parseAnimationDefinition(value, entry.getKey(), definitionFile);
+            animations.put(entry.getKey(), animation);
+        }
+        definition.animations = animations;
+    }
+
+    private BattleArenaCharacterDefinition.AnimationDefinition parseAnimationDefinition(JsonElement value,
+                                                                                        String animationKey,
+                                                                                        String definitionFile) {
+        BattleArenaCharacterDefinition.AnimationDefinition animation =
+                new BattleArenaCharacterDefinition.AnimationDefinition();
+        if (value == null || value.isJsonNull()) {
+            return animation;
+        }
+        if (value.isJsonPrimitive()) {
+            animation.asset = value.getAsString();
+            animation.framesPerSecond = BattleArenaCharacterDefinition.DEFAULT_ANIMATION_FPS;
+            return animation;
+        }
+        if (value.isJsonObject()) {
+            JsonObject object = value.getAsJsonObject();
+            JsonElement asset = object.get("asset");
+            if (asset != null && !asset.isJsonNull()) {
+                animation.asset = asset.getAsString();
+            }
+            JsonElement framesPerSecond = object.get("framesPerSecond");
+            if (framesPerSecond != null && !framesPerSecond.isJsonNull()) {
+                animation.framesPerSecond = framesPerSecond.getAsFloat();
+            }
+            return animation;
+        }
+        throw new IllegalStateException("Unsupported animation definition for animations."
+                + animationKey + " in " + definitionFile);
     }
 
     private void require(String value, String fieldName, String definitionFile) {

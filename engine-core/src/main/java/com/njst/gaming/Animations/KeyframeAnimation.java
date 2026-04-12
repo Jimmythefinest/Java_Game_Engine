@@ -19,6 +19,7 @@ public class KeyframeAnimation extends Animation implements Serializable {
     // private float duration; // Total duration of the animation
     // private boolean active; // Is the animation currently active?
     public Runnable onfinish;
+    public float framesPerSecond = LEGACY_FRAMES_PER_SECOND;
     public KeyframeAnimation(Bone bone) {
         this.bone = bone;
         this.keyframes = new ArrayList<>();
@@ -46,7 +47,7 @@ public class KeyframeAnimation extends Animation implements Serializable {
         if (deltaSeconds < 0f) {
             deltaSeconds = 0f;
         }
-        time += deltaSeconds * LEGACY_FRAMES_PER_SECOND * speed;
+        time += deltaSeconds * resolvedFramesPerSecond() * speed;
         float currentTime = time;
         Keyframe previousKeyframe = null;
         Keyframe nextKeyframe = null;
@@ -62,7 +63,7 @@ public class KeyframeAnimation extends Animation implements Serializable {
         }
         if (nextKeyframe == null) {
             if (previousKeyframe != null) {
-                bone.rotate(previousKeyframe.rotation.sub(bone.rotation));
+                // bone.rotate(previousKeyframe.rotation.sub(bone.rotation));
             }
             if (onfinish != null) {
                 onfinish.run();
@@ -109,6 +110,10 @@ public class KeyframeAnimation extends Animation implements Serializable {
 
     public boolean isActive() {
         return active;
+    }
+
+    private float resolvedFramesPerSecond() {
+        return framesPerSecond > 0f ? framesPerSecond : LEGACY_FRAMES_PER_SECOND;
     }
 
     private void cacheRestPose() {

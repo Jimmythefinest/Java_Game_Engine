@@ -24,7 +24,6 @@ final class BattleArenaCharacterController {
     static final String ANIM_KICK = "kick";
     static final String ANIM_TAKE_HIT = "take_hit";
 
-    private static final float MOVE_DEADZONE = 0.12f;
     private static final float WALK_SPEED = 0.02f;
     private static final float RUN_SPEED = 0.035f;
     private static final float TURN_SPEED_DEGREES = 3.2f;
@@ -50,6 +49,7 @@ final class BattleArenaCharacterController {
     private boolean punching = false;
     private boolean kicking = false;
     private boolean takingHit = false;
+    private final BattleArenaCharacterControlState playerControls = new BattleArenaCharacterControlState();
 
     void configureCharacterData(Map<String, ArrayList<KeyframeAnimation>> animationSets,
                                 Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions) {
@@ -81,16 +81,23 @@ final class BattleArenaCharacterController {
     }
 
     void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
-        if (actions.button(BattleArenaActions.PUNCH).pressed() && !punching
-                && !animationSet(ANIM_PUNCH).isEmpty()) {
+        playerControls.capturePlayerInput(actions, movementPointer);
+        update(playerControls, sceneSpeed);
+    }
+
+    void update(BattleArenaCharacterControlState controls, float sceneSpeed) {
+        if (controls == null) {
+            return;
+        }
+
+        if (controls.punchPressed && !punching && !animationSet(ANIM_PUNCH).isEmpty()) {
             triggerConfiguredEvent(
                     EVENT_PUNCH_STARTED,
                     () -> punching = true,
                     this::finishPunch);
         }
 
-        if (actions.button(BattleArenaActions.KICK).pressed() && !kicking
-                && !animationSet(ANIM_KICK).isEmpty()) {
+        if (controls.kickPressed && !kicking && !animationSet(ANIM_KICK).isEmpty()) {
             triggerConfiguredEvent(
                     EVENT_KICK_STARTED,
                     () -> kicking = true,
@@ -103,37 +110,18 @@ final class BattleArenaCharacterController {
             return;
         }
 
-        float forwardInput = 0f;
-        float turnInput = 0f;
+        float forwardInput = clamp(controls.forwardInput);
+        float turnInput = clamp(controls.turnInput);
 
-        if (movementPointer.isActive()) {
-            forwardInput += -applyDeadzone(movementPointer.getY());
-            turnInput += applyDeadzone(movementPointer.getX());
-        }
-        if (actions.button(BattleArenaActions.FORWARD).isDown()) {
-            forwardInput += 1f;
-        }
-        if (actions.button(BattleArenaActions.BACKWARD).isDown()) {
-            forwardInput -= 1f;
-        }
-        if (actions.button(BattleArenaActions.TURN_LEFT).isDown()) {
-            turnInput -= 1f;
-        }
-        if (actions.button(BattleArenaActions.ROTATE).isDown()) {
-            turnInput += 1f;
-        }
-
-        if (actions.button(BattleArenaActions.JUMP).pressed() && !jumping) {
+        if (controls.jumpPressed && !jumping) {
             jumping = true;
             verticalVelocity = JUMP_VELOCITY * sceneSpeed;
             updateMovementAnimationState();
         }
 
-        forwardInput = clamp(forwardInput);
-        turnInput = clamp(turnInput);
         playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * sceneSpeed;
 
-        boolean wantsToRun = actions.button(BattleArenaActions.RUN).isDown();
+        boolean wantsToRun = controls.runDown;
         float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
         float moveAmount = forwardInput * movementSpeed * sceneSpeed;
         boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
@@ -284,13 +272,6 @@ final class BattleArenaCharacterController {
             return;
         }
         setCurrentAnimationSet(playerRunning ? animationSet(ANIM_RUN) : animationSet(ANIM_WALK));
-    }
-
-    private float applyDeadzone(float value) {
-        if (Math.abs(value) < MOVE_DEADZONE) {
-            return 0f;
-        }
-        return clamp(value);
     }
 
     private void finishPunch() {
