@@ -44,4 +44,10 @@ public class WeightedGeometry extends Geometry implements Serializable {
     public float[] getWeightss() {
         return weights;
     }
+
+    public void resize(int scale) {
+        for(int i=0;i<vertices.length;i+=3){
+            vertices[i]*=scale;
+        }
+    }
 }

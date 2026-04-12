@@ -181,14 +181,14 @@ public class DefaultLoader implements Scene.SceneLoader {
       plane.scale = new float[] { 100, 1, 100 };
       plane.move(0, -1, 0);
       plane.updateModelMatrix();
-      scene.addGameObject(plane);
+      // scene.addGameObject(plane);
 
       Map<String, KeyframeAnimation> fbxanims = FBXAnimationLoader
           .extractAnimation(ANIMATION_SOURCE_PATH, 0, 100);
       exportAnimations(fbxanims);
 
       Skeleton skeleton = new Skeleton(
-          FBXBoneLoader.loadBones(data.rootDirectory + "/Defeated.fbx", new HashMap<String, KeyframeAnimation>(), 100));
+          FBXBoneLoader.loadBones("/home/jimmy/Documents/Java_projects/java_game_engine/backups/resources/Defeated.fbx", new HashMap<String, KeyframeAnimation>(), 100));
       Skeletal_Animation skeletal_Animation1 = new Skeletal_Animation();
       skeletal_Animation1.set_Animation_map(fbxanims);
       skeleton.map(skeletal_Animation1);
@@ -217,7 +217,8 @@ public class DefaultLoader implements Scene.SceneLoader {
 
       skeleton.root_bone.update();
 
-      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel(data.rootDirectory + "/Defeated.fbx", bonesList, 1, 1.0f);
+      WeightedGeometry npcGeometry = FBXBoneLoader.loadModel_invert_xz("/home/jimmy/Downloads/Taunt111.fbx", bonesList, 1, 10f);
+      // npcGeometry.resize(-1);
       exportWeightedGeometry(npcGeometry);
       exportBoneNames(bonesList);
       exportBones(bonesList);

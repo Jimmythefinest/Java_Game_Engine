@@ -1,9 +1,9 @@
 {
   "model": {
-    "mesh": "weighted_geometry/defeated_mesh_1.ser",
+    "mesh": "weighted_geometry/defeated_mesh.ser",
     "bones": "weighted_geometry/defeated_bones.ser",
     "boneNames": "weighted_geometry/defeated_bone_names.json",
-    "texture": "j.jpg"
+    "texture": "skin.jpg"
   },
   "animations": {
     "idle": {

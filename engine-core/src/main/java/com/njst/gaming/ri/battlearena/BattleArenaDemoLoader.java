@@ -24,7 +24,7 @@ import java.util.List;
 
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
-    private static final String GROUND_FILE = "stone.jpeg";
+    private static final String GROUND_FILE = "j.jpg";
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
     private static final int GROUND_SIZE = 96;
     private static final float CAMERA_DISTANCE = 6.5f;

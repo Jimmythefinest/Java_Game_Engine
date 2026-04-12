@@ -1,6 +1,5 @@
 package com.njst.gaming.ri.battlearena;
 
-import com.njst.gaming.Engine;
 import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.*;
 

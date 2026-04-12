@@ -215,4 +215,7 @@ public float[] texture_coordinates={
        return indices;
 
     }
+    public void clear_normals(){
+        
+    }
 }
