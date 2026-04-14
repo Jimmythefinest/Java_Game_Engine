@@ -11,7 +11,6 @@ import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -64,6 +63,7 @@ final class BattleArenaCharacterAssembler {
                                                    WeightedGeometry weightedGeometry,
                                                    BattleArenaCharacterDefinition definition,
                                                    String meshName,
+                                                   int texture,
                                                    float playerScale,
                                                    ArrayList<KeyframeAnimation> activeAnimations) {
         return assembleCharacter(
@@ -92,7 +92,7 @@ final class BattleArenaCharacterAssembler {
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
-                graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
+                texture,
                 meshName,
                 playerScale,
                 activeAnimations);
@@ -447,20 +447,6 @@ final class BattleArenaCharacterAssembler {
         }
         return definition.animations.get(key);
     }
-
-    private String resolveTexturePath(String textureFile) {
-        File file = new File(textureFile);
-        if (file.isAbsolute()) {
-            return file.getAbsolutePath();
-        }
-        File desktopResource = new File(com.njst.gaming.data.rootDirectory, textureFile);
-        if (desktopResource.isFile()) {
-            return desktopResource.getPath();
-        }
-        // On Android resource files are packaged as asset-relative paths.
-        return textureFile;
-    }
-
     private static final class AnimationAssetSpec {
         final String path;
         final float framesPerSecond;

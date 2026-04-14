@@ -124,18 +124,14 @@ final class BattleArenaCharacterRuntime {
                 rootBasePosition.x + position.x,
                 rootBasePosition.y + position.y,
                 rootBasePosition.z + position.z);
+        rootBone.rotation.set(0f, getHeadingDegrees(), 0f);
         rootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
         rootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
         rootBone.update();
-        rootBone.rotate(new Vector3());
     }
 
     void applyHeadingToRig() {
-        if (hipBone == null) {
-            return;
-        }
-        rootBone.setRotation(new Vector3(0f, getHeadingDegrees(), 0f));
-        hipBone.rotate(new Vector3());
+        rootBone.rotation.set(0f, getHeadingDegrees(), 0f);
     }
 
     void faceTowards(BattleArenaCharacterRuntime other) {

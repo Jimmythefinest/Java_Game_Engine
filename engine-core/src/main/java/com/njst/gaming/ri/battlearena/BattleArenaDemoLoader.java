@@ -38,6 +38,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final float HEALTH_BAR_WIDTH = 1.35f;
     private static final float HEALTH_BAR_HEIGHT = 0.18f;
     private static final float HEALTH_BAR_VERTICAL_OFFSET = 2.35f;
+    private static final boolean DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING = false;
     private static final String LOG_PREFIX = "[BattleArena] ";
 
     private TerrainGeometry terrainGeometry;
@@ -131,14 +132,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 secondaryCharacter.controller.update(aiControls, scene.speed);
                 updateSideStepFacing(primaryCharacter, secondaryCharacter);
                 updateSideStepFacing(secondaryCharacter, primaryCharacter);
-                primaryCharacter.applyHeadingToRig();
-                secondaryCharacter.applyHeadingToRig();
-                // Drive battle arena keyframes with elapsed time instead of frame count.
-                for (KeyframeAnimation anim : activeAnimations) {
-                    anim.animate(deltaSeconds);
+                // Temporary profiling switch so we can isolate animation cost.
+                if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
+                    for (KeyframeAnimation anim : activeAnimations) {
+                        anim.animate(deltaSeconds);
+                    }
                 }
-                primaryCharacter.rootBone.update();
-                secondaryCharacter.rootBone.update();
                 primaryCharacter.syncRig();
                 secondaryCharacter.syncRig();
                 updateCamera(scene.renderer.camera);
@@ -170,12 +169,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " boneIds=" + boneIdCount);
 
         activeAnimations.clear();
+        int characterTexture = loadCharacterTexture(graphicsDevice, definition);
         BattleArenaCharacterAssembly primaryAssembly = characterAssembler.assembleCharacter(
                 scene,
                 graphicsDevice,
                 weightedGeometry,
                 definition,
                 "BattleArenaPlayerMesh",
+                characterTexture,
                 PLAYER_SCALE,
                 activeAnimations);
         primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly, definition);
@@ -199,7 +200,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         log("loaded bones runtimeBones=" + primaryCharacter.bones.size()
                 + " root=" + primaryCharacter.rootBone.name);
 
-        Bone_object boneobj=new Bone_object(new CubeGeometry(), loadCharacterTexture(graphicsDevice, definition));
+        Bone_object boneobj=new Bone_object(new CubeGeometry(), characterTexture);
         boneobj.bone=primaryCharacter.rootBone;
         boneobj.scale=new float[]{0.1f,0.1f,0.1f};
         // scene.addGameObject(boneobj);
@@ -212,6 +213,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 weightedGeometry,
                 definition,
                 "BattleArenaSecondCharacter",
+                characterTexture,
                 PLAYER_SCALE,
                 activeAnimations);
         secondaryCharacter = new BattleArenaCharacterRuntime(secondaryCharacterController, secondaryAssembly, definition);

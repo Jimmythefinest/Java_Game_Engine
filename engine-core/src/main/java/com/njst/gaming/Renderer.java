@@ -76,6 +76,9 @@ public class Renderer {
     private boolean shadowMapDumpPending = true;
 
     private final GraphicsDevice graphicsDevice;
+    private final ArrayList<GameObject> renderQueue = new ArrayList<>();
+    private final float[] cameraDataBuffer = new float[39];
+    private final Vector3 mainPassLightPosition = new Vector3();
     private ProfilerSnapshot profilerSnapshot = new ProfilerSnapshot(0f, 0f, 0f, 0f, 0, 0);
     private long profilerWindowStartMillis = 0L;
     private long profilerFrameNanos = 0L;
@@ -142,7 +145,8 @@ public class Renderer {
             long updateEnd = System.nanoTime();
             scene.uploadSkeletonBuffer(graphicsDevice);
 
-            ArrayList<GameObject> renderQueue = new ArrayList<>(scene.objects);
+            renderQueue.clear();
+            renderQueue.addAll(scene.objects);
             if (skybox != null) {
                 renderQueue.remove(skybox);
             }
@@ -165,8 +169,9 @@ public class Renderer {
             }
 
             long renderStart = System.nanoTime();
-            renderQueue.sort(Comparator.comparingDouble(
-                    object -> -object.position.distance(camera.cameraPosition)));
+            renderQueue.sort((first, second) -> Float.compare(
+                    second.position.distanceSquared(camera.cameraPosition),
+                    first.position.distanceSquared(camera.cameraPosition)));
             int terrainCount = 0;
             for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
@@ -225,16 +230,21 @@ public class Renderer {
     }
 
     private void bindMainCameraData() {
-        bindCameraData(camera, new Vector3(lightPos[0], lightPos[1], lightPos[2]));
+        mainPassLightPosition.set(lightPos[0], lightPos[1], lightPos[2]);
+        bindCameraData(camera, mainPassLightPosition);
     }
 
     private void bindCameraData(Camera activeCamera, Vector3 activeLight) {
-        float[] consts = new float[39];
-        System.arraycopy(activeCamera.getProjectionMatrix().r, 0, consts, 0, 16);
-        System.arraycopy(activeCamera.getViewMatrix().r, 0, consts, 16, 16);
-        System.arraycopy(activeCamera.cameraPosition.toArray(), 0, consts, 32, 3);
-        System.arraycopy(new float[] { activeLight.x, activeLight.y, activeLight.z, 0 }, 0, consts, 35, 4);
-        ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
+        System.arraycopy(activeCamera.getProjectionMatrix().r, 0, cameraDataBuffer, 0, 16);
+        System.arraycopy(activeCamera.getViewMatrix().r, 0, cameraDataBuffer, 16, 16);
+        cameraDataBuffer[32] = activeCamera.cameraPosition.x;
+        cameraDataBuffer[33] = activeCamera.cameraPosition.y;
+        cameraDataBuffer[34] = activeCamera.cameraPosition.z;
+        cameraDataBuffer[35] = activeLight.x;
+        cameraDataBuffer[36] = activeLight.y;
+        cameraDataBuffer[37] = activeLight.z;
+        cameraDataBuffer[38] = 0f;
+        ssbo.setData(cameraDataBuffer, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
     }

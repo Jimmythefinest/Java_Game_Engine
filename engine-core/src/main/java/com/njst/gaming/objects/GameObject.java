@@ -2,8 +2,6 @@ package com.njst.gaming.objects;
 
 import java.util.ArrayList;
 
-import com.njst.gaming.Utils.GeneralUtil;
-import com.njst.gaming.Utils.Matrice_Math;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
@@ -49,6 +47,7 @@ public class GameObject {
     protected Matrix4 lightSpaceMatrix = new Matrix4().identity();
     protected boolean shadowsEnabled = false;
     public boolean castsShadows = true;
+    private final float[] worldCollisionBox = new float[24];
 
     public GameObject(Geometry geometry, int texture) {
         // vertices = geometry.getVertices();
@@ -194,31 +193,48 @@ public class GameObject {
         if (collisionBox == null) {
             initCollisionBoxFromGeometry();
         }
-        float[] collision1Box = GeneralUtil.from4to3(8,
-                Matrice_Math.MatrixMultiplication(collisionBox, modelMatrix.get(new float[16]), 4));
-        float[] x = new float[8], y = new float[8], z = new float[8];
+        float[] matrix = modelMatrix.r;
+        float minX = Float.POSITIVE_INFINITY;
+        float minY = Float.POSITIVE_INFINITY;
+        float minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY;
+        float maxY = Float.NEGATIVE_INFINITY;
+        float maxZ = Float.NEGATIVE_INFINITY;
+
         for (int i = 0; i < 8; i++) {
-            x[i] = collision1Box[(i * 3)];
-            y[i] = collision1Box[(i * 3) + 1];
-            z[i] = collision1Box[(i * 3) + 2];
+            int source = i * 4;
+            float x = collisionBox[source];
+            float y = collisionBox[source + 1];
+            float z = collisionBox[source + 2];
+            float w = collisionBox[source + 3];
+
+            int target = i * 3;
+            float worldX = (x * matrix[0]) + (y * matrix[4]) + (z * matrix[8]) + (w * matrix[12]);
+            float worldY = (x * matrix[1]) + (y * matrix[5]) + (z * matrix[9]) + (w * matrix[13]);
+            float worldZ = (x * matrix[2]) + (y * matrix[6]) + (z * matrix[10]) + (w * matrix[14]);
+            worldCollisionBox[target] = worldX;
+            worldCollisionBox[target + 1] = worldY;
+            worldCollisionBox[target + 2] = worldZ;
+
+            if (worldX < minX) minX = worldX;
+            if (worldY < minY) minY = worldY;
+            if (worldZ < minZ) minZ = worldZ;
+            if (worldX > maxX) maxX = worldX;
+            if (worldY > maxY) maxY = worldY;
+            if (worldZ > maxZ) maxZ = worldZ;
         }
-        collisionBounds = new float[] {
-                GeneralUtil.getMinValue(x),
-                GeneralUtil.getMinValue(y),
-                GeneralUtil.getMinValue(z),
-                GeneralUtil.getMaxValue(x),
-                GeneralUtil.getMaxValue(y),
-                GeneralUtil.getMaxValue(z)
-        };
-        none_axis_aligned_CollisionBox = collision1Box;
-        min = new Vector3(
-                GeneralUtil.getMinValue(x),
-                GeneralUtil.getMinValue(y),
-                GeneralUtil.getMinValue(z));
-        max = new Vector3(
-                GeneralUtil.getMaxValue(x),
-                GeneralUtil.getMaxValue(y),
-                GeneralUtil.getMaxValue(z));
+        if (collisionBounds == null || collisionBounds.length != 6) {
+            collisionBounds = new float[6];
+        }
+        collisionBounds[0] = minX;
+        collisionBounds[1] = minY;
+        collisionBounds[2] = minZ;
+        collisionBounds[3] = maxX;
+        collisionBounds[4] = maxY;
+        collisionBounds[5] = maxZ;
+        none_axis_aligned_CollisionBox = worldCollisionBox;
+        min.set(minX, minY, minZ);
+        max.set(maxX, maxY, maxZ);
     }
 
     public float[] getModelMatrix() {

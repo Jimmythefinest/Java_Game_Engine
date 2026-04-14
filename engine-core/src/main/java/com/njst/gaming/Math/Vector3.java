@@ -100,6 +100,12 @@ public class Vector3 implements Serializable {
     public float distance(Vector3 v){
         return  (float)Math.sqrt(((x-v.x)*(x-v.x))+((y-v.y)*(y-v.y))+((z-v.z)*(z-v.z)));
     }
+    public float distanceSquared(Vector3 v) {
+        float dx = x - v.x;
+        float dy = y - v.y;
+        float dz = z - v.z;
+        return (dx * dx) + (dy * dy) + (dz * dz);
+    }
     public Vector3 set(float x, float y, float z) {
         this.x = x;
         this.y = y;
