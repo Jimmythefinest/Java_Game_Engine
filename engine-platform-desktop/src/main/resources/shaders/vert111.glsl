@@ -8,6 +8,7 @@ layout(location = 4) in ivec4 bones;
 out vec3 fragPosition;
 out vec3 fragNormal;
 out vec2 fragTexCoord;
+out vec4 fragLightSpacePos;
 
 layout(std430, binding = 0) buffer CameraData {
     mat4 perspective;
@@ -22,6 +23,7 @@ layout(std430, binding = 2) buffer BoneData {
 
 uniform mat4 uMMatrix;
 uniform int boneStartIndex;
+uniform mat4 uLightSpaceMatrix;
 
 void main() {
     vec4 skinnedPosition = vec4(0.0);
@@ -41,4 +43,5 @@ void main() {
     fragPosition = worldPosition.xyz;
     fragNormal = normalize(mat3(uMMatrix) * skinnedNormal);
     fragTexCoord = texture_coordinate;
+    fragLightSpacePos = uLightSpaceMatrix * worldPosition;
 }

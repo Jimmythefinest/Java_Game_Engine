@@ -33,7 +33,7 @@ import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 public class DefaultLoader implements Scene.SceneLoader {
   private static final int NPC_COUNT = 3;
   private static final float NPC_SPACING = 3.0f;
-  private static final String ANIMATION_SOURCE_PATH = "/home/jimmy/Downloads/Punching.fbx";
+  private static final String ANIMATION_SOURCE_PATH = "/home/jimmy/Downloads/Walking (2).fbx";
   private static final float LOOK_SENSITIVITY = 0.0125f;
   private static final float MIN_PITCH = -1.35f;
   private static final float MAX_PITCH = 1.35f;
@@ -41,7 +41,7 @@ public class DefaultLoader implements Scene.SceneLoader {
   private static final String EXPORTED_WEIGHTED_GEOMETRY_PATH = data.rootDirectory + "/weighted_geometry/defeated_mesh.ser";
   private static final String EXPORTED_BONE_NAMES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bone_names.json";
   private static final String EXPORTED_BONES_PATH = data.rootDirectory + "/weighted_geometry/defeated_bones.ser";
-  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/jump_animation00.ser";
+  private static final String EXPORTED_ANIMATIONS_PATH = data.rootDirectory + "/weighted_geometry/walk_animation.ser";
   private float cameraYaw;
   private float cameraPitch;
 

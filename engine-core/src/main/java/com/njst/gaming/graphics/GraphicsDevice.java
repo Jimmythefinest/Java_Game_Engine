@@ -20,6 +20,8 @@ public interface GraphicsDevice {
 
     int createTextureRGBA(int width, int height, byte[] rgbaPixels);
 
+    ShadowMapHandle createShadowMap(int width, int height);
+
     ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height);
 
     SphericalHeightmapShape bakeSphericalHeightmap(Renderer renderer, GameObject object, int width, int height,
@@ -56,6 +58,14 @@ public interface GraphicsDevice {
     void enableBlendAndDepth();
 
     void clearColorAndDepth();
+
+    void clearDepth();
+
+    void bindShadowMap(ShadowMapHandle shadowMap);
+
+    void bindDefaultFramebuffer();
+
+    void dumpShadowMap(ShadowMapHandle shadowMap, String outputPath);
 
     void viewport(int width, int height);
 

@@ -92,7 +92,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         characterController.setTerrainHeightSampler(this::sampleTerrainHeight);
         secondaryCharacterController.setTerrainHeightSampler(this::sampleTerrainHeight);
         GameObject ground = new GameObject(terrainGeometry, groundTexture);
-        ground.ambientlight_multiplier = 1.35f;
+        ground.ambientlight_multiplier = 3f;
         ground.shininess = 3f;
         ground.setPosition(terrainOrigin.x, terrainOrigin.y, terrainOrigin.z);
        scene.addGameObject(ground);

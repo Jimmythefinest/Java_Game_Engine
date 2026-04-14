@@ -9,6 +9,7 @@ out vec3 fragColor; // Output color to fragment shader
 out vec3 fragpos;
 out vec3 frag_Normal;
 out vec2 tt_coord; 
+out vec4 fragLightSpacePos;
 
 
 layout(std430, binding = 0) buffer MySSBO {
@@ -24,6 +25,7 @@ layout(std430, binding = 1) buffer boneSSBO {
 uniform mat4 uMMatrix;
 uniform mat4 uVMatrix;
 uniform mat4 uPMatrix;
+uniform mat4 uLightSpaceMatrix;
 void main()
 {
     gl_Position = perspective* view * uMMatrix * vec4(position, 1.0);
@@ -31,4 +33,5 @@ void main()
     fragpos=vec3(uMMatrix*vec4(position,1.0));
     tt_coord=texture_coordinate;
     frag_Normal=vec3(mat3(uMMatrix)* color);
+    fragLightSpacePos = uLightSpaceMatrix * vec4(fragpos, 1.0);
 }

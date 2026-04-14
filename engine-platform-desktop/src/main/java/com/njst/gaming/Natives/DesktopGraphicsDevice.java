@@ -9,6 +9,14 @@ import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.FloatBuffer;
+
+import javax.imageio.ImageIO;
+
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -62,6 +70,11 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public int createTextureRGBA(int width, int height, byte[] rgbaPixels) {
         return ShaderProgram.createTextureRGBA(width, height, rgbaPixels);
+    }
+
+    @Override
+    public com.njst.gaming.graphics.ShadowMapHandle createShadowMap(int width, int height) {
+        return new DesktopShadowMapHandle(width, height);
     }
 
     @Override
@@ -169,6 +182,97 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public void clearColorAndDepth() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    @Override
+    public void clearDepth() {
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+
+    @Override
+    public void bindShadowMap(com.njst.gaming.graphics.ShadowMapHandle shadowMap) {
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, ((DesktopShadowMapHandle) shadowMap).getFramebufferId());
+    }
+
+    @Override
+    public void bindDefaultFramebuffer() {
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+    }
+
+    @Override
+    public void dumpShadowMap(com.njst.gaming.graphics.ShadowMapHandle shadowMap, String outputPath) {
+        if (!(shadowMap instanceof DesktopShadowMapHandle) || outputPath == null || outputPath.isEmpty()) {
+            return;
+        }
+        DesktopShadowMapHandle desktopShadowMap = (DesktopShadowMapHandle) shadowMap;
+        FloatBuffer pixels = BufferUtils.createFloatBuffer(desktopShadowMap.getWidth() * desktopShadowMap.getHeight());
+        GL30.glBindTexture(GL30.GL_TEXTURE_2D, desktopShadowMap.getTextureId());
+        GL30.glGetTexImage(GL30.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
+        GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
+
+        float minDepth = 1f;
+        float maxDepth = 0f;
+        int writtenPixelCount = 0;
+        for (int i = 0; i < pixels.capacity(); i++) {
+            float depth = pixels.get(i);
+            if (depth < 0f || depth > 1f) {
+                continue;
+            }
+            minDepth = Math.min(minDepth, depth);
+            maxDepth = Math.max(maxDepth, depth);
+            if (depth < 0.999999f) {
+                writtenPixelCount++;
+            }
+        }
+
+        BufferedImage image = new BufferedImage(
+                desktopShadowMap.getWidth(),
+                desktopShadowMap.getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        BufferedImage occupancyImage = new BufferedImage(
+                desktopShadowMap.getWidth(),
+                desktopShadowMap.getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        float range = Math.max(maxDepth - minDepth, 0.000001f);
+        for (int y = 0; y < desktopShadowMap.getHeight(); y++) {
+            for (int x = 0; x < desktopShadowMap.getWidth(); x++) {
+                float depth = pixels.get(x + (y * desktopShadowMap.getWidth()));
+                float normalized = (depth - minDepth) / range;
+                int grayscale = Math.max(0, Math.min(255, Math.round(normalized * 255f)));
+                int argb = 0xFF000000 | (grayscale << 16) | (grayscale << 8) | grayscale;
+                image.setRGB(x, desktopShadowMap.getHeight() - y - 1, argb);
+                int occupancy = depth < 0.999999f ? 255 : 0;
+                int occupancyArgb = 0xFF000000 | (occupancy << 16) | (occupancy << 8) | occupancy;
+                occupancyImage.setRGB(x, desktopShadowMap.getHeight() - y - 1, occupancyArgb);
+            }
+        }
+
+        File output = new File(outputPath);
+        File parent = output.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+        try {
+            ImageIO.write(image, "png", output);
+            File occupancyOutput = new File(withSuffix(outputPath, "_occupancy"));
+            ImageIO.write(occupancyImage, "png", occupancyOutput);
+            System.out.println("[ShadowMap] Saved debug depth map to: " + output.getAbsolutePath());
+            System.out.println("[ShadowMap] Saved occupancy map to: " + occupancyOutput.getAbsolutePath());
+            System.out.println("[ShadowMap] Depth stats min=" + minDepth
+                    + " max=" + maxDepth
+                    + " touchedPixels=" + writtenPixelCount
+                    + "/" + pixels.capacity());
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write shadow map debug image: " + outputPath, e);
+        }
+    }
+
+    private String withSuffix(String outputPath, String suffix) {
+        int extensionIndex = outputPath.lastIndexOf('.');
+        if (extensionIndex <= 0) {
+            return outputPath + suffix;
+        }
+        return outputPath.substring(0, extensionIndex) + suffix + outputPath.substring(extensionIndex);
     }
 
     @Override

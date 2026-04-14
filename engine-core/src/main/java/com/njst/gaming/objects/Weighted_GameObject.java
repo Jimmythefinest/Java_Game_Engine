@@ -50,7 +50,12 @@ public class Weighted_GameObject extends GameObject {
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         program1.setUniformMatrix4fv("uMMatrix", modelMatrix);
+        program1.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);
+        program1.setUniformInt("uShadowEnabled", shadowsEnabled ? 1 : 0);
         program1.setUniformInt("boneStartIndex", boneBufferStartIndex);
+        if (shadowsEnabled) {
+            program1.activateTexture("uShadowMap", 5, shadowMapTexture);
+        }
         program1.activateTexture(textureHandle, texture);
 
         graphicsDevice.bindVertexArray(vaoIds[0]);

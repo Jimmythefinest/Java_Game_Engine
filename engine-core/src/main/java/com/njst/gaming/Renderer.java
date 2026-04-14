@@ -9,8 +9,10 @@ import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
+import com.njst.gaming.graphics.ShadowMapHandle;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.TerrainObject;
+import com.njst.gaming.objects.Weighted_GameObject;
 
 public class Renderer {
     public static class ProfilerSnapshot {
@@ -42,6 +44,8 @@ public class Renderer {
 
     public ShaderHandle shaderProgram;
     public ShaderHandle terrainShaderProgram;
+    public ShaderHandle shadowShaderProgram;
+    public ShaderHandle skinnedShadowShaderProgram;
     public float speed = 1;
     public GameObject test;
 
@@ -63,6 +67,13 @@ public class Renderer {
     public int frame_counter = 0;
 
     public float[] lightViewMatrix, lightProjectionMatrix;
+    private Matrix4 lightSpaceMatrix = new Matrix4().identity();
+    private ShadowMapHandle shadowMap;
+    private static final int SHADOW_MAP_SIZE = 2048;
+    private static final float SHADOW_ORTHO_RADIUS = 40f;
+    private static final float SHADOW_NEAR = 1f;
+    private static final float SHADOW_FAR = 140f;
+    private boolean shadowMapDumpPending = true;
 
     private final GraphicsDevice graphicsDevice;
     private ProfilerSnapshot profilerSnapshot = new ProfilerSnapshot(0f, 0f, 0f, 0f, 0, 0);
@@ -99,6 +110,13 @@ public class Renderer {
             terrainShaderProgram = graphicsDevice.createShaderProgram(
                     graphicsDevice.loadShaderSource("resources/shaders/terrain_vert.glsl"),
                     graphicsDevice.loadShaderSource("resources/shaders/terrain_frag.glsl"));
+            shadowShaderProgram = graphicsDevice.createShaderProgram(
+                    graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_vert.glsl"),
+                    graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_frag.glsl"));
+            skinnedShadowShaderProgram = graphicsDevice.createShaderProgram(
+                    graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_skinned_vert.glsl"),
+                    graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_frag.glsl"));
+            shadowMap = graphicsDevice.createShadowMap(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
             scene.loader.load(scene);
             for (GameObject object : scene.objects) {
                 object.setGraphicsDevice(graphicsDevice);
@@ -119,23 +137,22 @@ public class Renderer {
             return;
         try {
             long frameStart = System.nanoTime();
-            float[] consts = new float[39];
-            System.arraycopy(camera.getProjectionMatrix().r, 0, consts, 0, 16);
-            System.arraycopy(camera.getViewMatrix().r, 0, consts, 16, 16);
-            System.arraycopy(camera.cameraPosition.toArray(), 0, consts, 32, 3);
-            System.arraycopy(new float[] { 0, 0, 100, 0 }, 0, consts, 35, 4);
-            ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
-            ssbo.bind();
-            ssbo.bindToShader(0);
-
-            graphicsDevice.clearColorAndDepth();
-            shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
-            terrainShaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
-
             long updateStart = System.nanoTime();
             scene.onDrawFrame();
             long updateEnd = System.nanoTime();
             scene.uploadSkeletonBuffer(graphicsDevice);
+
+            ArrayList<GameObject> renderQueue = new ArrayList<>(scene.objects);
+            if (skybox != null) {
+                renderQueue.remove(skybox);
+            }
+            updateLightMatrices();
+            renderShadowPass(renderQueue);
+            bindMainCameraData();
+
+            graphicsDevice.clearColorAndDepth();
+            shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+            terrainShaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
 
             long skyboxNanos = 0L;
             if (skybox != null) {
@@ -148,15 +165,12 @@ public class Renderer {
             }
 
             long renderStart = System.nanoTime();
-            ArrayList<GameObject> renderQueue = new ArrayList<>(scene.objects);
-            if (skybox != null) {
-                renderQueue.remove(skybox);
-            }
             renderQueue.sort(Comparator.comparingDouble(
                     object -> -object.position.distance(camera.cameraPosition)));
             int terrainCount = 0;
             for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
+                object.setShadowContext(shadowMap != null ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowMap != null);
                 boolean terrainObject = object instanceof TerrainObject;
                 if (terrainObject) {
                     terrainCount++;
@@ -198,7 +212,23 @@ public class Renderer {
             return;
         }
         Camera activeCamera = renderCamera != null ? renderCamera : camera;
-        Vector3 activeLight = lightPosition != null ? lightPosition : new Vector3(0f, 0f, 100f);
+        Vector3 activeLight = lightPosition != null ? lightPosition : new Vector3(lightPos[0], lightPos[1], lightPos[2]);
+        bindCameraData(activeCamera, activeLight);
+        scene.uploadSkeletonBuffer(graphicsDevice);
+        ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
+        activeShader.use();
+        activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
+        object.setGraphicsDevice(graphicsDevice);
+        object.setShadowContext(shadowMap != null ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowMap != null);
+        object.updateModelMatrix();
+        object.render(activeShader, textureHandle);
+    }
+
+    private void bindMainCameraData() {
+        bindCameraData(camera, new Vector3(lightPos[0], lightPos[1], lightPos[2]));
+    }
+
+    private void bindCameraData(Camera activeCamera, Vector3 activeLight) {
         float[] consts = new float[39];
         System.arraycopy(activeCamera.getProjectionMatrix().r, 0, consts, 0, 16);
         System.arraycopy(activeCamera.getViewMatrix().r, 0, consts, 16, 16);
@@ -207,13 +237,68 @@ public class Renderer {
         ssbo.setData(consts, graphicsDevice.dynamicDrawUsage());
         ssbo.bind();
         ssbo.bindToShader(0);
-        scene.uploadSkeletonBuffer(graphicsDevice);
-        ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
-        activeShader.use();
-        activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
-        object.setGraphicsDevice(graphicsDevice);
-        object.updateModelMatrix();
-        object.render(activeShader, textureHandle);
+    }
+
+    private void updateLightMatrices() {
+        Vector3 lightPosition = new Vector3(lightPos[0], lightPos[1], lightPos[2]);
+        Vector3 lightTarget = camera != null && camera.targetPosition != null
+                ? new Vector3(camera.targetPosition)
+                : new Vector3(0f, 0f, 0f);
+        Vector3 lightDirection = new Vector3(lightTarget).sub(lightPosition).normalize();
+        Vector3 upVector = Math.abs(lightDirection.y) > 0.98f
+                ? new Vector3(0f, 0f, 1f)
+                : new Vector3(0f, 1f, 0f);
+        Matrix4 lightView = new Matrix4().lookAt(lightPosition, lightTarget, upVector);
+        Matrix4 lightProjection = new Matrix4().identity()
+                .ortho(-SHADOW_ORTHO_RADIUS, SHADOW_ORTHO_RADIUS,
+                        -SHADOW_ORTHO_RADIUS, SHADOW_ORTHO_RADIUS,
+                        SHADOW_NEAR, SHADOW_FAR);
+        lightViewMatrix = lightView.r.clone();
+        lightProjectionMatrix = lightProjection.r.clone();
+        lightSpaceMatrix = lightProjection.multiply(lightView);
+    }
+
+    private void renderShadowPass(ArrayList<GameObject> renderQueue) {
+        if (shadowMap == null || shadowShaderProgram == null || skinnedShadowShaderProgram == null) {
+            return;
+        }
+        graphicsDevice.bindShadowMap(shadowMap);
+        graphicsDevice.viewport(shadowMap.getWidth(), shadowMap.getHeight());
+        graphicsDevice.clearDepth();
+        for (GameObject object : renderQueue) {
+            object.setGraphicsDevice(graphicsDevice);
+            object.updateModelMatrix();
+            if (object instanceof Weighted_GameObject) {
+                renderSkinnedShadow((Weighted_GameObject) object);
+            } else {
+                renderStaticShadow(object);
+            }
+        }
+        graphicsDevice.bindDefaultFramebuffer();
+        graphicsDevice.viewport(width, height);
+        if (shadowMapDumpPending) {
+            graphicsDevice.dumpShadowMap(shadowMap, data.rootDirectory + "/shadow_map_debug.png");
+            shadowMapDumpPending = false;
+        }
+    }
+
+    private void renderStaticShadow(GameObject object) {
+        shadowShaderProgram.use();
+        shadowShaderProgram.setUniformMatrix4fv("uMMatrix", object.modelMatrix);
+        shadowShaderProgram.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);
+        graphicsDevice.bindVertexArray(object.vaoIds[0]);
+        graphicsDevice.drawElementsTriangles(object.geometry.getIndices().length);
+        graphicsDevice.bindVertexArray(0);
+    }
+
+    private void renderSkinnedShadow(Weighted_GameObject object) {
+        skinnedShadowShaderProgram.use();
+        skinnedShadowShaderProgram.setUniformMatrix4fv("uMMatrix", object.modelMatrix);
+        skinnedShadowShaderProgram.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);
+        skinnedShadowShaderProgram.setUniformInt("boneStartIndex", object.boneBufferStartIndex);
+        graphicsDevice.bindVertexArray(object.vaoIds[0]);
+        graphicsDevice.drawElementsTriangles(object.geo.getIndices().length);
+        graphicsDevice.bindVertexArray(0);
     }
 
     public SphericalHeightmapShape bakeSphericalHeightmap(GameObject object, int width, int height) {

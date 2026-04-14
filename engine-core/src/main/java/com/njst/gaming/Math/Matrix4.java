@@ -216,7 +216,7 @@ public class Matrix4 implements Serializable {
      * @param far far clipping plane
      */
     public Matrix4 ortho(float left, float right, float bottom, float top, float near, float far) {
-        new Matrix4f().set(r).ortho(left, right, bottom, top, near, far);
+        r = new Matrix4f().set(r).ortho(left, right, bottom, top, near, far).get(r);
         return this;
     }
 

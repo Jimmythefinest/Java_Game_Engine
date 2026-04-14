@@ -16,6 +16,7 @@ import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ImposterBakeResult;
 import com.njst.gaming.graphics.ShaderHandle;
+import com.njst.gaming.graphics.ShadowMapHandle;
 import com.njst.gaming.objects.GameObject;
 
 import java.io.BufferedReader;
@@ -62,13 +63,36 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
             while ((line = reader.readLine()) != null) {
                 shader.append(line).append('\n');
             }
-            String shaderSource = shader.toString();
+            String shaderSource = normalizeShaderSource(shader.toString(), normalized);
             Log.i(TAG, "Loaded shader asset: " + normalized + " (" + shaderSource.length() + " chars)");
             return shaderSource;
         } catch (IOException e) {
             Log.e(TAG, "Failed to load shader asset: " + normalized, e);
             throw new IllegalStateException("Unable to load Android shader asset: " + normalized, e);
         }
+    }
+
+    private String normalizeShaderSource(String shaderSource, String assetPath) {
+        if (shaderSource == null || shaderSource.isEmpty()) {
+            return shaderSource;
+        }
+
+        if (shaderSource.startsWith("#version 310 es")) {
+            return shaderSource;
+        }
+
+        if (shaderSource.startsWith("#version 450 core")
+                || shaderSource.startsWith("#version 430 core")
+                || shaderSource.startsWith("#version 330 core")) {
+            Log.i(TAG, "Rewriting desktop GLSL version for Android asset: " + assetPath);
+            int newlineIndex = shaderSource.indexOf('\n');
+            if (newlineIndex < 0) {
+                return "#version 310 es\n";
+            }
+            return "#version 310 es\n" + shaderSource.substring(newlineIndex + 1);
+        }
+
+        return shaderSource;
     }
 
     @Override
@@ -160,6 +184,11 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
                 pixelBuffer);
         Log.i(TAG, "Created RGBA texture id=" + textureId + " size=" + width + "x" + height);
         return textureId;
+    }
+
+    @Override
+    public ShadowMapHandle createShadowMap(int width, int height) {
+        return new AndroidShadowMapHandle(width, height);
     }
 
     private int getWhiteTexture() {
@@ -320,6 +349,29 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
     @Override
     public void clearColorAndDepth() {
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT | GLES31.GL_DEPTH_BUFFER_BIT);
+    }
+
+    @Override
+    public void clearDepth() {
+        GLES31.glClear(GLES31.GL_DEPTH_BUFFER_BIT);
+    }
+
+    @Override
+    public void bindShadowMap(ShadowMapHandle shadowMap) {
+        if (!(shadowMap instanceof AndroidShadowMapHandle)) {
+            throw new IllegalArgumentException("Unexpected shadow map handle type: " + shadowMap);
+        }
+        GLES31.glBindFramebuffer(GLES31.GL_FRAMEBUFFER, ((AndroidShadowMapHandle) shadowMap).getFramebufferId());
+    }
+
+    @Override
+    public void bindDefaultFramebuffer() {
+        GLES31.glBindFramebuffer(GLES31.GL_FRAMEBUFFER, 0);
+    }
+
+    @Override
+    public void dumpShadowMap(ShadowMapHandle shadowMap, String outputPath) {
+        Log.w(TAG, "Shadow map dumping is not implemented on Android yet. Requested output: " + outputPath);
     }
 
     @Override

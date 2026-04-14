@@ -15,8 +15,8 @@
         "framesPerSecond":144
     },
     "walk": {
-      "asset": "weighted_geometry/walking_animation.ser",
-      "framesPerSecond": 144
+      "asset": "weighted_geometry/walk_animation.ser",
+      "framesPerSecond": 60
     },
     "walk_backward": {
       "asset": "weighted_geometry/walking_backwards_animation.ser",

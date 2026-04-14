@@ -45,6 +45,9 @@ public class GameObject {
     // int[] indices;
     public Geometry geometry;
     protected GraphicsDevice graphicsDevice = new NullGraphicsDevice();
+    protected int shadowMapTexture = 0;
+    protected Matrix4 lightSpaceMatrix = new Matrix4().identity();
+    protected boolean shadowsEnabled = false;
 
     public GameObject(Geometry geometry, int texture) {
         // vertices = geometry.getVertices();
@@ -263,6 +266,12 @@ public class GameObject {
         }
     }
 
+    public void setShadowContext(int textureId, Matrix4 lightSpaceMatrix, boolean enabled) {
+        this.shadowMapTexture = textureId;
+        this.lightSpaceMatrix = lightSpaceMatrix != null ? lightSpaceMatrix : new Matrix4().identity();
+        this.shadowsEnabled = enabled && textureId != 0;
+    }
+
     public ShaderHandle shaderprogram;
 
     public void render(ShaderHandle shader, int textureHandle) {
@@ -277,6 +286,11 @@ public class GameObject {
         shaderprogram.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         // Bind the VAO
         shaderprogram.setUniformMatrix4fv("uMMatrix", modelMatrix);
+        shaderprogram.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);
+        shaderprogram.setUniformInt("uShadowEnabled", shadowsEnabled ? 1 : 0);
+        if (shadowsEnabled) {
+            shaderprogram.activateTexture("uShadowMap", 5, shadowMapTexture);
+        }
         shaderprogram.activateTexture(textureHandle, texture);
 
         graphicsDevice.bindVertexArray(vaoIds[0]); // Bind the VAO

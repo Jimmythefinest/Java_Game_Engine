@@ -1,9 +1,9 @@
 {
   "model": {
-    "mesh": "weighted_geometry/defeated_mesh.ser",
+    "mesh": "weighted_geometry/defeated_mesh_1.ser",
     "bones": "weighted_geometry/defeated_bones.ser",
     "boneNames": "weighted_geometry/defeated_bone_names.json",
-    "texture": "j.jpg"
+    "texture": "stone.jpg"
   },
   "animations": {
     "idle": {
@@ -11,7 +11,7 @@
       "framesPerSecond": 60
     },
     "walk": {
-      "asset": "weighted_geometry/walking_animation.ser",
+      "asset": "weighted_geometry/walk_animation.ser",
       "framesPerSecond": 60
     },
     "walk_backward": {

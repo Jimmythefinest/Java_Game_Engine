@@ -46,6 +46,11 @@ public class NullGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public ShadowMapHandle createShadowMap(int width, int height) {
+        throw unsupported();
+    }
+
+    @Override
     public ImposterBakeResult bakeImposter(Renderer renderer, GameObject object, int width, int height) {
         return null;
     }
@@ -132,6 +137,26 @@ public class NullGraphicsDevice implements GraphicsDevice {
 
     @Override
     public void clearColorAndDepth() {
+        throw unsupported();
+    }
+
+    @Override
+    public void clearDepth() {
+        throw unsupported();
+    }
+
+    @Override
+    public void bindShadowMap(ShadowMapHandle shadowMap) {
+        throw unsupported();
+    }
+
+    @Override
+    public void bindDefaultFramebuffer() {
+        throw unsupported();
+    }
+
+    @Override
+    public void dumpShadowMap(ShadowMapHandle shadowMap, String outputPath) {
         throw unsupported();
     }
 

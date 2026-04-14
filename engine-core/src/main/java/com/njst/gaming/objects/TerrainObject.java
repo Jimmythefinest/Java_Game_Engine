@@ -44,11 +44,16 @@ public class TerrainObject extends GameObject {
         shaderprogram.setUniformVector3("terrainControlOffset",
                 new Vector3(controlTileOffsetX, controlTileOffsetY, 0f));
         shaderprogram.setUniformMatrix4fv("uMMatrix", modelMatrix);
+        shaderprogram.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);
+        shaderprogram.setUniformInt("uShadowEnabled", shadowsEnabled ? 1 : 0);
         shaderprogram.activateTexture("uTexture0", 0, terrainTextures[0]);
         shaderprogram.activateTexture("uTexture1", 1, terrainTextures[1]);
         shaderprogram.activateTexture("uTexture2", 2, terrainTextures[2]);
         shaderprogram.activateTexture("uTexture3", 3, terrainTextures[3]);
         shaderprogram.activateTexture("uSplatMap", 4, controlMapTexture);
+        if (shadowsEnabled) {
+            shaderprogram.activateTexture("uShadowMap", 5, shadowMapTexture);
+        }
 
         graphicsDevice.bindVertexArray(vaoIds[0]);
         graphicsDevice.drawElementsTriangles(geometry.getIndices().length);

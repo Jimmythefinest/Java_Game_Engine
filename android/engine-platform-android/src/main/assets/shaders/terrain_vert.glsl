@@ -6,6 +6,7 @@ layout (location = 2) in vec2 texture_coordinate;
 out vec3 fragpos;
 out vec3 frag_Normal;
 out vec2 terrainLocalCoord;
+out vec4 fragLightSpacePos;
 
 layout(std430, binding = 0) buffer MySSBO {
     mat4 perspective;
@@ -15,6 +16,7 @@ layout(std430, binding = 0) buffer MySSBO {
 };
 
 uniform mat4 uMMatrix;
+uniform mat4 uLightSpaceMatrix;
 
 void main()
 {
@@ -22,4 +24,5 @@ void main()
     fragpos = vec3(uMMatrix * vec4(position, 1.0));
     frag_Normal = vec3(mat3(uMMatrix) * color);
     terrainLocalCoord = position.xz;
+    fragLightSpacePos = uLightSpaceMatrix * vec4(fragpos, 1.0);
 }
