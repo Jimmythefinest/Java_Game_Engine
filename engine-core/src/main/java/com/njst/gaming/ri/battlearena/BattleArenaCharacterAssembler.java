@@ -34,6 +34,7 @@ final class BattleArenaCharacterAssembler {
             BattleArenaCharacterController.ANIM_PUNCH,
             BattleArenaCharacterController.ANIM_KICK,
             BattleArenaCharacterController.ANIM_LEFTSIDE_STEP,
+            BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP,
             BattleArenaCharacterController.ANIM_TAKE_HIT
     };
 
@@ -87,6 +88,8 @@ final class BattleArenaCharacterAssembler {
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_KICK),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_TAKE_HIT),
                 graphicsDevice.loadTexture(resolveTexturePath(definition.model.texture)),
@@ -116,6 +119,8 @@ final class BattleArenaCharacterAssembler {
                                                    float kickFramesPerSecond,
                                                    String leftsideStepAnimationFile,
                                                    float leftsideStepFramesPerSecond,
+                                                   String rightsideStepAnimationFile,
+                                                   float rightsideStepFramesPerSecond,
                                                    String takeHitAnimationFile,
                                                    float takeHitFramesPerSecond,
                                                    int texture,
@@ -152,6 +157,7 @@ final class BattleArenaCharacterAssembler {
         animationSpecs.put(BattleArenaCharacterController.ANIM_PUNCH, new AnimationAssetSpec(punchAnimationFile, punchFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_KICK, new AnimationAssetSpec(kickAnimationFile, kickFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_LEFTSIDE_STEP, new AnimationAssetSpec(leftsideStepAnimationFile, leftsideStepFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP, new AnimationAssetSpec(rightsideStepAnimationFile, rightsideStepFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_TAKE_HIT, new AnimationAssetSpec(takeHitAnimationFile, takeHitFramesPerSecond));
         loadAnimationSets(graphicsDevice, scene, assembly, animationSpecs, activeAnimations);
 
@@ -447,7 +453,12 @@ final class BattleArenaCharacterAssembler {
         if (file.isAbsolute()) {
             return file.getAbsolutePath();
         }
-        return com.njst.gaming.data.rootDirectory + "/" + textureFile;
+        File desktopResource = new File(com.njst.gaming.data.rootDirectory, textureFile);
+        if (desktopResource.isFile()) {
+            return desktopResource.getPath();
+        }
+        // On Android resource files are packaged as asset-relative paths.
+        return textureFile;
     }
 
     private static final class AnimationAssetSpec {

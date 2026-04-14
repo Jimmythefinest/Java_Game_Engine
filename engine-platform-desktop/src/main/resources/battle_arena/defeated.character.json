@@ -14,6 +14,10 @@
         "asset":"weighted_geometry/long left side step_animation_0.ser",
         "framesPerSecond":144
     },
+    "rightside_step":{
+        "asset":"weighted_geometry/long left side step (2)_animation_0.ser",
+        "framesPerSecond":144
+    },
     "walk": {
       "asset": "weighted_geometry/walk_animation.ser",
       "framesPerSecond": 60

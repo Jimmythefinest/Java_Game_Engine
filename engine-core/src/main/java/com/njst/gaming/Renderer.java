@@ -266,6 +266,9 @@ public class Renderer {
         graphicsDevice.viewport(shadowMap.getWidth(), shadowMap.getHeight());
         graphicsDevice.clearDepth();
         for (GameObject object : renderQueue) {
+            if (!object.castsShadows) {
+                continue;
+            }
             object.setGraphicsDevice(graphicsDevice);
             object.updateModelMatrix();
             if (object instanceof Weighted_GameObject) {

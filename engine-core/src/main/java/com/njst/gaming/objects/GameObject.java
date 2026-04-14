@@ -48,6 +48,7 @@ public class GameObject {
     protected int shadowMapTexture = 0;
     protected Matrix4 lightSpaceMatrix = new Matrix4().identity();
     protected boolean shadowsEnabled = false;
+    public boolean castsShadows = true;
 
     public GameObject(Geometry geometry, int texture) {
         // vertices = geometry.getVertices();

@@ -10,6 +10,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_E;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_0;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_1;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_2;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_9;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_Q;
@@ -37,6 +38,7 @@ public class BattleArenaApp extends Engine {
         bindings.bindKey(GLFW_KEY_E, BattleArenaActions.PUNCH);
         bindings.bindKey(GLFW_KEY_Q, BattleArenaActions.KICK);
         bindings.bindKey(GLFW_KEY_1, BattleArenaActions.STEP_LEFT);
+        bindings.bindKey(GLFW_KEY_2, BattleArenaActions.STEP_RIGHT);
         bindings.bindKey(GLFW_KEY_9, BattleArenaActions.SNAP);
         bindings.bindKey(GLFW_KEY_0, BattleArenaActions.TOGGLE_HITBOXES);
         bindings.bindMouseButton(MouseButtons.LEFT, BattleArenaActions.LOOK);

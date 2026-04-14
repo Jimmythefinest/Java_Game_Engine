@@ -52,6 +52,10 @@ final class AndroidAssetLoader {
         if (externalRoot == null || externalRoot.isEmpty() || filePath == null || filePath.isEmpty()) {
             return null;
         }
+        File directFile = new File(filePath);
+        if (directFile.isAbsolute()) {
+            return directFile;
+        }
         String normalized = normalizeResourcePath(filePath);
         File root = new File(externalRoot);
         if (!root.isAbsolute()) {

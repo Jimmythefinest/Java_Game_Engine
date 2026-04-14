@@ -35,6 +35,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final float PLAYER_SCALE = 1f;
     private static final float PLAYER_FOCUS_HEIGHT = 1.6f;
     private static final float SECOND_CHARACTER_START_X = 2.5f;
+    private static final float HEALTH_BAR_WIDTH = 1.35f;
+    private static final float HEALTH_BAR_HEIGHT = 0.18f;
+    private static final float HEALTH_BAR_VERTICAL_OFFSET = 2.35f;
     private static final String LOG_PREFIX = "[BattleArena] ";
 
     private TerrainGeometry terrainGeometry;
@@ -177,6 +180,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 activeAnimations);
         primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly, definition);
         activeCharacter = primaryCharacter;
+        scene.addGameObject(new BattleArenaHealthBarGameObject(
+                primaryCharacter,
+                scene.renderer.camera,
+                "BattleArenaPlayerHealthBar",
+                HEALTH_BAR_WIDTH,
+                HEALTH_BAR_HEIGHT,
+                HEALTH_BAR_VERTICAL_OFFSET));
         log("wired animation count total=" + activeAnimations.size()
                 + " idle=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
                 + " walk=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
@@ -206,6 +216,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 activeAnimations);
         secondaryCharacter = new BattleArenaCharacterRuntime(secondaryCharacterController, secondaryAssembly, definition);
         playerMeshes.add(secondaryCharacter.meshObject);
+        scene.addGameObject(new BattleArenaHealthBarGameObject(
+                secondaryCharacter,
+                scene.renderer.camera,
+                "BattleArenaSecondCharacterHealthBar",
+                HEALTH_BAR_WIDTH,
+                HEALTH_BAR_HEIGHT,
+                HEALTH_BAR_VERTICAL_OFFSET));
         log("spawned second character name=" + secondaryCharacter.meshObject.name + " bones=" + secondaryCharacter.bones.size());
         secondaryCharacterController.setPlayerPosition(SECOND_CHARACTER_START_X, 0f, 0f);
         secondaryCharacter.syncRig();
@@ -226,7 +243,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     }
 
     private void updateSideStepFacing(BattleArenaCharacterRuntime self, BattleArenaCharacterRuntime opponent) {
-        if (self == null || opponent == null || !self.isSideSteppingLeft()) {
+        if (self == null || opponent == null || (!self.isSideSteppingLeft() && !self.isSideSteppingRight())) {
             return;
         }
         self.faceTowards(opponent);
