@@ -73,6 +73,7 @@ public class Renderer {
     private static final float SHADOW_ORTHO_RADIUS = 40f;
     private static final float SHADOW_NEAR = 1f;
     private static final float SHADOW_FAR = 140f;
+    private boolean shadowMapEnabled = true;
     private boolean shadowMapDumpPending = true;
 
     private final GraphicsDevice graphicsDevice;
@@ -119,7 +120,9 @@ public class Renderer {
             skinnedShadowShaderProgram = graphicsDevice.createShaderProgram(
                     graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_skinned_vert.glsl"),
                     graphicsDevice.loadShaderSource("resources/shaders/shadow_depth_frag.glsl"));
-            shadowMap = graphicsDevice.createShadowMap(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+            if (shadowMapEnabled) {
+                shadowMap = graphicsDevice.createShadowMap(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+            }
             scene.loader.load(scene);
             for (GameObject object : scene.objects) {
                 object.setGraphicsDevice(graphicsDevice);
@@ -173,9 +176,10 @@ public class Renderer {
                     second.position.distanceSquared(camera.cameraPosition),
                     first.position.distanceSquared(camera.cameraPosition)));
             int terrainCount = 0;
+            boolean shadowsActive = shadowMapEnabled && shadowMap != null;
             for (GameObject object : renderQueue) {
                 object.setGraphicsDevice(graphicsDevice);
-                object.setShadowContext(shadowMap != null ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowMap != null);
+                object.setShadowContext(shadowsActive ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowsActive);
                 boolean terrainObject = object instanceof TerrainObject;
                 if (terrainObject) {
                     terrainCount++;
@@ -224,9 +228,21 @@ public class Renderer {
         activeShader.use();
         activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
         object.setGraphicsDevice(graphicsDevice);
-        object.setShadowContext(shadowMap != null ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowMap != null);
+        boolean shadowsActive = shadowMapEnabled && shadowMap != null;
+        object.setShadowContext(shadowsActive ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowsActive);
         object.updateModelMatrix();
         object.render(activeShader, textureHandle);
+    }
+
+    public void setShadowMapEnabled(boolean enabled) {
+        shadowMapEnabled = enabled;
+        if (!enabled) {
+            shadowMapDumpPending = false;
+        }
+    }
+
+    public boolean isShadowMapEnabled() {
+        return shadowMapEnabled;
     }
 
     private void bindMainCameraData() {
@@ -269,7 +285,7 @@ public class Renderer {
     }
 
     private void renderShadowPass(ArrayList<GameObject> renderQueue) {
-        if (shadowMap == null || shadowShaderProgram == null || skinnedShadowShaderProgram == null) {
+        if (!shadowMapEnabled || shadowMap == null || shadowShaderProgram == null || skinnedShadowShaderProgram == null) {
             return;
         }
         graphicsDevice.bindShadowMap(shadowMap);

@@ -25,4 +25,8 @@ public interface AndroidGameConfig {
     default String getExternalAssetRoot() {
         return null;
     }
+
+    default boolean isShadowMapEnabled() {
+        return false;
+    }
 }

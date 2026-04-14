@@ -42,6 +42,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             AndroidAssetLoader.setExternalRoot(gameConfig.getExternalAssetRoot());
             AndroidGraphicsDevice graphicsDevice = new AndroidGraphicsDevice(context);
             renderer = new Renderer(graphicsDevice);
+            renderer.setShadowMapEnabled(gameConfig.isShadowMapEnabled());
 
             Scene scene = new Scene();
             scene.renderer = renderer;
