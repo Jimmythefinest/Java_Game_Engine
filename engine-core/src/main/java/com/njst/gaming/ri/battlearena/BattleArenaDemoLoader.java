@@ -16,7 +16,6 @@ import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.*;
-import com.njst.gaming.objects.Weighted_GameObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,17 +42,16 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
     private TerrainGeometry terrainGeometry;
     private Vector3 terrainOrigin;
+    private Scene loadedScene;
     private final List<GameObject> playerMeshes = new ArrayList<>();
     private final List<BattleArenaHitboxDebugGameObject> debugHitboxes = new ArrayList<>();
-    private final BattleArenaCharacterController characterController = new BattleArenaCharacterController();
-    private final BattleArenaCharacterController secondaryCharacterController = new BattleArenaCharacterController();
     private final BattleArenaCharacterAssembler characterAssembler = new BattleArenaCharacterAssembler();
     private final BattleArenaCharacterDefinitionLoader characterDefinitionLoader = new BattleArenaCharacterDefinitionLoader();
-    private final BattleArenaCharacterControlState aiControls = new BattleArenaCharacterControlState();
-    private final BattleArenaCharacterBrain secondaryCharacterAi = new BattleArenaSimpleChaseAi();
-    private BattleArenaCharacterRuntime primaryCharacter;
-    private BattleArenaCharacterRuntime secondaryCharacter;
-    private BattleArenaCharacterRuntime activeCharacter;
+    private final BattleArenaSkillSystem skillSystem = new BattleArenaSkillSystem();
+    private final List<BattleArenaControlledCharacter> arenaCharacters = new ArrayList<>();
+    private final List<BattleArenaControlledCharacter> npcCharacters = new ArrayList<>();
+    private BattleArenaControlledCharacter playerCharacter;
+    private BattleArenaControlledCharacter activeCharacter;
     private float cameraYaw = 0f;
     private float cameraPitch = -0.18f;
     private boolean debugHitboxesVisible = false;
@@ -62,16 +60,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     @Override
     public void load(Scene scene) {
         GraphicsDevice graphicsDevice = scene.renderer.getGraphicsDevice();
+        loadedScene = scene;
         log("load start root=" + com.njst.gaming.data.rootDirectory);
         playerMeshes.clear();
         debugHitboxes.clear();
+        arenaCharacters.clear();
+        npcCharacters.clear();
         activeAnimations.clear();
-        primaryCharacter = null;
-        secondaryCharacter = null;
-        characterController.reset();
-        secondaryCharacterController.reset();
+        playerCharacter = null;
         activeCharacter = null;
-        aiControls.clear();
         cameraYaw = 0f;
         cameraPitch = -0.18f;
         debugHitboxesVisible = false;
@@ -93,8 +90,6 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         terrainGeometry = new TerrainGeometry(GROUND_SIZE, GROUND_SIZE, new float[GROUND_SIZE][GROUND_SIZE]);
         terrainOrigin = new Vector3(-GROUND_SIZE * 0.5f, -0.75f, -GROUND_SIZE * 0.5f);
-        characterController.setTerrainHeightSampler(this::sampleTerrainHeight);
-        secondaryCharacterController.setTerrainHeightSampler(this::sampleTerrainHeight);
         GameObject ground = new GameObject(terrainGeometry, groundTexture);
         ground.ambientlight_multiplier = 3f;
         ground.shininess = 3f;
@@ -107,10 +102,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             log("ERROR in loadPlayer: " + e.getMessage());
             throw e;
         }
-        log("player meshes loaded=" + playerMeshes.size() + " bones=" + primaryCharacter.bones.size());
-        primaryCharacter.syncRig();
-        registerCharacterHitboxes(scene, primaryCharacter);
-        registerCharacterHitboxes(scene, secondaryCharacter);
+        log("player meshes loaded=" + playerMeshes.size() + " bones=" + playerCharacter.runtime.bones.size());
+        for (BattleArenaControlledCharacter character : arenaCharacters) {
+            character.runtime.syncRig();
+            registerCharacterHitboxes(scene, character.runtime);
+        }
         scene.getCollisionWorld().addListener(this::handleHitboxCollision);
 
         ActionInput actions = scene.actionInput;
@@ -121,31 +117,58 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         scene.animations.add(new Animation() {
             @Override
             public void animate(float deltaSeconds) {
+                BattleArenaSkillContext skillContext = createSkillContext();
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     toggleActiveCharacter();
                 }
                 if (actions.button(BattleArenaActions.TOGGLE_HITBOXES).pressed()) {
                     toggleHitboxDebug();
                 }
-                primaryCharacter.controller.update(actions, movementPointer, scene.speed);
-                secondaryCharacterAi.update(secondaryCharacter, primaryCharacter, aiControls, deltaSeconds);
-                secondaryCharacter.controller.update(aiControls, scene.speed);
-                updateSideStepFacing(primaryCharacter, secondaryCharacter);
-                updateSideStepFacing(secondaryCharacter, primaryCharacter);
+                if (actions.button(BattleArenaActions.MUD_WALL).pressed()) {
+                    if (activeCharacter != null) {
+                        activeCharacter.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(activeCharacter));
+                    }
+                }
+                if (playerCharacter != null) {
+                    playerCharacter.captureControls(actions, movementPointer, primaryOpponentRuntime(), deltaSeconds);
+                    playerCharacter.updateController(scene.speed);
+                }
+                for (BattleArenaControlledCharacter npc : npcCharacters) {
+                    if (npc.brain instanceof BattleArenaSimpleChaseAi) {
+                        ((BattleArenaSimpleChaseAi) npc.brain)
+                                .setIncomingFireballThreat(skillSystem.hasIncomingFireballThreat(
+                                        npc.runtime,
+                                        playerCharacter != null ? playerCharacter.runtime : null));
+                    }
+                    npc.captureControls(actions, movementPointer, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
+                    npc.updateController(scene.speed);
+                    if (npc.controls.castMudWallPressed) {
+                        npc.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(npc));
+                    }
+                }
+                updateFireballCasting(skillContext);
+                skillSystem.update(skillContext, deltaSeconds);
+                if (playerCharacter != null) {
+                    for (BattleArenaControlledCharacter npc : npcCharacters) {
+                        updateSideStepFacing(playerCharacter.runtime, npc.runtime);
+                        updateSideStepFacing(npc.runtime, playerCharacter.runtime);
+                    }
+                }
                 // Temporary profiling switch so we can isolate animation cost.
                 if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
                     for (KeyframeAnimation anim : activeAnimations) {
                         anim.animate(deltaSeconds);
                     }
                 }
-                primaryCharacter.syncRig();
-                secondaryCharacter.syncRig();
+                for (BattleArenaControlledCharacter character : arenaCharacters) {
+                    character.runtime.syncRig();
+                }
                 updateCamera(scene.renderer.camera);
             }
         });
 
         updateCamera(scene.renderer.camera);
-        Vector3 playerPosition = activeCharacter.getPosition();
+        Vector3 playerPosition = activeCharacter.runtime.getPosition();
         log("load complete playerPosition=" + playerPosition.x + "," + playerPosition.y + "," + playerPosition.z);
         // if(rootBone.parent!=null){
         	// log("Root Bone has parent");
@@ -170,65 +193,120 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         activeAnimations.clear();
         int characterTexture = loadCharacterTexture(graphicsDevice, definition);
-        BattleArenaCharacterAssembly primaryAssembly = characterAssembler.assembleCharacter(
+        playerCharacter = spawnCharacter(
                 scene,
                 graphicsDevice,
                 weightedGeometry,
                 definition,
                 "BattleArenaPlayerMesh",
-                characterTexture,
-                PLAYER_SCALE,
-                activeAnimations);
-        primaryCharacter = new BattleArenaCharacterRuntime(characterController, primaryAssembly, definition);
-        activeCharacter = primaryCharacter;
-        scene.addGameObject(new BattleArenaHealthBarGameObject(
-                primaryCharacter,
-                scene.renderer.camera,
                 "BattleArenaPlayerHealthBar",
-                HEALTH_BAR_WIDTH,
-                HEALTH_BAR_HEIGHT,
-                HEALTH_BAR_VERTICAL_OFFSET));
-        log("wired animation count total=" + activeAnimations.size()
-                + " idle=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
-                + " walk=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
-                + " walkBackward=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_WALK_BACKWARD).size()
-                + " run=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_RUN).size()
-                + " jump=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_JUMP).size()
-                + " punch=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
-                + " hit=" + primaryCharacter.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
+                characterTexture,
+                0f,
+                null,
+                true);
+        activeCharacter = playerCharacter;
 
-        log("loaded bones runtimeBones=" + primaryCharacter.bones.size()
-                + " root=" + primaryCharacter.rootBone.name);
+        log("wired animation count total=" + activeAnimations.size()
+                + " idle=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
+                + " walk=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
+                + " walkBackward=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK_BACKWARD).size()
+                + " run=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_RUN).size()
+                + " jump=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_JUMP).size()
+                + " punch=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
+                + " hit=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
+
+        log("loaded bones runtimeBones=" + playerCharacter.runtime.bones.size()
+                + " root=" + playerCharacter.runtime.rootBone.name);
 
         Bone_object boneobj=new Bone_object(new CubeGeometry(), characterTexture);
-        boneobj.bone=primaryCharacter.rootBone;
+        boneobj.bone=playerCharacter.runtime.rootBone;
         boneobj.scale=new float[]{0.1f,0.1f,0.1f};
         // scene.addGameObject(boneobj);
-        playerMeshes.add(primaryCharacter.meshObject);
-        log("spawned weighted mesh name=" + primaryCharacter.meshObject.name + " scale=" + PLAYER_SCALE);
+        log("spawned weighted mesh name=" + playerCharacter.runtime.meshObject.name + " scale=" + PLAYER_SCALE);
 
-        BattleArenaCharacterAssembly secondaryAssembly = characterAssembler.assembleCharacter(
+        BattleArenaControlledCharacter secondCharacter = spawnCharacter(
                 scene,
                 graphicsDevice,
                 weightedGeometry,
                 definition,
                 "BattleArenaSecondCharacter",
+                "BattleArenaSecondCharacterHealthBar",
                 characterTexture,
+                SECOND_CHARACTER_START_X,
+                new BattleArenaSimpleChaseAi(),
+                false);
+        npcCharacters.add(secondCharacter);
+        log("spawned second character name=" + secondCharacter.runtime.meshObject.name + " bones=" + secondCharacter.runtime.bones.size());
+    }
+
+    private BattleArenaControlledCharacter spawnCharacter(Scene scene,
+                                                          GraphicsDevice graphicsDevice,
+                                                          WeightedGeometry weightedGeometry,
+                                                          BattleArenaCharacterDefinition definition,
+                                                          String meshName,
+                                                          String healthBarName,
+                                                          int texture,
+                                                          float startX,
+                                                          BattleArenaCharacterBrain brain,
+                                                          boolean playerControlled) {
+        BattleArenaCharacterController controller = new BattleArenaCharacterController();
+        controller.setTerrainHeightSampler(this::sampleTerrainHeight);
+        BattleArenaCharacterAssembly assembly = characterAssembler.assembleCharacter(
+                scene,
+                graphicsDevice,
+                weightedGeometry,
+                definition,
+                meshName,
+                texture,
                 PLAYER_SCALE,
                 activeAnimations);
-        secondaryCharacter = new BattleArenaCharacterRuntime(secondaryCharacterController, secondaryAssembly, definition);
-        playerMeshes.add(secondaryCharacter.meshObject);
+        BattleArenaCharacterRuntime runtime = new BattleArenaCharacterRuntime(controller, assembly, definition);
+        BattleArenaControlledCharacter character = new BattleArenaControlledCharacter(
+                runtime,
+                controller,
+                skillSystem.skills(),
+                brain,
+                playerControlled);
+        if (startX != 0f) {
+            controller.setPlayerPosition(startX, 0f, 0f);
+        }
+        runtime.syncRig();
+        playerMeshes.add(runtime.meshObject);
         scene.addGameObject(new BattleArenaHealthBarGameObject(
-                secondaryCharacter,
+                character,
                 scene.renderer.camera,
-                "BattleArenaSecondCharacterHealthBar",
+                healthBarName,
                 HEALTH_BAR_WIDTH,
                 HEALTH_BAR_HEIGHT,
                 HEALTH_BAR_VERTICAL_OFFSET));
-        log("spawned second character name=" + secondaryCharacter.meshObject.name + " bones=" + secondaryCharacter.bones.size());
-        secondaryCharacterController.setPlayerPosition(SECOND_CHARACTER_START_X, 0f, 0f);
-        secondaryCharacter.syncRig();
+        arenaCharacters.add(character);
+        return character;
     }
+
+    private void updateFireballCasting(BattleArenaSkillContext skillContext) {
+        for (BattleArenaControlledCharacter character : arenaCharacters) {
+            character.castLatched = updateFireballCasting(
+                    skillContext,
+                    character,
+                    resolveOpponent(character),
+                    character.castLatched);
+        }
+    }
+
+    private boolean updateFireballCasting(BattleArenaSkillContext skillContext,
+                                          BattleArenaControlledCharacter caster,
+                                          BattleArenaCharacterRuntime target,
+                                          boolean castLatched) {
+        if (caster == null) {
+            return false;
+        }
+        boolean casting = caster.runtime.isCasting();
+        if (casting && !castLatched) {
+            caster.runSkill(BattleArenaFireballSkill.ID, skillContext, target);
+        }
+        return casting;
+    }
+
 
     private void registerCharacterHitboxes(Scene scene, BattleArenaCharacterRuntime character) {
         for (Collider collider : character.getHitboxColliders()) {
@@ -252,7 +330,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     }
 
     private void handleHitboxCollision(CollisionEvent event) {
-        if (event == null || event.getType() != CollisionEventType.ENTER) {
+        if (event == null) {
+            return;
+        }
+        if (event.getFirst() instanceof BattleArenaMudWallCollider
+                || event.getSecond() instanceof BattleArenaMudWallCollider) {
+            skillSystem.onCollision(createSkillContext(), event);
+            return;
+        }
+        if (event.getType() != CollisionEventType.ENTER) {
             return;
         }
         if (!(event.getFirst() instanceof BattleArenaHitboxCollider)
@@ -288,9 +374,14 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     }
 
     private void toggleActiveCharacter() {
-        activeCharacter = activeCharacter == primaryCharacter ? secondaryCharacter : primaryCharacter;
-        Vector3 activePosition = activeCharacter.getPosition();
-        log("camera target switched to " + activeCharacter.meshObject.name
+        if (arenaCharacters.isEmpty()) {
+            return;
+        }
+        int currentIndex = arenaCharacters.indexOf(activeCharacter);
+        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % arenaCharacters.size();
+        activeCharacter = arenaCharacters.get(nextIndex);
+        Vector3 activePosition = activeCharacter.runtime.getPosition();
+        log("camera target switched to " + activeCharacter.runtime.meshObject.name
                 + " x=" + activePosition.x + " z=" + activePosition.z);
     }
 
@@ -299,6 +390,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         for (BattleArenaHitboxDebugGameObject debugHitbox : debugHitboxes) {
             debugHitbox.setEnabled(debugHitboxesVisible);
         }
+        skillSystem.setDebugVisible(debugHitboxesVisible);
         log("hitbox debug visible=" + debugHitboxesVisible);
     }
 
@@ -346,7 +438,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     }
 
     private void updateCamera(Camera camera) {
-        Vector3 playerPosition = activeCharacter.getPosition();
+        if (activeCharacter == null) {
+            return;
+        }
+        Vector3 playerPosition = activeCharacter.runtime.getPosition();
         Vector3 focus = new Vector3(playerPosition.x, playerPosition.y + PLAYER_FOCUS_HEIGHT, playerPosition.z);
         float horizontalDistance = (float) Math.cos(cameraPitch) * CAMERA_DISTANCE;
         float verticalOffset = (float) Math.sin(cameraPitch) * CAMERA_DISTANCE;
@@ -355,6 +450,35 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 focus.y + CAMERA_HEIGHT + verticalOffset,
                 focus.z - ((float) Math.cos(cameraYaw) * horizontalDistance));
         camera.lookAt(cameraPosition, focus, new Vector3(0f, 1f, 0f));
+    }
+
+    private BattleArenaCharacterRuntime resolveOpponent(BattleArenaControlledCharacter self) {
+        if (self == null) {
+            return null;
+        }
+        if (self != playerCharacter && playerCharacter != null) {
+            return playerCharacter.runtime;
+        }
+        if (!npcCharacters.isEmpty()) {
+            return npcCharacters.get(0).runtime;
+        }
+        for (BattleArenaControlledCharacter character : arenaCharacters) {
+            if (character != self) {
+                return character.runtime;
+            }
+        }
+        return null;
+    }
+
+    private BattleArenaCharacterRuntime primaryOpponentRuntime() {
+        return resolveOpponent(playerCharacter);
+    }
+
+    private BattleArenaSkillContext createSkillContext() {
+        return new BattleArenaSkillContext(
+                loadedScene,
+                this::sampleTerrainHeight,
+                debugHitboxesVisible);
     }
 
     private int clampIndex(int value, int max) {

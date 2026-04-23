@@ -136,6 +136,9 @@ final class BattleArenaHitboxCollider implements Collider {
         if (!isEnabled() || other == null || other == this) {
             return false;
         }
+        if (other instanceof BattleArenaMudWallCollider) {
+            return type == Type.HURTBOX && "torso".equals(name);
+        }
         if (!(other instanceof BattleArenaHitboxCollider)) {
             return false;
         }

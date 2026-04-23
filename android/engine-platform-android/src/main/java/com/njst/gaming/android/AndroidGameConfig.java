@@ -29,4 +29,28 @@ public interface AndroidGameConfig {
     default boolean isShadowMapEnabled() {
         return false;
     }
+
+    default String getVirtualJoystickSprintActionId() {
+        return null;
+    }
+
+    default String getVirtualJoystickStepLeftActionId() {
+        return null;
+    }
+
+    default String getVirtualJoystickStepRightActionId() {
+        return null;
+    }
+
+    default float getVirtualJoystickSprintThreshold() {
+        return 0.85f;
+    }
+
+    default float getVirtualJoystickSideStepThreshold() {
+        return getVirtualJoystickSprintThreshold();
+    }
+
+    default float getVirtualJoystickSideStepCenterBand() {
+        return 0.35f;
+    }
 }

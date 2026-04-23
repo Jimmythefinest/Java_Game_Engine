@@ -1,104 +1,196 @@
 Renderer initialized
 Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
-Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain58
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain60
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain60
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain60
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain60
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain62
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Failed to load text resource: resources/shaders/vert11.glsl
+com.njst.gaming.Natives.ShaderProgramloadTextResource125
+com.njst.gaming.Natives.ShaderProgramloadShader75
+com.njst.gaming.Natives.DesktopGraphicsDeviceloadShaderSource49
+com.njst.gaming.RendereronSurfaceCreated112
+com.njst.gaming.Engineinit66
+com.njst.gaming.Enginerun28
+com.njst.gaming.ri.battlearena.BattleArenaAppmain65
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.setUniformVector3(String, com.njst.gaming.Math.Vector3)" because "this.shaderProgram" is null
+com.njst.gaming.RendereronDrawFrame161
+com.njst.gaming.Engineloop156
+com.njst.gaming.Enginerun29
+com.njst.gaming.ri.battlearena.BattleArenaAppmain65
 Renderer initialized
 Renderer initialized
 Renderer initialized

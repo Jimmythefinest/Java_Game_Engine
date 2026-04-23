@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 final class BattleArenaCharacterRuntime {
-    private static final float DEFAULT_MAX_HEALTH = 100f;
     private static final float DEFAULT_HIT_DAMAGE = 10f;
     private static final float PUNCH_RECOIL_STRENGTH = 0.22f;
     private static final float KICK_RECOIL_STRENGTH = 0.32f;
@@ -28,8 +27,7 @@ final class BattleArenaCharacterRuntime {
     final Map<String, ArrayList<KeyframeAnimation>> animationSets;
     final Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions;
     final ArrayList<Collider> hitboxColliders;
-    private final float maxHealth;
-    private float currentHealth;
+    private BattleArenaControlledCharacter character;
 
     BattleArenaCharacterRuntime(BattleArenaCharacterController controller,
                                 BattleArenaCharacterAssembly assembly,
@@ -44,9 +42,11 @@ final class BattleArenaCharacterRuntime {
         this.animationSets = createAnimationSets(assembly);
         this.eventDefinitions = createEventDefinitions(definition);
         this.hitboxColliders = createHitboxColliders();
-        this.maxHealth = DEFAULT_MAX_HEALTH;
-        this.currentHealth = DEFAULT_MAX_HEALTH;
         controller.configureCharacterData(animationSets, eventDefinitions);
+    }
+
+    void setCharacter(BattleArenaControlledCharacter character) {
+        this.character = character;
     }
 
     Vector3 getPosition() {
@@ -63,6 +63,10 @@ final class BattleArenaCharacterRuntime {
 
     boolean isKicking() {
         return controller.isKicking();
+    }
+
+    boolean isCasting() {
+        return controller.isCasting();
     }
 
     boolean isSideSteppingLeft() {
@@ -84,18 +88,15 @@ final class BattleArenaCharacterRuntime {
     }
 
     float getCurrentHealth() {
-        return currentHealth;
+        return character != null ? character.getCurrentHealth() : 0f;
     }
 
     float getMaxHealth() {
-        return maxHealth;
+        return character != null ? character.getMaxHealth() : 0f;
     }
 
     float getHealthRatio() {
-        if (maxHealth <= 0f) {
-            return 0f;
-        }
-        return Math.max(0f, Math.min(1f, currentHealth / maxHealth));
+        return character != null ? character.getHealthRatio() : 0f;
     }
 
     void onHitTaken(String hitboxName, String onHitAnimation) {
@@ -248,9 +249,8 @@ final class BattleArenaCharacterRuntime {
     }
 
     private void applyDamage(float damage) {
-        if (damage <= 0f) {
-            return;
+        if (character != null) {
+            character.applyDamage(damage);
         }
-        currentHealth = Math.max(0f, currentHealth - damage);
     }
 }

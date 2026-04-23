@@ -12,6 +12,7 @@ import java.util.Map;
 final class BattleArenaCharacterController {
     static final String EVENT_PUNCH_STARTED = "punch_started";
     static final String EVENT_KICK_STARTED = "kick_started";
+    static final String EVENT_CAST_STARTED = "cast_started";
     static final String EVENT_STEP_LEFT_STARTED = "step_left_started";
     static final String EVENT_STEP_RIGHT_STARTED = "step_right_started";
     static final String EVENT_HIT_TAKEN = "hit_taken";
@@ -24,6 +25,7 @@ final class BattleArenaCharacterController {
     static final String ANIM_JUMP = "jump";
     static final String ANIM_PUNCH = "punch";
     static final String ANIM_KICK = "kick";
+    static final String ANIM_CAST = "cast";
     static final String ANIM_LEFTSIDE_STEP = "leftside_step";
     static final String ANIM_RIGHTSIDE_STEP = "rightside_step";
     static final String ANIM_TAKE_HIT = "take_hit";
@@ -36,6 +38,8 @@ final class BattleArenaCharacterController {
     private static final float RECOIL_DAMPING = 0.82f;
     private static final float RECOIL_STOP_SPEED = 0.0005f;
     private static final float SIDE_STEP_DISTANCE = 0.75f;
+    private static final float PUNCH_LUNGE_DISTANCE = 0.2f;
+    private static final float PUNCH_LUNGE_DURATION_SECONDS = 0.1f;
 
     interface TerrainHeightSampler {
         float sample(float worldX, float worldZ);
@@ -55,12 +59,15 @@ final class BattleArenaCharacterController {
     private boolean jumping = false;
     private boolean punching = false;
     private boolean kicking = false;
+    private boolean casting = false;
     private boolean sideSteppingLeft = false;
     private boolean sideSteppingRight = false;
     private boolean takingHit = false;
     private final Vector3 recoilVelocity = new Vector3();
     private float sideStepVelocity = 0f;
     private float sideStepRemainingSeconds = 0f;
+    private float forwardLungeVelocity = 0f;
+    private float forwardLungeRemainingSeconds = 0f;
     private final BattleArenaCharacterControlState playerControls = new BattleArenaCharacterControlState();
 
     void configureCharacterData(Map<String, ArrayList<KeyframeAnimation>> animationSets,
@@ -89,12 +96,15 @@ final class BattleArenaCharacterController {
         jumping = false;
         punching = false;
         kicking = false;
+        casting = false;
         sideSteppingLeft = false;
         sideSteppingRight = false;
         takingHit = false;
         recoilVelocity.set(0f, 0f, 0f);
         sideStepVelocity = 0f;
         sideStepRemainingSeconds = 0f;
+        forwardLungeVelocity = 0f;
+        forwardLungeRemainingSeconds = 0f;
     }
 
     void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
@@ -107,18 +117,30 @@ final class BattleArenaCharacterController {
             return;
         }
 
-        if (controls.punchPressed && !punching && !animationSet(ANIM_PUNCH).isEmpty()) {
+        boolean combatActionActive = punching || kicking || casting || takingHit;
+
+        if (controls.punchPressed && !combatActionActive && !animationSet(ANIM_PUNCH).isEmpty()) {
             triggerConfiguredEvent(
                     EVENT_PUNCH_STARTED,
-                    () -> punching = true,
+                    () -> {
+                        punching = true;
+                        startForwardLunge(PUNCH_LUNGE_DISTANCE, PUNCH_LUNGE_DURATION_SECONDS);
+                    },
                     this::finishPunch);
         }
 
-        if (controls.kickPressed && !kicking && !animationSet(ANIM_KICK).isEmpty()) {
+        if (controls.kickPressed && !combatActionActive && !animationSet(ANIM_KICK).isEmpty()) {
             triggerConfiguredEvent(
                     EVENT_KICK_STARTED,
                     () -> kicking = true,
                     this::finishKick);
+        }
+
+        if (controls.castFireballPressed && !combatActionActive && !animationSet(ANIM_CAST).isEmpty()) {
+            triggerConfiguredEvent(
+                    EVENT_CAST_STARTED,
+                    () -> casting = true,
+                    this::finishCast);
         }
 
         if (controls.stepLeftPressed && !sideSteppingLeft && !animationSet(ANIM_LEFTSIDE_STEP).isEmpty()) {
@@ -128,7 +150,8 @@ final class BattleArenaCharacterController {
             startSideStepRight();
         }
 
-        if (punching || kicking || sideSteppingLeft || sideSteppingRight || takingHit) {
+        if (punching || kicking || casting || sideSteppingLeft || sideSteppingRight || takingHit) {
+            updateForwardLungeMotion(sceneSpeed);
             updateSideStepMotion(sceneSpeed);
             applyRecoilMotion(sceneSpeed);
             updateJumpPhysics(sceneSpeed);
@@ -169,6 +192,7 @@ final class BattleArenaCharacterController {
         }
 
         updateSideStepMotion(sceneSpeed);
+        updateForwardLungeMotion(sceneSpeed);
         applyRecoilMotion(sceneSpeed);
         updateJumpPhysics(sceneSpeed);
         snapPlayerToGround();
@@ -188,6 +212,10 @@ final class BattleArenaCharacterController {
 
     boolean isKicking() {
         return kicking;
+    }
+
+    boolean isCasting() {
+        return casting;
     }
 
     boolean isSideSteppingLeft() {
@@ -293,6 +321,24 @@ final class BattleArenaCharacterController {
         }
     }
 
+    private void updateForwardLungeMotion(float sceneSpeed) {
+        float frameSeconds = Math.max(sceneSpeed, 0f) / 60f;
+        if (frameSeconds <= 0f || forwardLungeRemainingSeconds <= 0f || Math.abs(forwardLungeVelocity) <= 0f) {
+            forwardLungeVelocity = 0f;
+            forwardLungeRemainingSeconds = 0f;
+            return;
+        }
+        float appliedSeconds = Math.min(frameSeconds, forwardLungeRemainingSeconds);
+        float headingRadians = (float) Math.toRadians(playerHeadingDegrees);
+        playerPosition.x += (float) Math.sin(headingRadians) * forwardLungeVelocity * appliedSeconds;
+        playerPosition.z += (float) Math.cos(headingRadians) * forwardLungeVelocity * appliedSeconds;
+        forwardLungeRemainingSeconds -= appliedSeconds;
+        if (forwardLungeRemainingSeconds <= 0f) {
+            forwardLungeVelocity = 0f;
+            forwardLungeRemainingSeconds = 0f;
+        }
+    }
+
     private void setCurrentAnimationSet(ArrayList<KeyframeAnimation> nextAnimationSet) {
         if (nextAnimationSet == null || nextAnimationSet.isEmpty() || currentAnimationSet == nextAnimationSet) {
             return;
@@ -316,11 +362,15 @@ final class BattleArenaCharacterController {
             return;
         }
         if (animationSet == animationSets.get(ANIM_PUNCH)) {
-            punching = false;
+            finishPunch();
             return;
         }
         if (animationSet == animationSets.get(ANIM_KICK)) {
             kicking = false;
+            return;
+        }
+        if (animationSet == animationSets.get(ANIM_CAST)) {
+            finishCast();
             return;
         }
         if (animationSet == animationSets.get(ANIM_LEFTSIDE_STEP)) {
@@ -357,6 +407,7 @@ final class BattleArenaCharacterController {
         ArrayList<KeyframeAnimation> takeHitAnimations = animationSet(ANIM_TAKE_HIT);
         ArrayList<KeyframeAnimation> punchAnimations = animationSet(ANIM_PUNCH);
         ArrayList<KeyframeAnimation> kickAnimations = animationSet(ANIM_KICK);
+        ArrayList<KeyframeAnimation> castAnimations = animationSet(ANIM_CAST);
         ArrayList<KeyframeAnimation> sideStepAnimations = animationSet(ANIM_LEFTSIDE_STEP);
         ArrayList<KeyframeAnimation> rightSideStepAnimations = animationSet(ANIM_RIGHTSIDE_STEP);
         ArrayList<KeyframeAnimation> jumpAnimations = animationSet(ANIM_JUMP);
@@ -370,6 +421,10 @@ final class BattleArenaCharacterController {
         }
         if (kicking) {
             setCurrentAnimationSet(kickAnimations);
+            return;
+        }
+        if (casting) {
+            setCurrentAnimationSet(castAnimations);
             return;
         }
         if (sideSteppingLeft) {
@@ -399,10 +454,16 @@ final class BattleArenaCharacterController {
 
     private void finishPunch() {
         punching = false;
+        forwardLungeVelocity = 0f;
+        forwardLungeRemainingSeconds = 0f;
     }
 
     private void finishKick() {
         kicking = false;
+    }
+
+    private void finishCast() {
+        casting = false;
     }
 
     private void finishSideStep() {
@@ -414,6 +475,16 @@ final class BattleArenaCharacterController {
 
     private void finishHitReact() {
         takingHit = false;
+    }
+
+    private void startForwardLunge(float distance, float durationSeconds) {
+        if (distance <= 0f || durationSeconds <= 0f) {
+            forwardLungeVelocity = 0f;
+            forwardLungeRemainingSeconds = 0f;
+            return;
+        }
+        forwardLungeRemainingSeconds = durationSeconds;
+        forwardLungeVelocity = distance / durationSeconds;
     }
 
     private void onAnimationFinished(KeyframeAnimation finishedAnimation,

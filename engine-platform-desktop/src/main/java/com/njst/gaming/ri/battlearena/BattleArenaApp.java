@@ -8,15 +8,20 @@ import com.njst.gaming.input.MouseButtons;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_E;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_F;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_G;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_0;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_1;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_2;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_9;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_Q;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_SLASH;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 
 public class BattleArenaApp extends Engine {
@@ -36,9 +41,11 @@ public class BattleArenaApp extends Engine {
         bindings.bindKey(GLFW_KEY_RIGHT_SHIFT, BattleArenaActions.RUN);
         bindings.bindKey(GLFW_KEY_SPACE, BattleArenaActions.JUMP);
         bindings.bindKey(GLFW_KEY_E, BattleArenaActions.PUNCH);
+        bindings.bindKey(GLFW_KEY_SLASH, BattleArenaActions.FIREBALL);
+        bindings.bindKey(GLFW_KEY_G, BattleArenaActions.MUD_WALL);
         bindings.bindKey(GLFW_KEY_Q, BattleArenaActions.KICK);
-        bindings.bindKey(GLFW_KEY_1, BattleArenaActions.STEP_LEFT);
-        bindings.bindKey(GLFW_KEY_2, BattleArenaActions.STEP_RIGHT);
+        bindings.bindKey(GLFW_KEY_LEFT, BattleArenaActions.STEP_LEFT);
+        bindings.bindKey(GLFW_KEY_RIGHT, BattleArenaActions.STEP_RIGHT);
         bindings.bindKey(GLFW_KEY_9, BattleArenaActions.SNAP);
         bindings.bindKey(GLFW_KEY_0, BattleArenaActions.TOGGLE_HITBOXES);
         bindings.bindMouseButton(MouseButtons.LEFT, BattleArenaActions.LOOK);

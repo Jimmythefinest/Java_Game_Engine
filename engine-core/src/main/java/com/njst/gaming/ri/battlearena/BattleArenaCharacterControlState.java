@@ -12,6 +12,8 @@ final class BattleArenaCharacterControlState {
     boolean jumpPressed;
     boolean punchPressed;
     boolean kickPressed;
+    boolean castFireballPressed;
+    boolean castMudWallPressed;
     boolean stepLeftPressed;
     boolean stepRightPressed;
 
@@ -22,6 +24,8 @@ final class BattleArenaCharacterControlState {
         jumpPressed = false;
         punchPressed = false;
         kickPressed = false;
+        castFireballPressed = false;
+        castMudWallPressed = false;
         stepLeftPressed = false;
         stepRightPressed = false;
     }
@@ -48,6 +52,8 @@ final class BattleArenaCharacterControlState {
         jumpPressed = actions.button(BattleArenaActions.JUMP).pressed();
         punchPressed = actions.button(BattleArenaActions.PUNCH).pressed();
         kickPressed = actions.button(BattleArenaActions.KICK).pressed();
+        castFireballPressed = actions.button(BattleArenaActions.FIREBALL).pressed();
+        castMudWallPressed = actions.button(BattleArenaActions.MUD_WALL).pressed();
         stepLeftPressed = actions.button(BattleArenaActions.STEP_LEFT).pressed();
         stepRightPressed = actions.button(BattleArenaActions.STEP_RIGHT).pressed();
         forwardInput = clamp(forwardInput);

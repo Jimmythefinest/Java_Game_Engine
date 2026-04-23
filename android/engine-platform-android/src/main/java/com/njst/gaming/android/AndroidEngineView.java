@@ -55,6 +55,12 @@ public class AndroidEngineView extends FrameLayout {
 
         String virtualJoystickPointerId = gameConfig.getVirtualJoystickPointerId();
         if (virtualJoystickPointerId != null && !virtualJoystickPointerId.isEmpty()) {
+            String sprintActionId = gameConfig.getVirtualJoystickSprintActionId();
+            String stepLeftActionId = gameConfig.getVirtualJoystickStepLeftActionId();
+            String stepRightActionId = gameConfig.getVirtualJoystickStepRightActionId();
+            float sprintThreshold = gameConfig.getVirtualJoystickSprintThreshold();
+            float sideStepThreshold = gameConfig.getVirtualJoystickSideStepThreshold();
+            float sideStepCenterBand = gameConfig.getVirtualJoystickSideStepCenterBand();
             AndroidVirtualJoystickView joystickView = new AndroidVirtualJoystickView(context, new AndroidVirtualJoystickView.Listener() {
                 @Override
                 public void onJoystickStart() {
@@ -64,12 +70,22 @@ public class AndroidEngineView extends FrameLayout {
                 @Override
                 public void onJoystickMove(float normalizedX, float normalizedY) {
                     surfaceView.moveVirtualPointer(virtualJoystickPointerId, normalizedX, normalizedY);
+                    updateJoystickDerivedActions(
+                            sprintActionId,
+                            stepLeftActionId,
+                            stepRightActionId,
+                            normalizedX,
+                            normalizedY,
+                            sprintThreshold,
+                            sideStepThreshold,
+                            sideStepCenterBand);
                 }
 
                 @Override
                 public void onJoystickEnd() {
                     surfaceView.moveVirtualPointer(virtualJoystickPointerId, 0f, 0f);
                     surfaceView.setVirtualPointerActive(virtualJoystickPointerId, false);
+                    clearJoystickDerivedActions(sprintActionId, stepLeftActionId, stepRightActionId);
                 }
             });
             int joystickSize = dp(context, 164);
@@ -154,19 +170,29 @@ public class AndroidEngineView extends FrameLayout {
         button.setText(label);
         button.setAllCaps(false);
         button.setAlpha(0.82f);
-        button.setOnTouchListener((view, event) -> handleActionTouch(event, setter));
+        button.setOnClickListener(view -> {
+            setter.set(true);
+            setter.set(false);
+        });
+        button.setOnTouchListener((view, event) -> handleActionTouch(view, event, setter));
         return button;
     }
 
-    private boolean handleActionTouch(MotionEvent event, ActionSetter setter) {
+    private boolean handleActionTouch(View view, MotionEvent event, ActionSetter setter) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
+                view.setPressed(true);
                 setter.set(true);
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
+                view.setPressed(false);
+                setter.set(false);
+                view.performClick();
+                return true;
             case MotionEvent.ACTION_CANCEL:
+                view.setPressed(false);
                 setter.set(false);
                 return true;
             default:
@@ -177,6 +203,39 @@ public class AndroidEngineView extends FrameLayout {
     private static int dp(Context context, int value) {
         float density = context.getResources().getDisplayMetrics().density;
         return Math.round(value * density);
+    }
+
+    private void updateJoystickDerivedActions(String sprintActionId,
+                                              String stepLeftActionId,
+                                              String stepRightActionId,
+                                              float normalizedX,
+                                              float normalizedY,
+                                              float sprintThreshold,
+                                              float sideStepThreshold,
+                                              float sideStepCenterBand) {
+        float radialDistance = (float) Math.sqrt((normalizedX * normalizedX) + (normalizedY * normalizedY));
+        boolean sprintDown = radialDistance >= sprintThreshold && normalizedY <= -sideStepCenterBand;
+        boolean stepLeftDown = Math.abs(normalizedY) <= sideStepCenterBand && normalizedX <= -sideStepThreshold;
+        boolean stepRightDown = Math.abs(normalizedY) <= sideStepCenterBand && normalizedX >= sideStepThreshold;
+
+        setOptionalActionState(sprintActionId, sprintDown);
+        setOptionalActionState(stepLeftActionId, stepLeftDown);
+        setOptionalActionState(stepRightActionId, stepRightDown);
+    }
+
+    private void clearJoystickDerivedActions(String sprintActionId,
+                                             String stepLeftActionId,
+                                             String stepRightActionId) {
+        setOptionalActionState(sprintActionId, false);
+        setOptionalActionState(stepLeftActionId, false);
+        setOptionalActionState(stepRightActionId, false);
+    }
+
+    private void setOptionalActionState(String actionId, boolean down) {
+        if (actionId == null || actionId.isEmpty()) {
+            return;
+        }
+        surfaceView.setActionState(actionId, down);
     }
 
     private interface ActionSetter {

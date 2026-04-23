@@ -16,7 +16,10 @@ public class Projectile {
     }
 
     public void update(float dt) {
-        obj.position.add(velocity.clone().mul(dt));
+        obj.move(
+                velocity.x * dt,
+                velocity.y * dt,
+                velocity.z * dt);
         obj.updateModelMatrix();
         lifetime -= dt;
     }

@@ -4,13 +4,26 @@ import com.njst.gaming.Math.Vector3;
 
 final class BattleArenaSimpleChaseAi implements BattleArenaCharacterBrain {
     private static final float TURN_DEADZONE_DEGREES = 6f;
+    private static final float MELEE_FACING_DEGREES = 18f;
+    private static final float TOOL_FACING_DEGREES = 16f;
     private static final float ATTACK_RANGE = 1.35f;
+    private static final float FIREBALL_MIN_RANGE = 2.4f;
+    private static final float FIREBALL_MAX_RANGE = 7.5f;
+    private static final float MUD_WALL_MIN_RANGE = 1.8f;
+    private static final float MUD_WALL_MAX_RANGE = 4.2f;
     private static final float RUN_RANGE = 3.5f;
     private static final float STRAFE_DISTANCE = 0.85f;
+    private static final float STRAFE_REPOSITION_RANGE = 2.1f;
     private static final float ATTACK_COOLDOWN_SECONDS = 1.1f;
+    private static final float FIREBALL_COOLDOWN_SECONDS = 2.6f;
+    private static final float MUD_WALL_COOLDOWN_SECONDS = 4.0f;
 
     private float attackCooldownRemaining = 0f;
+    private float fireballCooldownRemaining = 0f;
+    private float mudWallCooldownRemaining = 0f;
     private boolean useKickNext = false;
+    private boolean strafeLeftNext = true;
+    private boolean incomingFireballThreat = false;
 
     @Override
     public void update(BattleArenaCharacterRuntime self,
@@ -23,6 +36,8 @@ final class BattleArenaSimpleChaseAi implements BattleArenaCharacterBrain {
         }
 
         attackCooldownRemaining = Math.max(0f, attackCooldownRemaining - Math.max(0f, deltaSeconds));
+        fireballCooldownRemaining = Math.max(0f, fireballCooldownRemaining - Math.max(0f, deltaSeconds));
+        mudWallCooldownRemaining = Math.max(0f, mudWallCooldownRemaining - Math.max(0f, deltaSeconds));
 
         Vector3 selfPosition = self.getPosition();
         Vector3 opponentPosition = opponent.getPosition();
@@ -42,13 +57,33 @@ final class BattleArenaSimpleChaseAi implements BattleArenaCharacterBrain {
             controls.turnInput = -1f;
         }
 
-        if (distance > ATTACK_RANGE) {
-            controls.forwardInput = distance > STRAFE_DISTANCE ? 1f : 0f;
-            controls.runDown = distance > RUN_RANGE;
+        if (shouldCastMudWall(distance, headingDelta)) {
+            controls.castMudWallPressed = true;
+            mudWallCooldownRemaining = MUD_WALL_COOLDOWN_SECONDS;
             return;
         }
 
-        if (Math.abs(headingDelta) > 18f) {
+        if (shouldCastFireball(distance, headingDelta)) {
+            controls.castFireballPressed = true;
+            fireballCooldownRemaining = FIREBALL_COOLDOWN_SECONDS;
+            return;
+        }
+
+        if (distance > ATTACK_RANGE) {
+            controls.forwardInput = distance > STRAFE_DISTANCE ? 1f : 0f;
+            controls.runDown = distance > RUN_RANGE;
+            if (distance < STRAFE_REPOSITION_RANGE && Math.abs(headingDelta) <= TOOL_FACING_DEGREES) {
+                if (strafeLeftNext) {
+                    controls.stepLeftPressed = true;
+                } else {
+                    controls.stepRightPressed = true;
+                }
+                strafeLeftNext = !strafeLeftNext;
+            }
+            return;
+        }
+
+        if (Math.abs(headingDelta) > MELEE_FACING_DEGREES) {
             return;
         }
         if (attackCooldownRemaining > 0f) {
@@ -62,6 +97,25 @@ final class BattleArenaSimpleChaseAi implements BattleArenaCharacterBrain {
         }
         useKickNext = !useKickNext;
         attackCooldownRemaining = ATTACK_COOLDOWN_SECONDS;
+    }
+
+    private boolean shouldCastFireball(float distance, float headingDelta) {
+        return fireballCooldownRemaining <= 0f
+                && distance >= FIREBALL_MIN_RANGE
+                && distance <= FIREBALL_MAX_RANGE
+                && Math.abs(headingDelta) <= TOOL_FACING_DEGREES;
+    }
+
+    private boolean shouldCastMudWall(float distance, float headingDelta) {
+        return incomingFireballThreat
+                && mudWallCooldownRemaining <= 0f
+                && distance >= MUD_WALL_MIN_RANGE
+                && distance <= MUD_WALL_MAX_RANGE
+                && Math.abs(headingDelta) <= TOOL_FACING_DEGREES;
+    }
+
+    void setIncomingFireballThreat(boolean incomingFireballThreat) {
+        this.incomingFireballThreat = incomingFireballThreat;
     }
 
     private float normalizeAngle(float angleDegrees) {

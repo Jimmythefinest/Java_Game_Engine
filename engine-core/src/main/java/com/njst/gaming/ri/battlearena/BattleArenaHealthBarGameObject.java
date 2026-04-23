@@ -12,7 +12,7 @@ final class BattleArenaHealthBarGameObject extends GameObject {
     private static final int TEXTURE_WIDTH = 96;
     private static final int TEXTURE_HEIGHT = 12;
 
-    private final BattleArenaCharacterRuntime character;
+    private final BattleArenaControlledCharacter character;
     private final Camera camera;
     private final float widthWorldUnits;
     private final float heightWorldUnits;
@@ -20,7 +20,7 @@ final class BattleArenaHealthBarGameObject extends GameObject {
     private float lastRenderedHealthRatio = -1f;
     private int generatedTextureId = 0;
 
-    BattleArenaHealthBarGameObject(BattleArenaCharacterRuntime character,
+    BattleArenaHealthBarGameObject(BattleArenaControlledCharacter character,
                                    Camera camera,
                                    String name,
                                    float widthWorldUnits,
@@ -61,7 +61,7 @@ final class BattleArenaHealthBarGameObject extends GameObject {
     }
 
     private void updatePlacement() {
-        Vector3 position = character.getPosition();
+        Vector3 position = character.runtime.getPosition();
         setPosition(position.x, position.y + verticalOffset, position.z);
 
         if (camera == null || camera.cameraPosition == null) {

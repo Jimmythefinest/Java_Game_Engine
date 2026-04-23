@@ -6,6 +6,7 @@ import com.njst.gaming.android.AndroidPointerBinding;
 import com.njst.gaming.ri.battlearena.BattleArenaActions;
 import com.njst.gaming.ri.battlearena.BattleArenaDemoLoader;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,8 +18,9 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
 
     @Override
     public List<AndroidActionButton> getActionButtons() {
-        return Collections.singletonList(
-                new AndroidActionButton("Punch", BattleArenaActions.PUNCH));
+        return Arrays.asList(
+                new AndroidActionButton("Punch", BattleArenaActions.PUNCH),
+                new AndroidActionButton("Kick", BattleArenaActions.KICK));
     }
 
     @Override
@@ -38,5 +40,20 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
     @Override
     public String getExternalAssetRoot() {
         return "/sdcard/Documents/battlearena";
+    }
+
+    @Override
+    public String getVirtualJoystickSprintActionId() {
+        return BattleArenaActions.RUN;
+    }
+
+    @Override
+    public String getVirtualJoystickStepLeftActionId() {
+        return BattleArenaActions.STEP_LEFT;
+    }
+
+    @Override
+    public String getVirtualJoystickStepRightActionId() {
+        return BattleArenaActions.STEP_RIGHT;
     }
 }

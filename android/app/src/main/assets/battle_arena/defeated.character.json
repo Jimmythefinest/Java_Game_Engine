@@ -27,7 +27,7 @@
       "framesPerSecond": 60
     },
     "punch": {
-      "asset": "weighted_geometry/punching_animation_0.ser",
+      "asset": "weighted_geometry/uppercut_animation_0.ser",
       "framesPerSecond": 200
     },
     "kick": {

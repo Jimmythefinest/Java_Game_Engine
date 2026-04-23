@@ -32,6 +32,7 @@ final class BattleArenaCharacterAssembler {
             BattleArenaCharacterController.ANIM_JUMP,
             BattleArenaCharacterController.ANIM_PUNCH,
             BattleArenaCharacterController.ANIM_KICK,
+            BattleArenaCharacterController.ANIM_CAST,
             BattleArenaCharacterController.ANIM_LEFTSIDE_STEP,
             BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP,
             BattleArenaCharacterController.ANIM_TAKE_HIT
@@ -86,6 +87,8 @@ final class BattleArenaCharacterAssembler {
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_PUNCH),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_KICK),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_KICK),
+                definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_CAST),
+                definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_CAST),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
                 definitionAnimationFramesPerSecond(definition, BattleArenaCharacterController.ANIM_LEFTSIDE_STEP),
                 definitionAnimationAsset(definition, BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP),
@@ -117,6 +120,8 @@ final class BattleArenaCharacterAssembler {
                                                    float punchFramesPerSecond,
                                                    String kickAnimationFile,
                                                    float kickFramesPerSecond,
+                                                   String castAnimationFile,
+                                                   float castFramesPerSecond,
                                                    String leftsideStepAnimationFile,
                                                    float leftsideStepFramesPerSecond,
                                                    String rightsideStepAnimationFile,
@@ -156,6 +161,7 @@ final class BattleArenaCharacterAssembler {
         animationSpecs.put(BattleArenaCharacterController.ANIM_JUMP, new AnimationAssetSpec(jumpAnimationFile, jumpFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_PUNCH, new AnimationAssetSpec(punchAnimationFile, punchFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_KICK, new AnimationAssetSpec(kickAnimationFile, kickFramesPerSecond));
+        animationSpecs.put(BattleArenaCharacterController.ANIM_CAST, new AnimationAssetSpec(castAnimationFile, castFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_LEFTSIDE_STEP, new AnimationAssetSpec(leftsideStepAnimationFile, leftsideStepFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_RIGHTSIDE_STEP, new AnimationAssetSpec(rightsideStepAnimationFile, rightsideStepFramesPerSecond));
         animationSpecs.put(BattleArenaCharacterController.ANIM_TAKE_HIT, new AnimationAssetSpec(takeHitAnimationFile, takeHitFramesPerSecond));
