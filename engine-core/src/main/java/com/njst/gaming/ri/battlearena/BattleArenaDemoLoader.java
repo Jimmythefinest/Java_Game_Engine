@@ -156,7 +156,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 }
                 // Temporary profiling switch so we can isolate animation cost.
                 if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
-                    for (KeyframeAnimation anim : activeAnimations) {
+                    ArrayList<KeyframeAnimation> runningAnimations = new ArrayList<>(activeAnimations);
+                    for (KeyframeAnimation anim : runningAnimations) {
                         anim.animate(deltaSeconds);
                     }
                 }
@@ -260,7 +261,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 texture,
                 PLAYER_SCALE,
                 activeAnimations);
-        BattleArenaCharacterRuntime runtime = new BattleArenaCharacterRuntime(controller, assembly, definition);
+        BattleArenaCharacterRuntime runtime = new BattleArenaCharacterRuntime(controller, assembly, definition, activeAnimations);
         BattleArenaControlledCharacter character = new BattleArenaControlledCharacter(
                 runtime,
                 controller,

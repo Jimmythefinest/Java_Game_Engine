@@ -69,13 +69,16 @@ final class BattleArenaCharacterController {
     private float forwardLungeVelocity = 0f;
     private float forwardLungeRemainingSeconds = 0f;
     private final BattleArenaCharacterControlState playerControls = new BattleArenaCharacterControlState();
+    private ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
 
     void configureCharacterData(Map<String, ArrayList<KeyframeAnimation>> animationSets,
-                                Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions) {
+                                Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions,
+                                ArrayList<KeyframeAnimation> activeAnimations) {
         this.animationSets = animationSets != null ? new HashMap<>(animationSets) : new HashMap<String, ArrayList<KeyframeAnimation>>();
         this.eventDefinitions = eventDefinitions != null
                 ? new HashMap<String, BattleArenaCharacterDefinition.EventDefinition>(eventDefinitions)
                 : new HashMap<String, BattleArenaCharacterDefinition.EventDefinition>();
+        this.activeAnimations = activeAnimations != null ? activeAnimations : new ArrayList<KeyframeAnimation>();
         currentAnimationSet = null;
         updateMovementAnimationState();
     }
@@ -348,11 +351,13 @@ final class BattleArenaCharacterController {
             for (KeyframeAnimation animation : currentAnimationSet) {
                 animation.stop();
                 animation.time = 0f;
+                unregisterActiveAnimation(animation);
             }
         }
         for (KeyframeAnimation animation : nextAnimationSet) {
             animation.time = 0f;
             animation.start();
+            registerActiveAnimation(animation);
         }
         currentAnimationSet = nextAnimationSet;
     }
@@ -493,6 +498,7 @@ final class BattleArenaCharacterController {
                                      Runnable onAnimationSetFinished) {
         finishedAnimation.stop();
         finishedAnimation.time = 0f;
+        unregisterActiveAnimation(finishedAnimation);
         if (currentAnimationSet != sourceAnimationSet) {
             return;
         }
@@ -554,6 +560,20 @@ final class BattleArenaCharacterController {
                 eventAnimationSet,
                 resolveFollowupAnimationSet(eventDefinition.then),
                 onEventFinished);
+    }
+
+    private void registerActiveAnimation(KeyframeAnimation animation) {
+        if (animation == null || activeAnimations == null || activeAnimations.contains(animation)) {
+            return;
+        }
+        activeAnimations.add(animation);
+    }
+
+    private void unregisterActiveAnimation(KeyframeAnimation animation) {
+        if (animation == null || activeAnimations == null) {
+            return;
+        }
+        activeAnimations.remove(animation);
     }
 
     private void startSideStepLeft() {

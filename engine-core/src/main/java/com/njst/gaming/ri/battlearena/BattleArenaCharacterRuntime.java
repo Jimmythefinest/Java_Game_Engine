@@ -31,7 +31,8 @@ final class BattleArenaCharacterRuntime {
 
     BattleArenaCharacterRuntime(BattleArenaCharacterController controller,
                                 BattleArenaCharacterAssembly assembly,
-                                BattleArenaCharacterDefinition definition) {
+                                BattleArenaCharacterDefinition definition,
+                                ArrayList<KeyframeAnimation> activeAnimations) {
         this.controller = controller;
         this.bones = assembly.bones;
         this.rootBone = assembly.rootBone;
@@ -42,7 +43,7 @@ final class BattleArenaCharacterRuntime {
         this.animationSets = createAnimationSets(assembly);
         this.eventDefinitions = createEventDefinitions(definition);
         this.hitboxColliders = createHitboxColliders();
-        controller.configureCharacterData(animationSets, eventDefinitions);
+        controller.configureCharacterData(animationSets, eventDefinitions, activeAnimations);
     }
 
     void setCharacter(BattleArenaControlledCharacter character) {

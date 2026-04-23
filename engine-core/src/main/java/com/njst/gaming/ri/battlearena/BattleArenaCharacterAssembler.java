@@ -295,7 +295,6 @@ final class BattleArenaCharacterAssembler {
             animation.time = 0f;
             animation.speed = 1f;
             targetList.add(animation);
-            activeAnimations.add(animation);
             scene.KEY_ANIMATIONS.add(animation);
         }
     }
