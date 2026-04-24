@@ -23,6 +23,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SLASH;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_X;
 
 public class BattleArenaApp extends Engine {
     private final BattleArenaDemoLoader loader = new BattleArenaDemoLoader();
@@ -44,6 +45,7 @@ public class BattleArenaApp extends Engine {
         bindings.bindKey(GLFW_KEY_SLASH, BattleArenaActions.FIREBALL);
         bindings.bindKey(GLFW_KEY_G, BattleArenaActions.MUD_WALL);
         bindings.bindKey(GLFW_KEY_Q, BattleArenaActions.KICK);
+        bindings.bindKey(GLFW_KEY_X, BattleArenaActions.BURST);
         bindings.bindKey(GLFW_KEY_LEFT, BattleArenaActions.STEP_LEFT);
         bindings.bindKey(GLFW_KEY_RIGHT, BattleArenaActions.STEP_RIGHT);
         bindings.bindKey(GLFW_KEY_9, BattleArenaActions.SNAP);

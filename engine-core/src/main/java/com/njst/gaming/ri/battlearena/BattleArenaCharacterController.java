@@ -40,6 +40,10 @@ final class BattleArenaCharacterController {
     private static final float SIDE_STEP_DISTANCE = 0.75f;
     private static final float PUNCH_LUNGE_DISTANCE = 0.2f;
     private static final float PUNCH_LUNGE_DURATION_SECONDS = 0.1f;
+    private static final float FORWARD_CHARGE_DISTANCE = 2.8f;
+    private static final float BACKWARD_SHADOW_STEP_DISTANCE = 2.2f;
+    private static final float CHARGE_DURATION_SECONDS = 0.18f;
+    private static final float BURST_DIRECTION_THRESHOLD = 0.15f;
 
     interface TerrainHeightSampler {
         float sample(float worldX, float worldZ);
@@ -120,7 +124,11 @@ final class BattleArenaCharacterController {
             return;
         }
 
+        float forwardInput = clamp(controls.forwardInput);
+        float turnInput = clamp(controls.turnInput);
         boolean combatActionActive = punching || kicking || casting || takingHit;
+        boolean chargeTriggered = tryStartDirectionalCharge(forwardInput, controls.burstPressed, combatActionActive);
+        boolean chargeActive = isChargeActive();
 
         if (controls.punchPressed && !combatActionActive && !animationSet(ANIM_PUNCH).isEmpty()) {
             triggerConfiguredEvent(
@@ -146,24 +154,18 @@ final class BattleArenaCharacterController {
                     this::finishCast);
         }
 
-        if (controls.stepLeftPressed && !sideSteppingLeft && !animationSet(ANIM_LEFTSIDE_STEP).isEmpty()) {
+        boolean sideStepActive = sideSteppingLeft || sideSteppingRight;
+        if (controls.stepLeftPressed && !sideStepActive && !animationSet(ANIM_LEFTSIDE_STEP).isEmpty()) {
             startSideStepLeft();
         }
-        if (controls.stepRightPressed && !sideSteppingRight && !animationSet(ANIM_RIGHTSIDE_STEP).isEmpty()) {
+        if (controls.stepRightPressed && !sideStepActive && !animationSet(ANIM_RIGHTSIDE_STEP).isEmpty()) {
             startSideStepRight();
         }
 
-        if (punching || kicking || casting || sideSteppingLeft || sideSteppingRight || takingHit) {
-            updateForwardLungeMotion(sceneSpeed);
-            updateSideStepMotion(sceneSpeed);
-            applyRecoilMotion(sceneSpeed);
-            updateJumpPhysics(sceneSpeed);
-            snapPlayerToGround();
-            return;
-        }
-
-        float forwardInput = clamp(controls.forwardInput);
-        float turnInput = clamp(controls.turnInput);
+        boolean locomotionAnimationBlocked = punching || kicking || casting || sideSteppingLeft || sideSteppingRight || takingHit;
+        float animationForwardInput = chargeActive ? Math.signum(forwardLungeVelocity) : forwardInput;
+        boolean animationRunDown = controls.runDown || (chargeActive && forwardLungeVelocity > 0f);
+        updateMovementIntent(animationForwardInput, animationRunDown, sceneSpeed, !locomotionAnimationBlocked);
 
         if (controls.jumpPressed && !jumping) {
             jumping = true;
@@ -171,24 +173,18 @@ final class BattleArenaCharacterController {
             updateMovementAnimationState();
         }
 
-        playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * sceneSpeed;
+        if (!takingHit) {
+            playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * sceneSpeed;
+        }
+
+        boolean locomotionBlocked = sideSteppingLeft || sideSteppingRight || takingHit || chargeActive || chargeTriggered;
 
         boolean wantsToRun = controls.runDown;
         float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
         float moveAmount = forwardInput * movementSpeed * sceneSpeed;
         boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
-        boolean isMovingBackwardNow = moveAmount < -0.0001f;
-        boolean isRunningNow = isMovingNow && wantsToRun;
-        if (isMovingNow != playerMoving
-                || isMovingBackwardNow != playerMovingBackward
-                || isRunningNow != playerRunning) {
-            playerMoving = isMovingNow;
-            playerMovingBackward = isMovingBackwardNow;
-            playerRunning = isRunningNow;
-            updateMovementAnimationState();
-        }
 
-        if (isMovingNow) {
+        if (!locomotionBlocked && isMovingNow) {
             float headingRadians = (float) Math.toRadians(playerHeadingDegrees);
             playerPosition.x += (float) Math.sin(headingRadians) * moveAmount;
             playerPosition.z += (float) Math.cos(headingRadians) * moveAmount;
@@ -306,7 +302,7 @@ final class BattleArenaCharacterController {
             sideStepRemainingSeconds = 0f;
             return;
         }
-        float frameSeconds = Math.max(sceneSpeed, 0f) / 60f;
+        float frameSeconds = frameSeconds(sceneSpeed);
         if (frameSeconds <= 0f || sideStepRemainingSeconds <= 0f) {
             finishSideStep();
             return;
@@ -325,7 +321,7 @@ final class BattleArenaCharacterController {
     }
 
     private void updateForwardLungeMotion(float sceneSpeed) {
-        float frameSeconds = Math.max(sceneSpeed, 0f) / 60f;
+        float frameSeconds = frameSeconds(sceneSpeed);
         if (frameSeconds <= 0f || forwardLungeRemainingSeconds <= 0f || Math.abs(forwardLungeVelocity) <= 0f) {
             forwardLungeVelocity = 0f;
             forwardLungeRemainingSeconds = 0f;
@@ -483,13 +479,32 @@ final class BattleArenaCharacterController {
     }
 
     private void startForwardLunge(float distance, float durationSeconds) {
-        if (distance <= 0f || durationSeconds <= 0f) {
+        if (distance == 0f || durationSeconds <= 0f) {
             forwardLungeVelocity = 0f;
             forwardLungeRemainingSeconds = 0f;
             return;
         }
         forwardLungeRemainingSeconds = durationSeconds;
         forwardLungeVelocity = distance / durationSeconds;
+    }
+
+    private boolean tryStartDirectionalCharge(float forwardInput, boolean burstPressed, boolean combatActionActive) {
+        if (!burstPressed || combatActionActive || sideSteppingLeft || sideSteppingRight || takingHit) {
+            return false;
+        }
+        float burstDistance = forwardInput <= -BURST_DIRECTION_THRESHOLD
+                ? -BACKWARD_SHADOW_STEP_DISTANCE
+                : FORWARD_CHARGE_DISTANCE;
+        startForwardLunge(burstDistance, CHARGE_DURATION_SECONDS);
+        return true;
+    }
+
+    private boolean isChargeActive() {
+        return forwardLungeRemainingSeconds > 0f && Math.abs(forwardLungeVelocity) > 0f;
+    }
+
+    private float frameSeconds(float sceneSpeed) {
+        return Math.max(sceneSpeed, 0f) / 60f;
     }
 
     private void onAnimationFinished(KeyframeAnimation finishedAnimation,
@@ -511,7 +526,12 @@ final class BattleArenaCharacterController {
             onAnimationSetFinished.run();
         }
         if (nextAnimationSetOnFinish != null && !nextAnimationSetOnFinish.isEmpty()) {
-            setCurrentAnimationSet(nextAnimationSetOnFinish);
+            ArrayList<KeyframeAnimation> followup = nextAnimationSetOnFinish;
+            ArrayList<KeyframeAnimation> baseAnimationSet = resolveBaseAnimationSet();
+            if (followup == animationSet(ANIM_IDLE) && baseAnimationSet != followup) {
+                followup = baseAnimationSet;
+            }
+            setCurrentAnimationSet(followup);
             return;
         }
         updateMovementAnimationState();
@@ -638,6 +658,27 @@ final class BattleArenaCharacterController {
             return resolveBaseAnimationSet();
         }
         return animationSet(followupKey);
+    }
+
+    private void updateMovementIntent(float forwardInput,
+                                      boolean wantsToRun,
+                                      float sceneSpeed,
+                                      boolean updateAnimationState) {
+        float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
+        float moveAmount = forwardInput * movementSpeed * sceneSpeed;
+        boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
+        boolean isMovingBackwardNow = moveAmount < -0.0001f;
+        boolean isRunningNow = isMovingNow && wantsToRun;
+        if (isMovingNow != playerMoving
+                || isMovingBackwardNow != playerMovingBackward
+                || isRunningNow != playerRunning) {
+            playerMoving = isMovingNow;
+            playerMovingBackward = isMovingBackwardNow;
+            playerRunning = isRunningNow;
+            if (updateAnimationState) {
+                updateMovementAnimationState();
+            }
+        }
     }
 
     private float clamp(float value) {

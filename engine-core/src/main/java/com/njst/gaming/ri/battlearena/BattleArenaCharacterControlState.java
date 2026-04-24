@@ -16,6 +16,7 @@ final class BattleArenaCharacterControlState {
     boolean castMudWallPressed;
     boolean stepLeftPressed;
     boolean stepRightPressed;
+    boolean burstPressed;
 
     void clear() {
         forwardInput = 0f;
@@ -28,6 +29,7 @@ final class BattleArenaCharacterControlState {
         castMudWallPressed = false;
         stepLeftPressed = false;
         stepRightPressed = false;
+        burstPressed = false;
     }
 
     void capturePlayerInput(ActionInput actions, PointerState movementPointer) {
@@ -56,6 +58,7 @@ final class BattleArenaCharacterControlState {
         castMudWallPressed = actions.button(BattleArenaActions.MUD_WALL).pressed();
         stepLeftPressed = actions.button(BattleArenaActions.STEP_LEFT).pressed();
         stepRightPressed = actions.button(BattleArenaActions.STEP_RIGHT).pressed();
+        burstPressed = actions.button(BattleArenaActions.BURST).pressed();
         forwardInput = clamp(forwardInput);
         turnInput = clamp(turnInput);
     }

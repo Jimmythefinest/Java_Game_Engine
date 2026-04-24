@@ -13,6 +13,7 @@ public final class BattleArenaActions {
     public static final String MUD_WALL = "mud_wall";
     public static final String STEP_LEFT = "step_left";
     public static final String STEP_RIGHT = "step_right";
+    public static final String BURST = "burst";
     public static final String SNAP = "snap";
     public static final String TOGGLE_HITBOXES = "toggle_hitboxes";
     public static final String LOOK = "look";
