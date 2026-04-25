@@ -60,6 +60,7 @@ public class Renderer {
     public float angle;
     public final float[] lightPos = { 0, 50f, 0 };
     public final float[] lightColor = { 1.0f, 1.0f, 1.0f };
+    public static final int MAX_LIGHTS = 8;
     public BufferHandle ssbo;
 
     public long lasttym = 0;
@@ -78,8 +79,11 @@ public class Renderer {
 
     private final GraphicsDevice graphicsDevice;
     private final ArrayList<GameObject> renderQueue = new ArrayList<>();
+    private final ArrayList<Light> lights = new ArrayList<>();
     private final float[] cameraDataBuffer = new float[39];
     private final Vector3 mainPassLightPosition = new Vector3();
+    private final Vector3 scratchLightColor = new Vector3();
+    private final Vector3 scratchLightProperties = new Vector3();
     private ProfilerSnapshot profilerSnapshot = new ProfilerSnapshot(0f, 0f, 0f, 0f, 0, 0);
     private long profilerWindowStartMillis = 0L;
     private long profilerFrameNanos = 0L;
@@ -158,8 +162,12 @@ public class Renderer {
             bindMainCameraData();
 
             graphicsDevice.clearColorAndDepth();
+            shaderProgram.use();
             shaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+            uploadLightUniforms(shaderProgram);
+            terrainShaderProgram.use();
             terrainShaderProgram.setUniformVector3("eyepos1", camera.cameraPosition);
+            uploadLightUniforms(terrainShaderProgram);
 
             long skyboxNanos = 0L;
             if (skybox != null) {
@@ -227,6 +235,7 @@ public class Renderer {
         ShaderHandle activeShader = (object instanceof TerrainObject) ? terrainShaderProgram : shaderProgram;
         activeShader.use();
         activeShader.setUniformVector3("eyepos1", activeCamera.cameraPosition);
+        uploadLightUniforms(activeShader, activeLight);
         object.setGraphicsDevice(graphicsDevice);
         boolean shadowsActive = shadowMapEnabled && shadowMap != null;
         object.setShadowContext(shadowsActive ? shadowMap.getTextureId() : 0, lightSpaceMatrix, shadowsActive);
@@ -245,9 +254,59 @@ public class Renderer {
         return shadowMapEnabled;
     }
 
+    public void addLight(Light light) {
+        if (light != null && lights.size() < MAX_LIGHTS - 1) {
+            lights.add(light);
+        }
+    }
+
+    public Light addPointLight(float x, float y, float z, float r, float g, float b, float intensity, float range) {
+        Light light = Light.point(x, y, z, r, g, b, intensity, range);
+        addLight(light);
+        return light;
+    }
+
+    public void clearLights() {
+        lights.clear();
+    }
+
+    public ArrayList<Light> getLights() {
+        return lights;
+    }
+
     private void bindMainCameraData() {
         mainPassLightPosition.set(lightPos[0], lightPos[1], lightPos[2]);
         bindCameraData(camera, mainPassLightPosition);
+    }
+
+    private void uploadLightUniforms(ShaderHandle shader) {
+        uploadLightUniforms(shader, mainPassLightPosition);
+    }
+
+    private void uploadLightUniforms(ShaderHandle shader, Vector3 primaryLightPosition) {
+        if (shader == null) {
+            return;
+        }
+        Vector3 primaryPosition = primaryLightPosition != null
+                ? primaryLightPosition
+                : new Vector3(lightPos[0], lightPos[1], lightPos[2]);
+        int count = Math.min(MAX_LIGHTS, 1 + lights.size());
+        shader.setUniformInt("uLightCount", count);
+        uploadLight(shader, 0, primaryPosition, lightColor[0], lightColor[1], lightColor[2], 1f, 200f);
+        for (int i = 1; i < count; i++) {
+            Light light = lights.get(i - 1);
+            uploadLight(shader, i, light.position, light.color.x, light.color.y, light.color.z,
+                    light.intensity, light.range);
+        }
+    }
+
+    private void uploadLight(ShaderHandle shader, int index, Vector3 position, float red, float green, float blue,
+            float intensity, float range) {
+        shader.setUniformVector3("uLightPositions[" + index + "]", position);
+        scratchLightColor.set(red * intensity, green * intensity, blue * intensity);
+        shader.setUniformVector3("uLightColors[" + index + "]", scratchLightColor);
+        scratchLightProperties.set(Math.max(0.001f, range), index == 0 ? 1f : 0f, 0f);
+        shader.setUniformVector3("uLightProperties[" + index + "]", scratchLightProperties);
     }
 
     private void bindCameraData(Camera activeCamera, Vector3 activeLight) {

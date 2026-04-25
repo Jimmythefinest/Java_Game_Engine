@@ -2,6 +2,7 @@ package com.njst.gaming.android.audio;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.util.Log;
 
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.android.AndroidAssetLoader;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 public class AndroidAudioDevice implements AudioDevice {
+    private static final String TAG = "NJST_AUDIO";
+
     private final AssetManager assetManager;
     private final Map<String, AndroidAudioBufferHandle> soundCache = new HashMap<>();
     private final List<AndroidAudioSourceHandle> sources = new ArrayList<>();
@@ -25,6 +28,7 @@ public class AndroidAudioDevice implements AudioDevice {
             throw new IllegalArgumentException("Context must not be null.");
         }
         assetManager = context.getAssets();
+        Log.i(TAG, "Initializing Android audio device");
         NativeAudio.init();
     }
 
@@ -35,8 +39,10 @@ public class AndroidAudioDevice implements AudioDevice {
         }
         AndroidAudioBufferHandle cached = soundCache.get(resourcePath);
         if (cached != null) {
+            Log.i(TAG, "Reusing cached sound path=" + resourcePath + " bufferId=" + cached.getBufferId());
             return cached;
         }
+        Log.i(TAG, "Loading sound path=" + resourcePath);
         byte[] wavBytes = AndroidAssetLoader.readBytes(assetManager, resourcePath);
         int bufferId = NativeAudio.createBuffer(wavBytes);
         if (bufferId == 0) {
@@ -44,6 +50,7 @@ public class AndroidAudioDevice implements AudioDevice {
         }
         AndroidAudioBufferHandle buffer = new AndroidAudioBufferHandle(bufferId);
         soundCache.put(resourcePath, buffer);
+        Log.i(TAG, "Loaded sound path=" + resourcePath + " bytes=" + wavBytes.length + " bufferId=" + bufferId);
         return buffer;
     }
 
@@ -56,6 +63,7 @@ public class AndroidAudioDevice implements AudioDevice {
         }
         AndroidAudioSourceHandle source = new AndroidAudioSourceHandle(sourceId);
         sources.add(source);
+        Log.i(TAG, "Created audio source sourceId=" + sourceId + " bufferId=" + androidBuffer.getBufferId());
         return source;
     }
 
@@ -89,6 +97,7 @@ public class AndroidAudioDevice implements AudioDevice {
 
     @Override
     public void setMasterGain(float gain) {
+        Log.i(TAG, "Setting master gain=" + gain);
         NativeAudio.setMasterGain(gain);
     }
 
@@ -97,6 +106,7 @@ public class AndroidAudioDevice implements AudioDevice {
         if (cleanedUp) {
             return;
         }
+        Log.i(TAG, "Cleaning up Android audio device sources=" + sources.size() + " buffers=" + soundCache.size());
         for (AndroidAudioSourceHandle source : new ArrayList<>(sources)) {
             source.cleanup();
         }
@@ -107,6 +117,7 @@ public class AndroidAudioDevice implements AudioDevice {
         soundCache.clear();
         NativeAudio.shutdown();
         cleanedUp = true;
+        Log.i(TAG, "Android audio device cleanup complete");
     }
 
     private AndroidAudioBufferHandle requireAndroidBuffer(AudioBufferHandle buffer) {

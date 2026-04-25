@@ -17,6 +17,11 @@ uniform vec3 terrainBlendConfig;
 uniform vec3 terrainControlOffset;
 uniform sampler2D uShadowMap;
 uniform int uShadowEnabled;
+const int MAX_LIGHTS = 8;
+uniform int uLightCount;
+uniform vec3 uLightPositions[MAX_LIGHTS];
+uniform vec3 uLightColors[MAX_LIGHTS];
+uniform vec3 uLightProperties[MAX_LIGHTS];
 
 layout(std430, binding = 0) buffer MySSBO {
     mat4 perspective;
@@ -70,21 +75,32 @@ void main()
         (layer3 * weights.a);
 
     vec3 norm = normalize(frag_Normal);
-    vec3 lightDir = normalize(lightpos - fragpos);
     vec3 viewDir = normalize(eyepos - fragpos);
 
     vec3 ambientColor = vec3(0.1, 0.1, 0.1) * properties[1];
     vec3 ambient = ambientColor * vec3(texture_color);
 
-    float diff = max(dot(norm, lightDir), 0.1);
-    vec3 diffuse = diff * vec3(texture_color);
+    vec3 lit = vec3(0.0);
+    int activeLightCount = clamp(uLightCount, 1, MAX_LIGHTS);
+    for (int i = 0; i < activeLightCount; i++) {
+        vec3 toLight = uLightPositions[i] - fragpos;
+        float distanceToLight = length(toLight);
+        vec3 lightDir = distanceToLight > 0.0001 ? toLight / distanceToLight : vec3(0.0, 1.0, 0.0);
+        float range = max(uLightProperties[i].x, 0.001);
+        float attenuation = clamp(1.0 - (distanceToLight / range), 0.0, 1.0);
+        attenuation *= attenuation;
 
-    vec3 reflection = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflection), 0.0), properties[0]);
-    vec3 lightColor = vec3(1.0, 1.0, 1.0);
-    vec3 specular = spec * lightColor / (32.0 / properties[0]);
-    float shadow = calculateShadow(fragLightSpacePos, norm, lightDir);
+        float diff = max(dot(norm, lightDir), 0.0);
+        vec3 diffuse = diff * vec3(texture_color) * uLightColors[i] * attenuation;
 
-    vec3 result = ambient + ((1.0 - shadow) * diffuse) + ((1.0 - shadow) * specular);
+        vec3 reflection = reflect(-lightDir, norm);
+        float spec = pow(max(dot(viewDir, reflection), 0.0), max(properties[0], 1.0));
+        vec3 specular = spec * uLightColors[i] * attenuation / max(32.0 / max(properties[0], 1.0), 1.0);
+        float shadow = uLightProperties[i].y > 0.5 ? calculateShadow(fragLightSpacePos, norm, lightDir) : 0.0;
+
+        lit += ((1.0 - shadow) * diffuse) + ((1.0 - shadow) * specular);
+    }
+
+    vec3 result = ambient + lit;
     finalColor = vec4(result, texture_color.a);
 }

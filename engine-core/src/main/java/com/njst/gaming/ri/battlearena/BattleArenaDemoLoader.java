@@ -89,9 +89,10 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         int groundTexture = graphicsDevice.loadTexture(groundPath);
         log("loaded textures skyboxId=" + skyboxTexture + " groundId=" + groundTexture);
         initAudioSmokeTest(scene);
+        setupDemoLights(scene);
 
         GameObject skybox = new GameObject(new SphereGeometry(1f, 20, 20), skyboxTexture);
-        skybox.ambientlight_multiplier = 5f;
+        skybox.ambientlight_multiplier = 10f;
         skybox.shininess = 1f;
         skybox.setScale(100f, 100f, 100f);
         skybox.setPosition(0f, 0f, 0f);
@@ -217,6 +218,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             audioAvailable = false;
             log("audio smoke test disabled after playback error: " + e.getMessage());
         }
+    }
+
+    private void setupDemoLights(Scene scene) {
+        scene.renderer.clearLights();
+        scene.renderer.addPointLight(-4.5f, 3.2f, -2.5f, 1.0f, 0.48f, 0.18f, 1.65f, 16f);
+        scene.renderer.addPointLight(4.5f, 3.2f, 2.8f, 0.18f, 0.55f, 1.0f, 1.45f, 16f);
+        log("demo lights configured count=" + (scene.renderer.getLights().size() + 1));
     }
 
     private void loadPlayer(Scene scene, GraphicsDevice graphicsDevice) {

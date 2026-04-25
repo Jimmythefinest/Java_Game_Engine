@@ -104,6 +104,8 @@ bool parseWav(const uint8_t *bytes, size_t size, AudioBuffer &out) {
         LOGE("Unsupported WAV format: channels=%u bits=%u", out.channels, out.bitsPerSample);
         return false;
     }
+    LOGI("Parsed WAV sampleRate=%u channels=%u bits=%u pcmBytes=%zu",
+         out.sampleRate, out.channels, out.bitsPerSample, out.pcm.size());
     return !out.pcm.empty();
 }
 
@@ -173,6 +175,7 @@ void bufferQueueCallback(SLAndroidSimpleBufferQueueItf queueItf, void *context) 
         return;
     }
     source->playing = false;
+    LOGI("Playback complete sourceId=%d", sourceId);
     if (source->playItf) {
         (*source->playItf)->SetPlayState(source->playItf, SL_PLAYSTATE_STOPPED);
     }
@@ -244,12 +247,15 @@ Java_com_njst_gaming_android_audio_NativeAudio_createBuffer(JNIEnv *env, jclass,
     std::lock_guard<std::mutex> lock(gMutex);
     int id = gNextBufferId++;
     gBuffers[id] = buffer;
+    LOGI("Created native audio buffer bufferId=%d sampleRate=%u channels=%u bytes=%zu",
+         id, buffer->sampleRate, buffer->channels, buffer->pcm.size());
     return id;
 }
 
 JNIEXPORT void JNICALL
 Java_com_njst_gaming_android_audio_NativeAudio_deleteBuffer(JNIEnv *, jclass, jint bufferId) {
     std::lock_guard<std::mutex> lock(gMutex);
+    LOGI("Deleting native audio buffer bufferId=%d", bufferId);
     gBuffers.erase(bufferId);
 }
 
@@ -302,6 +308,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_createSource(JNIEnv *, jclass, ji
     (*source->queueItf)->RegisterCallback(source->queueItf, bufferQueueCallback, reinterpret_cast<void *>(static_cast<intptr_t>(source->id)));
     applySourceGain(source);
     gSources[source->id] = source;
+    LOGI("Created native audio source sourceId=%d bufferId=%d", source->id, bufferId);
     return source->id;
 }
 
@@ -309,6 +316,7 @@ JNIEXPORT void JNICALL
 Java_com_njst_gaming_android_audio_NativeAudio_deleteSource(JNIEnv *, jclass, jint sourceId) {
     std::lock_guard<std::mutex> lock(gMutex);
     std::shared_ptr<AudioSource> source = findSourceLocked(sourceId);
+    LOGI("Deleting native audio source sourceId=%d", sourceId);
     destroySourceLocked(source);
     gSources.erase(sourceId);
 }
@@ -323,6 +331,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_play(JNIEnv *, jclass, jint sourc
     (*source->queueItf)->Clear(source->queueItf);
     enqueueSourceLocked(source);
     source->playing = true;
+    LOGI("Starting playback sourceId=%d bufferId=%d", sourceId, source->bufferId);
     (*source->playItf)->SetPlayState(source->playItf, SL_PLAYSTATE_PLAYING);
 }
 
@@ -332,6 +341,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_pause(JNIEnv *, jclass, jint sour
     std::shared_ptr<AudioSource> source = findSourceLocked(sourceId);
     if (source && source->playItf) {
         source->playing = false;
+        LOGI("Pausing playback sourceId=%d", sourceId);
         (*source->playItf)->SetPlayState(source->playItf, SL_PLAYSTATE_PAUSED);
     }
 }
@@ -342,6 +352,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_stop(JNIEnv *, jclass, jint sourc
     std::shared_ptr<AudioSource> source = findSourceLocked(sourceId);
     if (source && source->playItf && source->queueItf) {
         source->playing = false;
+        LOGI("Stopping playback sourceId=%d", sourceId);
         (*source->playItf)->SetPlayState(source->playItf, SL_PLAYSTATE_STOPPED);
         (*source->queueItf)->Clear(source->queueItf);
     }
@@ -360,6 +371,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_setLooping(JNIEnv *, jclass, jint
     std::shared_ptr<AudioSource> source = findSourceLocked(sourceId);
     if (source) {
         source->looping = looping == JNI_TRUE;
+        LOGI("Set looping sourceId=%d looping=%d", sourceId, source->looping ? 1 : 0);
     }
 }
 
@@ -370,6 +382,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_setGain(JNIEnv *, jclass, jint so
     if (source) {
         source->gain = std::max(0.0f, gain);
         applySourceGain(source);
+        LOGI("Set gain sourceId=%d gain=%.3f", sourceId, source->gain);
     }
 }
 
@@ -395,6 +408,7 @@ JNIEXPORT void JNICALL
 Java_com_njst_gaming_android_audio_NativeAudio_setMasterGain(JNIEnv *, jclass, jfloat gain) {
     std::lock_guard<std::mutex> lock(gMutex);
     gMasterGain = std::max(0.0f, gain);
+    LOGI("Set master gain=%.3f", gMasterGain);
     for (auto &entry : gSources) {
         applySourceGain(entry.second);
     }
@@ -403,6 +417,7 @@ Java_com_njst_gaming_android_audio_NativeAudio_setMasterGain(JNIEnv *, jclass, j
 JNIEXPORT void JNICALL
 Java_com_njst_gaming_android_audio_NativeAudio_shutdown(JNIEnv *, jclass) {
     std::lock_guard<std::mutex> lock(gMutex);
+    LOGI("Shutting down native audio sources=%zu buffers=%zu", gSources.size(), gBuffers.size());
     for (auto &entry : gSources) {
         destroySourceLocked(entry.second);
     }
