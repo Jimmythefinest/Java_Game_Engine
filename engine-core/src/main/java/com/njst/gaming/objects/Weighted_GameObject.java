@@ -45,6 +45,10 @@ public class Weighted_GameObject extends GameObject {
                 graphicsDevice.loadShaderSource(SKINNED_FRAGMENT_SHADER));
     }
 
+    public ShaderHandle getSkinnedShaderProgram() {
+        return program1;
+    }
+
     @Override
     public void render(ShaderHandle shaderprogram, int textureHandle) {
         program1.use();

@@ -159,6 +159,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                     }
                     npc.captureControls(actions, movementPointer, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
                     npc.updateController(scene.speed);
+                    if (npc.controls.castFireballPressed) {
+                        log("NPC cast fireball requested by " + npc.runtime.meshObject.name);
+                        npc.runSkill(BattleArenaFireballSkill.ID, skillContext, resolveOpponent(npc));
+                        npc.castLatched = true;
+                    }
                     if (npc.controls.castMudWallPressed) {
                         npc.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(npc));
                     }

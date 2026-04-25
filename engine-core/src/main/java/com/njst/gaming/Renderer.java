@@ -193,7 +193,13 @@ public class Renderer {
                     terrainCount++;
                 }
                 ShaderHandle activeShader = terrainObject ? terrainShaderProgram : shaderProgram;
+                if (object instanceof Weighted_GameObject
+                        && ((Weighted_GameObject) object).getSkinnedShaderProgram() != null) {
+                    activeShader = ((Weighted_GameObject) object).getSkinnedShaderProgram();
+                }
                 activeShader.use();
+                activeShader.setUniformVector3("eyepos1", camera.cameraPosition);
+                uploadLightUniforms(activeShader);
                 object.updateModelMatrix();
                 object.render(activeShader, textureHandle);
             }
