@@ -16,9 +16,16 @@ val syncDesktopResourcesToAndroidAssets by tasks.registering(Sync::class) {
 android {
   namespace = "com.njst.gaming.android"
   compileSdk = libs.versions.compileSdk.get().toInt()
+  ndkVersion = "30.0.14904198-beta1"
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()
+
+    externalNativeBuild {
+      cmake {
+        cppFlags += "-std=c++17"
+      }
+    }
   }
 
   compileOptions {
@@ -29,6 +36,13 @@ android {
   sourceSets {
     getByName("main") {
       assets.srcDir("src/main/assets")
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path = file("CMakeLists.txt")
+      version = "3.22.1"
     }
   }
 }

@@ -12,6 +12,8 @@ import com.njst.gaming.Scene;
 import com.njst.gaming.collision.CollisionEvent;
 import com.njst.gaming.collision.CollisionEventType;
 import com.njst.gaming.collision.Collider;
+import com.njst.gaming.audio.AudioBufferHandle;
+import com.njst.gaming.audio.AudioSourceHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
@@ -25,6 +27,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
     private static final String GROUND_FILE = "j.jpg";
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
+    private static final String AUDIO_TEST_FILE = "audio/battle_arena_test.wav";
     private static final int GROUND_SIZE = 96;
     private static final float CAMERA_DISTANCE = 6.5f;
     private static final float CAMERA_HEIGHT = 1.2f;
@@ -56,6 +59,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private float cameraPitch = -0.18f;
     private boolean debugHitboxesVisible = false;
     private final ArrayList<KeyframeAnimation> activeAnimations = new ArrayList<>();
+    private AudioBufferHandle audioTestBuffer;
+    private AudioSourceHandle audioTestSource;
+    private boolean audioAvailable;
 
     @Override
     public void load(Scene scene) {
@@ -72,6 +78,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         cameraYaw = 0f;
         cameraPitch = -0.18f;
         debugHitboxesVisible = false;
+        audioTestBuffer = null;
+        audioTestSource = null;
+        audioAvailable = false;
 
         String skyboxPath = resolveTexturePath(SKYBOX_FILE);
         String groundPath = resolveTexturePath(GROUND_FILE);
@@ -79,6 +88,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         int skyboxTexture = graphicsDevice.loadTexture(skyboxPath);
         int groundTexture = graphicsDevice.loadTexture(groundPath);
         log("loaded textures skyboxId=" + skyboxTexture + " groundId=" + groundTexture);
+        initAudioSmokeTest(scene);
 
         GameObject skybox = new GameObject(new SphereGeometry(1f, 20, 20), skyboxTexture);
         skybox.ambientlight_multiplier = 5f;
@@ -123,6 +133,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 }
                 if (actions.button(BattleArenaActions.TOGGLE_HITBOXES).pressed()) {
                     toggleHitboxDebug();
+                }
+                if (actions.button(BattleArenaActions.PUNCH).pressed()
+                        || actions.button(BattleArenaActions.KICK).pressed()
+                        || actions.button(BattleArenaActions.FIREBALL).pressed()
+                        || actions.button(BattleArenaActions.BURST).pressed()) {
+                    playAudioSmokeTest(scene, 0.55f);
                 }
                 if (actions.button(BattleArenaActions.MUD_WALL).pressed()) {
                     if (activeCharacter != null) {
@@ -170,10 +186,37 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         updateCamera(scene.renderer.camera);
         Vector3 playerPosition = activeCharacter.runtime.getPosition();
+        playAudioSmokeTest(scene, 0.35f);
         log("load complete playerPosition=" + playerPosition.x + "," + playerPosition.y + "," + playerPosition.z);
         // if(rootBone.parent!=null){
         	// log("Root Bone has parent");
         // }
+    }
+
+    private void initAudioSmokeTest(Scene scene) {
+        try {
+            audioTestBuffer = scene.audioDevice.loadSound(AUDIO_TEST_FILE);
+            audioTestSource = scene.audioDevice.createSource(audioTestBuffer);
+            audioAvailable = true;
+            log("audio smoke test loaded=" + AUDIO_TEST_FILE);
+        } catch (RuntimeException e) {
+            audioAvailable = false;
+            log("audio smoke test unavailable: " + e.getMessage());
+        }
+    }
+
+    private void playAudioSmokeTest(Scene scene, float gain) {
+        if (!audioAvailable || audioTestSource == null) {
+            return;
+        }
+        try {
+            audioTestSource.stop();
+            audioTestSource.setGain(gain);
+            audioTestSource.play();
+        } catch (RuntimeException e) {
+            audioAvailable = false;
+            log("audio smoke test disabled after playback error: " + e.getMessage());
+        }
     }
 
     private void loadPlayer(Scene scene, GraphicsDevice graphicsDevice) {

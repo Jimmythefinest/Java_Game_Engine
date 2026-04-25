@@ -3,7 +3,9 @@ package com.njst.gaming;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.Natives.audio.DesktopAudioDevice;
 import com.njst.gaming.Natives.DesktopGraphicsDevice;
+import com.njst.gaming.audio.AudioDevice;
 import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.input.InputSystem;
 import com.njst.gaming.input.MouseButtons;
@@ -23,11 +25,15 @@ public abstract class Engine {
     protected Renderer renderer;
     protected Scene scene;
     protected InputSystem input;
+    protected AudioDevice audioDevice;
 
     public void run() {
-        init();
-        loop();
-        cleanup();
+        try {
+            init();
+            loop();
+        } finally {
+            cleanup();
+        }
     }
 
     protected void init() {
@@ -54,6 +60,8 @@ public abstract class Engine {
         glEnable(GL_DEPTH_TEST);
 
         scene = new Scene();
+        audioDevice = new DesktopAudioDevice();
+        scene.setAudioDevice(audioDevice);
         renderer = new Renderer(new DesktopGraphicsDevice());
         input = scene.inputSystem;
         renderer.scene = scene;
@@ -197,8 +205,15 @@ public abstract class Engine {
     }
 
     protected void cleanup() {
-        glfwFreeCallbacks(window);
-        glfwDestroyWindow(window);
+        if (audioDevice != null) {
+            audioDevice.cleanup();
+            audioDevice = null;
+        }
+        if (window != NULL) {
+            glfwFreeCallbacks(window);
+            glfwDestroyWindow(window);
+            window = NULL;
+        }
         glfwTerminate();
     }
 }

@@ -131,4 +131,8 @@ public class AndroidEngineSurfaceView extends GLSurfaceView {
         cancelPointers();
         renderer.releaseAllActions();
     }
+
+    public void cleanupAudio() {
+        renderer.cleanupAudio();
+    }
 }

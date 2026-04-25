@@ -5,6 +5,7 @@ plugins {
 android {
   namespace = "com.njst.gaming"
   compileSdk = libs.versions.compileSdk.get().toInt()
+  ndkVersion = "30.0.14904198-beta1"
 
   defaultConfig {
     applicationId = "com.njst.gaming"

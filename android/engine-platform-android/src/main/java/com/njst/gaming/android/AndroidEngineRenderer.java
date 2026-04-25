@@ -7,6 +7,8 @@ import android.util.Log;
 
 import com.njst.gaming.Renderer;
 import com.njst.gaming.Scene;
+import com.njst.gaming.android.audio.AndroidAudioDevice;
+import com.njst.gaming.audio.AudioDevice;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,6 +26,7 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     private final AndroidGameConfig gameConfig;
     private final Map<String, Boolean> pendingActions = new LinkedHashMap<>();
     private Renderer renderer;
+    private AudioDevice audioDevice;
     private StatsListener statsListener;
     private long fpsWindowStartMillis;
     private int framesThisWindow;
@@ -45,6 +48,8 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
             renderer.setShadowMapEnabled(gameConfig.isShadowMapEnabled());
 
             Scene scene = new Scene();
+            audioDevice = new AndroidAudioDevice(context);
+            scene.setAudioDevice(audioDevice);
             scene.renderer = renderer;
             renderer.scene = scene;
             Log.i(TAG, "onSurfaceCreated: calling configureScene");
@@ -134,6 +139,16 @@ public class AndroidEngineRenderer implements GLSurfaceView.Renderer {
     public void releaseAllActions() {
         for (String actionId : pendingActions.keySet().toArray(new String[0])) {
             setActionState(actionId, false);
+        }
+    }
+
+    public void cleanupAudio() {
+        if (audioDevice != null) {
+            audioDevice.cleanup();
+            audioDevice = null;
+        }
+        if (renderer != null && renderer.scene != null) {
+            renderer.scene.setAudioDevice(null);
         }
     }
 

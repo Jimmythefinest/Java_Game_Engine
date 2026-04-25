@@ -8,4 +8,5 @@ engine-platform-desktop/src/main/resources/Scene.log
 android/Scene.log
 android/engine-platform-android/src/main/assets/render.log
 android/engine-platform-android/src/main/assets/Scene.log
+android/engine-platform-android/.cxx/
 backups

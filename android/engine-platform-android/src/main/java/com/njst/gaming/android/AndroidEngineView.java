@@ -41,6 +41,7 @@ public class AndroidEngineView extends FrameLayout {
     public void onPause() {
         surfaceView.onPause();
         surfaceView.releaseAllInputs();
+        surfaceView.cleanupAudio();
     }
 
     private View createControlOverlay(Context context, AndroidGameConfig gameConfig) {

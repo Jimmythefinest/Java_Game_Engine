@@ -9,6 +9,8 @@ import com.njst.gaming.collision.CollisionWorld;
 import com.njst.gaming.collision.DefaultCollisionWorld;
 import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
+import com.njst.gaming.audio.AudioDevice;
+import com.njst.gaming.audio.NullAudioDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.input.InputSystem;
@@ -35,6 +37,7 @@ public class Scene {
     public final InputSystem inputSystem;
     public final ActionInput actionInput;
     public final InputBindings inputBindings;
+    public AudioDevice audioDevice;
     private final Map<String, PointerInputHandler> pointerHandlers;
     public Renderer renderer;
     public String cameraForwardAction;
@@ -70,6 +73,7 @@ public class Scene {
         inputSystem = new InputSystem();
         actionInput = new ActionInput(inputSystem);
         inputBindings = new InputBindings();
+        audioDevice = new NullAudioDevice();
         pointerHandlers = new HashMap<>();
         log = new RootLogger(data.rootDirectory + "/Scene.log");
         log.logToRootDirectory("hiisis");
@@ -81,6 +85,10 @@ public class Scene {
 
     public Renderer getRenderer() {
         return renderer;
+    }
+
+    public void setAudioDevice(AudioDevice audioDevice) {
+        this.audioDevice = audioDevice != null ? audioDevice : new NullAudioDevice();
     }
 
     public CollisionWorld getCollisionWorld() {
