@@ -75,7 +75,6 @@ public class Renderer {
     private static final float SHADOW_NEAR = 1f;
     private static final float SHADOW_FAR = 140f;
     private boolean shadowMapEnabled = true;
-    private boolean shadowMapDumpPending = true;
 
     private final GraphicsDevice graphicsDevice;
     private final ArrayList<GameObject> renderQueue = new ArrayList<>();
@@ -104,7 +103,6 @@ public class Renderer {
         log = new RootLogger(data.rootDirectory + "/render.log");
         camera = new Camera(new Vector3(0f, 0f, -7f), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f));
         lightCamera = new Camera(new Vector3(0f, 5f, 0f), new Vector3(0f, 0f, 0f), new Vector3(-1f, 10f, 0f));
-        log.logToRootDirectory("Renderer initialized");
     }
 
     public void onSurfaceCreated() {
@@ -251,9 +249,6 @@ public class Renderer {
 
     public void setShadowMapEnabled(boolean enabled) {
         shadowMapEnabled = enabled;
-        if (!enabled) {
-            shadowMapDumpPending = false;
-        }
     }
 
     public boolean isShadowMapEnabled() {
@@ -373,10 +368,6 @@ public class Renderer {
         }
         graphicsDevice.bindDefaultFramebuffer();
         graphicsDevice.viewport(width, height);
-        if (shadowMapDumpPending) {
-            graphicsDevice.dumpShadowMap(shadowMap, data.rootDirectory + "/shadow_map_debug.png");
-            shadowMapDumpPending = false;
-        }
     }
 
     private void renderStaticShadow(GameObject object) {

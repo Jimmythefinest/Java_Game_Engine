@@ -77,7 +77,6 @@ public class Scene {
         audioDevice = new NullAudioDevice();
         pointerHandlers = new HashMap<>();
         log = new RootLogger(data.rootDirectory + "/Scene.log");
-        log.logToRootDirectory("hiisis");
         physics = new PhysicsEngine(this);
         collisionWorld = new DefaultCollisionWorld();
         lastCollisionUpdateNanos = 0L;
