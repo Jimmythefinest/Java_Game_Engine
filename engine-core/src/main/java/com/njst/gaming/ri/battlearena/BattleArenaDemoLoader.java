@@ -2,6 +2,7 @@ package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
+import com.njst.gaming.Animations.ParallelKeyframeAnimator;
 import com.njst.gaming.Bone;
 import com.njst.gaming.Camera;
 import com.njst.gaming.Geometries.*;
@@ -178,10 +179,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 }
                 // Temporary profiling switch so we can isolate animation cost.
                 if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
-                    ArrayList<KeyframeAnimation> runningAnimations = new ArrayList<>(activeAnimations);
-                    for (KeyframeAnimation anim : runningAnimations) {
-                        anim.animate(deltaSeconds);
-                    }
+                    ParallelKeyframeAnimator.animateSkeletons(collectActiveSkeletonAnimations(), deltaSeconds);
                 }
                 for (BattleArenaControlledCharacter character : arenaCharacters) {
                     character.runtime.syncRig();
@@ -197,6 +195,32 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         // if(rootBone.parent!=null){
         	// log("Root Bone has parent");
         // }
+    }
+
+    private ArrayList<ArrayList<KeyframeAnimation>> collectActiveSkeletonAnimations() {
+        ArrayList<ArrayList<KeyframeAnimation>> skeletonAnimations = new ArrayList<>();
+        for (BattleArenaControlledCharacter character : arenaCharacters) {
+            if (character == null || character.runtime == null) {
+                continue;
+            }
+            ArrayList<KeyframeAnimation> activeSkeletonAnimations = collectActiveAnimations(character.runtime);
+            if (!activeSkeletonAnimations.isEmpty()) {
+                skeletonAnimations.add(activeSkeletonAnimations);
+            }
+        }
+        return skeletonAnimations;
+    }
+
+    private ArrayList<KeyframeAnimation> collectActiveAnimations(BattleArenaCharacterRuntime runtime) {
+        ArrayList<KeyframeAnimation> activeSkeletonAnimations = new ArrayList<>();
+        for (ArrayList<KeyframeAnimation> animationSet : runtime.animationSets.values()) {
+            for (KeyframeAnimation animation : animationSet) {
+                if (animation != null && animation.active && !activeSkeletonAnimations.contains(animation)) {
+                    activeSkeletonAnimations.add(animation);
+                }
+            }
+        }
+        return activeSkeletonAnimations;
     }
 
     private void initAudioSmokeTest(Scene scene) {

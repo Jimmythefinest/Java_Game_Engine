@@ -105,7 +105,6 @@ public class KeyframeAnimation extends Animation implements Serializable {
 
     public void stop() {
         active = false;
-        restoreRestPose();
     }
 
     public boolean isActive() {

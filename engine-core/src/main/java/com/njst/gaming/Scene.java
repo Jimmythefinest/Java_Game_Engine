@@ -2,6 +2,7 @@ package com.njst.gaming;
 
 import com.njst.gaming.Animations.Animation;
 import com.njst.gaming.Animations.KeyframeAnimation;
+import com.njst.gaming.Animations.ParallelKeyframeAnimator;
 import com.njst.gaming.Math.Tetrahedron;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
@@ -109,12 +110,31 @@ public class Scene {
         if (renderer != null && renderer.camera != null) {
             updateCameraMovement();
         }
-        for (Animation i : animations) {
-            i.animate(animationDeltaSeconds);
-        }
+        animateSceneAnimations(animationDeltaSeconds);
         if (collisionWorld != null) {
             collisionWorld.update(computeCollisionDeltaSeconds());
         }
+    }
+
+    private void animateSceneAnimations(float deltaSeconds) {
+        ArrayList<KeyframeAnimation> keyframeBatch = new ArrayList<>();
+        for (Animation animation : animations) {
+            if (animation instanceof KeyframeAnimation) {
+                keyframeBatch.add((KeyframeAnimation) animation);
+                continue;
+            }
+            flushKeyframeBatch(keyframeBatch, deltaSeconds);
+            animation.animate(deltaSeconds);
+        }
+        flushKeyframeBatch(keyframeBatch, deltaSeconds);
+    }
+
+    private void flushKeyframeBatch(ArrayList<KeyframeAnimation> keyframeBatch, float deltaSeconds) {
+        if (keyframeBatch.isEmpty()) {
+            return;
+        }
+        ParallelKeyframeAnimator.animate(keyframeBatch, deltaSeconds);
+        keyframeBatch.clear();
     }
 
     private float computeFrameDeltaSeconds() {

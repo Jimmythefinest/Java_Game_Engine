@@ -1,6 +1,6 @@
 {
   "model": {
-    "mesh": "weighted_geometry/defeated_mesh_1.ser",
+    "mesh": "weighted_geometry/defeated_mesh.ser",
     "bones": "weighted_geometry/defeated_bones.ser",
     "boneNames": "weighted_geometry/defeated_bone_names.json",
     "texture": "skin.jpg"
@@ -35,11 +35,15 @@
       "framesPerSecond": 144
     },
     "punch": {
-      "asset": "weighted_geometry/punching_animation_0.ser",
-      "framesPerSecond": 400
+      "asset": "weighted_geometry//right hook_animation_0.ser",
+      "framesPerSecond": 144
     },
     "kick": {
       "asset": "weighted_geometry/kick_animation_0.ser",
+      "framesPerSecond": 144
+    },
+    "cast": {
+      "asset": "weighted_geometry//right hook_animation_0.ser",
       "framesPerSecond": 144
     },
     "take_hit": {
@@ -60,6 +64,11 @@
     },
     "kick_started": {
       "play": "kick",
+      "then": "idle",
+      "interrupts": true
+    },
+    "cast_started": {
+      "play": "cast",
       "then": "idle",
       "interrupts": true
     }
