@@ -25,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
+    public static final String LOCAL_PLAYER_ANDROID = "android";
+    public static final String LOCAL_PLAYER_DESKTOP = "desktop";
+    public static final int DEFAULT_TCP_CONTROL_PORT = 7777;
+
     private static final String SKYBOX_FILE = "desertstorm.jpg";
     private static final String GROUND_FILE = "j.jpg";
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
@@ -56,6 +60,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final List<BattleArenaControlledCharacter> npcCharacters = new ArrayList<>();
     private BattleArenaControlledCharacter playerCharacter;
     private BattleArenaControlledCharacter activeCharacter;
+    private BattleArenaTcpControlClient tcpControlClient;
     private float cameraYaw = 0f;
     private float cameraPitch = -0.18f;
     private boolean debugHitboxesVisible = false;
@@ -63,6 +68,33 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private AudioBufferHandle audioTestBuffer;
     private AudioSourceHandle audioTestSource;
     private boolean audioAvailable;
+    private final String localPlayer;
+    private final String tcpControlHost;
+    private final int tcpControlPort;
+
+    public BattleArenaDemoLoader() {
+        this(
+                System.getProperty("battleArena.localPlayer", LOCAL_PLAYER_DESKTOP),
+                System.getProperty("battleArena.remoteHost", BattleArenaTcpControlClient.DEFAULT_HOST),
+                readPortProperty("battleArena.remotePort", DEFAULT_TCP_CONTROL_PORT));
+    }
+
+    public BattleArenaDemoLoader(String localPlayer) {
+        this(
+                localPlayer,
+                System.getProperty("battleArena.remoteHost", BattleArenaTcpControlClient.DEFAULT_HOST),
+                readPortProperty("battleArena.remotePort", DEFAULT_TCP_CONTROL_PORT));
+    }
+
+    public BattleArenaDemoLoader(String localPlayer, String tcpControlHost, int tcpControlPort) {
+        this.localPlayer = LOCAL_PLAYER_ANDROID.equals(localPlayer)
+                ? LOCAL_PLAYER_ANDROID
+                : LOCAL_PLAYER_DESKTOP;
+        this.tcpControlHost = tcpControlHost == null || tcpControlHost.trim().isEmpty()
+                ? BattleArenaTcpControlClient.DEFAULT_HOST
+                : tcpControlHost;
+        this.tcpControlPort = tcpControlPort > 0 ? tcpControlPort : DEFAULT_TCP_CONTROL_PORT;
+    }
 
     @Override
     public void load(Scene scene) {
@@ -76,6 +108,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         activeAnimations.clear();
         playerCharacter = null;
         activeCharacter = null;
+        tcpControlClient = new BattleArenaTcpControlClient(tcpControlHost, tcpControlPort);
         cameraYaw = 0f;
         cameraPitch = -0.18f;
         debugHitboxesVisible = false;
@@ -130,6 +163,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
             @Override
             public void animate(float deltaSeconds) {
                 BattleArenaSkillContext skillContext = createSkillContext();
+                if (tcpControlClient != null) {
+                    tcpControlClient.update(deltaSeconds);
+                }
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     toggleActiveCharacter();
                 }
@@ -142,14 +178,11 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                         || actions.button(BattleArenaActions.BURST).pressed()) {
                     playAudioSmokeTest(scene, 0.55f);
                 }
-                if (actions.button(BattleArenaActions.MUD_WALL).pressed()) {
-                    if (activeCharacter != null) {
-                        activeCharacter.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(activeCharacter));
-                    }
-                }
                 if (playerCharacter != null) {
                     playerCharacter.captureControls(actions, movementPointer, primaryOpponentRuntime(), deltaSeconds);
+                    sendLocalControls(playerCharacter);
                     playerCharacter.updateController(scene.speed);
+                    updateControlTriggeredSkills(playerCharacter, skillContext);
                 }
                 for (BattleArenaControlledCharacter npc : npcCharacters) {
                     if (npc.brain instanceof BattleArenaSimpleChaseAi) {
@@ -159,15 +192,9 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                                         playerCharacter != null ? playerCharacter.runtime : null));
                     }
                     npc.captureControls(actions, movementPointer, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
+                    sendLocalControls(npc);
                     npc.updateController(scene.speed);
-                    if (npc.controls.castFireballPressed) {
-                        log("NPC cast fireball requested by " + npc.runtime.meshObject.name);
-                        npc.runSkill(BattleArenaFireballSkill.ID, skillContext, resolveOpponent(npc));
-                        npc.castLatched = true;
-                    }
-                    if (npc.controls.castMudWallPressed) {
-                        npc.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(npc));
-                    }
+                    updateControlTriggeredSkills(npc, skillContext);
                 }
                 updateFireballCasting(skillContext);
                 skillSystem.update(skillContext, deltaSeconds);
@@ -274,6 +301,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
 
         activeAnimations.clear();
         int characterTexture = loadCharacterTexture(graphicsDevice, definition);
+        boolean androidIsLocal = LOCAL_PLAYER_ANDROID.equals(localPlayer);
         playerCharacter = spawnCharacter(
                 scene,
                 graphicsDevice,
@@ -283,9 +311,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 "BattleArenaPlayerHealthBar",
                 characterTexture,
                 0f,
-                null,
-                true);
-        activeCharacter = playerCharacter;
+                androidIsLocal ? null : new BattleArenaTcpRemoteController(tcpControlClient, BattleArenaTcpControlClient.ANDROID_PLAYER),
+                androidIsLocal);
 
         log("wired animation count total=" + activeAnimations.size()
                 + " idle=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
@@ -314,10 +341,12 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 "BattleArenaSecondCharacterHealthBar",
                 characterTexture,
                 SECOND_CHARACTER_START_X,
-                new BattleArenaSimpleChaseAi(),
-                false);
+                androidIsLocal ? new BattleArenaTcpRemoteController(tcpControlClient, BattleArenaTcpControlClient.DESKTOP_PLAYER) : null,
+                !androidIsLocal);
         npcCharacters.add(secondCharacter);
+        activeCharacter = androidIsLocal ? playerCharacter : secondCharacter;
         log("spawned second character name=" + secondCharacter.runtime.meshObject.name + " bones=" + secondCharacter.runtime.bones.size());
+        log("local player role=" + localPlayer + " activeCharacter=" + activeCharacter.runtime.meshObject.name);
     }
 
     private BattleArenaControlledCharacter spawnCharacter(Scene scene,
@@ -372,6 +401,23 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                     resolveOpponent(character),
                     character.castLatched);
         }
+    }
+
+    private void updateControlTriggeredSkills(BattleArenaControlledCharacter character,
+                                              BattleArenaSkillContext skillContext) {
+        if (character == null) {
+            return;
+        }
+        if (character.controls.castMudWallPressed) {
+            character.runSkill(BattleArenaMudWallSkill.ID, skillContext, resolveOpponent(character));
+        }
+    }
+
+    private void sendLocalControls(BattleArenaControlledCharacter character) {
+        if (tcpControlClient == null || character == null || !character.playerControlled) {
+            return;
+        }
+        tcpControlClient.sendControls(localPlayer, character.controls);
     }
 
     private boolean updateFireballCasting(BattleArenaSkillContext skillContext,
@@ -592,5 +638,17 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
      */
     private static void log(String message) {
         System.out.println(LOG_PREFIX + message);
+    }
+
+    private static int readPortProperty(String name, int fallback) {
+        String value = System.getProperty(name);
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 }

@@ -13,7 +13,10 @@ import java.util.List;
 public class BattleArenaAndroidConfig implements AndroidGameConfig {
     @Override
     public void configureScene(Scene scene) {
-        scene.loader = new BattleArenaDemoLoader();
+        scene.loader = new BattleArenaDemoLoader(
+                BattleArenaDemoLoader.LOCAL_PLAYER_ANDROID,
+                System.getProperty("battleArena.remoteHost", "172.168.64.106"),
+                BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT);
     }
 
     @Override
