@@ -58,8 +58,8 @@ final class BattleArenaControlledCharacter {
         }
     }
 
-    void updateController(float sceneSpeed) {
-        controller.update(controls, sceneSpeed);
+    void updateController(float deltaSeconds) {
+        controller.update(controls, deltaSeconds);
     }
 
     float getCurrentHealth() {

@@ -35,6 +35,7 @@ final class BattleArenaCharacterController {
     private static final float TURN_SPEED_DEGREES = 3.2f;
     private static final float JUMP_VELOCITY = 0.22f;
     private static final float JUMP_GRAVITY = 0.012f;
+    private static final float TUNING_FRAME_RATE = 60f;
     private static final float RECOIL_DAMPING = 0.82f;
     private static final float RECOIL_STOP_SPEED = 0.0005f;
     private static final float SIDE_STEP_DISTANCE = 0.75f;
@@ -114,16 +115,18 @@ final class BattleArenaCharacterController {
         forwardLungeRemainingSeconds = 0f;
     }
 
-    void update(ActionInput actions, PointerState movementPointer, float sceneSpeed) {
+    void update(ActionInput actions, PointerState movementPointer, float deltaSeconds) {
         playerControls.capturePlayerInput(actions, movementPointer);
-        update(playerControls, sceneSpeed);
+        update(playerControls, deltaSeconds);
     }
 
-    void update(BattleArenaCharacterControlState controls, float sceneSpeed) {
+    void update(BattleArenaCharacterControlState controls, float deltaSeconds) {
         if (controls == null) {
             return;
         }
 
+        float safeDeltaSeconds = Math.max(0f, deltaSeconds);
+        float frameScale = safeDeltaSeconds * TUNING_FRAME_RATE;
         float forwardInput = clamp(controls.forwardInput);
         float turnInput = clamp(controls.turnInput);
         boolean combatActionActive = punching || kicking || casting || takingHit;
@@ -165,23 +168,23 @@ final class BattleArenaCharacterController {
         boolean locomotionAnimationBlocked = punching || kicking || casting || sideSteppingLeft || sideSteppingRight || takingHit;
         float animationForwardInput = chargeActive ? Math.signum(forwardLungeVelocity) : forwardInput;
         boolean animationRunDown = controls.runDown || (chargeActive && forwardLungeVelocity > 0f);
-        updateMovementIntent(animationForwardInput, animationRunDown, sceneSpeed, !locomotionAnimationBlocked);
+        updateMovementIntent(animationForwardInput, animationRunDown, frameScale, !locomotionAnimationBlocked);
 
         if (controls.jumpPressed && !jumping) {
             jumping = true;
-            verticalVelocity = JUMP_VELOCITY * sceneSpeed;
+            verticalVelocity = JUMP_VELOCITY * TUNING_FRAME_RATE;
             updateMovementAnimationState();
         }
 
         if (!takingHit) {
-            playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * sceneSpeed;
+            playerHeadingDegrees += turnInput * TURN_SPEED_DEGREES * frameScale;
         }
 
         boolean locomotionBlocked = sideSteppingLeft || sideSteppingRight || takingHit || chargeActive || chargeTriggered;
 
         boolean wantsToRun = controls.runDown;
         float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
-        float moveAmount = forwardInput * movementSpeed * sceneSpeed;
+        float moveAmount = forwardInput * movementSpeed * frameScale;
         boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
 
         if (!locomotionBlocked && isMovingNow) {
@@ -190,10 +193,10 @@ final class BattleArenaCharacterController {
             playerPosition.z += (float) Math.cos(headingRadians) * moveAmount;
         }
 
-        updateSideStepMotion(sceneSpeed);
-        updateForwardLungeMotion(sceneSpeed);
-        applyRecoilMotion(sceneSpeed);
-        updateJumpPhysics(sceneSpeed);
+        updateSideStepMotion(safeDeltaSeconds);
+        updateForwardLungeMotion(safeDeltaSeconds);
+        applyRecoilMotion(frameScale);
+        updateJumpPhysics(safeDeltaSeconds);
         snapPlayerToGround();
     }
 
@@ -264,15 +267,15 @@ final class BattleArenaCharacterController {
                 horizontalDirection.z * strength);
     }
 
-    private void updateJumpPhysics(float sceneSpeed) {
+    private void updateJumpPhysics(float deltaSeconds) {
         if (!jumping) {
             jumpHeight = 0f;
             verticalVelocity = 0f;
             return;
         }
 
-        jumpHeight += verticalVelocity;
-        verticalVelocity -= JUMP_GRAVITY * sceneSpeed;
+        jumpHeight += verticalVelocity * deltaSeconds;
+        verticalVelocity -= JUMP_GRAVITY * TUNING_FRAME_RATE * TUNING_FRAME_RATE * deltaSeconds;
         if (jumpHeight <= 0f && verticalVelocity <= 0f) {
             jumpHeight = 0f;
             verticalVelocity = 0f;
@@ -285,29 +288,28 @@ final class BattleArenaCharacterController {
         playerPosition.y = terrainHeightSampler.sample(playerPosition.x, playerPosition.z) + jumpHeight;
     }
 
-    private void applyRecoilMotion(float sceneSpeed) {
+    private void applyRecoilMotion(float frameScale) {
         if (Math.abs(recoilVelocity.x) <= RECOIL_STOP_SPEED && Math.abs(recoilVelocity.z) <= RECOIL_STOP_SPEED) {
             recoilVelocity.set(0f, 0f, 0f);
             return;
         }
-        playerPosition.x += recoilVelocity.x * sceneSpeed;
-        playerPosition.z += recoilVelocity.z * sceneSpeed;
-        float damping = (float) Math.pow(RECOIL_DAMPING, Math.max(sceneSpeed, 1f));
+        playerPosition.x += recoilVelocity.x * frameScale;
+        playerPosition.z += recoilVelocity.z * frameScale;
+        float damping = (float) Math.pow(RECOIL_DAMPING, frameScale);
         recoilVelocity.mul(damping);
     }
 
-    private void updateSideStepMotion(float sceneSpeed) {
+    private void updateSideStepMotion(float deltaSeconds) {
         if (!sideSteppingLeft && !sideSteppingRight) {
             sideStepVelocity = 0f;
             sideStepRemainingSeconds = 0f;
             return;
         }
-        float frameSeconds = frameSeconds(sceneSpeed);
-        if (frameSeconds <= 0f || sideStepRemainingSeconds <= 0f) {
+        if (deltaSeconds <= 0f || sideStepRemainingSeconds <= 0f) {
             finishSideStep();
             return;
         }
-        float appliedSeconds = Math.min(frameSeconds, sideStepRemainingSeconds);
+        float appliedSeconds = Math.min(deltaSeconds, sideStepRemainingSeconds);
         float headingRadians = (float) Math.toRadians(playerHeadingDegrees);
         float lateralDirection = sideSteppingLeft ? -1f : 1f;
         float sideX = lateralDirection * -(float) Math.cos(headingRadians);
@@ -320,14 +322,13 @@ final class BattleArenaCharacterController {
         }
     }
 
-    private void updateForwardLungeMotion(float sceneSpeed) {
-        float frameSeconds = frameSeconds(sceneSpeed);
-        if (frameSeconds <= 0f || forwardLungeRemainingSeconds <= 0f || Math.abs(forwardLungeVelocity) <= 0f) {
+    private void updateForwardLungeMotion(float deltaSeconds) {
+        if (deltaSeconds <= 0f || forwardLungeRemainingSeconds <= 0f || Math.abs(forwardLungeVelocity) <= 0f) {
             forwardLungeVelocity = 0f;
             forwardLungeRemainingSeconds = 0f;
             return;
         }
-        float appliedSeconds = Math.min(frameSeconds, forwardLungeRemainingSeconds);
+        float appliedSeconds = Math.min(deltaSeconds, forwardLungeRemainingSeconds);
         float headingRadians = (float) Math.toRadians(playerHeadingDegrees);
         playerPosition.x += (float) Math.sin(headingRadians) * forwardLungeVelocity * appliedSeconds;
         playerPosition.z += (float) Math.cos(headingRadians) * forwardLungeVelocity * appliedSeconds;
@@ -503,10 +504,6 @@ final class BattleArenaCharacterController {
         return forwardLungeRemainingSeconds > 0f && Math.abs(forwardLungeVelocity) > 0f;
     }
 
-    private float frameSeconds(float sceneSpeed) {
-        return Math.max(sceneSpeed, 0f) / 60f;
-    }
-
     private void onAnimationFinished(KeyframeAnimation finishedAnimation,
                                      ArrayList<KeyframeAnimation> sourceAnimationSet,
                                      ArrayList<KeyframeAnimation> nextAnimationSetOnFinish,
@@ -662,10 +659,10 @@ final class BattleArenaCharacterController {
 
     private void updateMovementIntent(float forwardInput,
                                       boolean wantsToRun,
-                                      float sceneSpeed,
+                                      float frameScale,
                                       boolean updateAnimationState) {
         float movementSpeed = wantsToRun ? RUN_SPEED : WALK_SPEED;
-        float moveAmount = forwardInput * movementSpeed * sceneSpeed;
+        float moveAmount = forwardInput * movementSpeed * frameScale;
         boolean isMovingNow = Math.abs(moveAmount) > 0.0001f;
         boolean isMovingBackwardNow = moveAmount < -0.0001f;
         boolean isRunningNow = isMovingNow && wantsToRun;

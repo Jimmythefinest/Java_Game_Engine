@@ -89,6 +89,37 @@ tasks.register('runBattleArenaTcpControlServer', JavaExec) {
     }
 }
 
+tasks.register('battleArenaTcpControlServerJar', Jar) {
+    group = 'build'
+    description = 'Build a tiny standalone jar for the battle arena TCP relay server'
+    archiveBaseName = 'battle-arena-tcp-control-server'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn(':engine-core:classes', 'classes')
+
+    from(sourceSets.main.output) {
+        include 'com/njst/gaming/ri/battlearena/BattleArenaTcpControlServer*.class'
+    }
+    from(project(':engine-core').sourceSets.main.output) {
+        include 'com/njst/gaming/Networking/AbstractNetworkPeer.class'
+        include 'com/njst/gaming/Networking/MessageFramer.class'
+        include 'com/njst/gaming/Networking/NetworkConnection.class'
+        include 'com/njst/gaming/Networking/NetworkEvent.class'
+        include 'com/njst/gaming/Networking/NetworkEventType.class'
+        include 'com/njst/gaming/Networking/NetworkListener.class'
+        include 'com/njst/gaming/Networking/NetworkMessage.class'
+        include 'com/njst/gaming/Networking/NetworkPeer.class'
+        include 'com/njst/gaming/Networking/NetworkSettings.class'
+        include 'com/njst/gaming/Networking/TcpConnection*.class'
+        include 'com/njst/gaming/Networking/TcpNetworkServer*.class'
+    }
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.njst.gaming.ri.battlearena.BattleArenaTcpControlServer'
+        )
+    }
+}
+
 tasks.register('runCollisionDemo', JavaExec) {
     group = 'application'
     description = 'Run the collision box runtime demo'

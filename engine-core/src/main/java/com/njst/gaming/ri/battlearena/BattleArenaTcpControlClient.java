@@ -16,7 +16,7 @@ final class BattleArenaTcpControlClient {
     static final String MESSAGE_TYPE = "battle_arena.controls";
     static final String ANDROID_PLAYER = "android";
     static final String DESKTOP_PLAYER = "desktop";
-    static final String DEFAULT_HOST = "127.0.0.1";
+    static final String DEFAULT_HOST = "52.66.201.70";
     static final int DEFAULT_PORT = 7777;
 
     private static final int CONNECT_TIMEOUT_MILLIS = 150;

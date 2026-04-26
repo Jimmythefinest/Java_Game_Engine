@@ -181,7 +181,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 if (playerCharacter != null) {
                     playerCharacter.captureControls(actions, movementPointer, primaryOpponentRuntime(), deltaSeconds);
                     sendLocalControls(playerCharacter);
-                    playerCharacter.updateController(scene.speed);
+                    playerCharacter.updateController(deltaSeconds);
                     updateControlTriggeredSkills(playerCharacter, skillContext);
                 }
                 for (BattleArenaControlledCharacter npc : npcCharacters) {
@@ -193,7 +193,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                     }
                     npc.captureControls(actions, movementPointer, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
                     sendLocalControls(npc);
-                    npc.updateController(scene.speed);
+                    npc.updateController(deltaSeconds);
                     updateControlTriggeredSkills(npc, skillContext);
                 }
                 updateFireballCasting(skillContext);

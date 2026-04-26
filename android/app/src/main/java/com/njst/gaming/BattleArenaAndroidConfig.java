@@ -15,7 +15,7 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
     public void configureScene(Scene scene) {
         scene.loader = new BattleArenaDemoLoader(
                 BattleArenaDemoLoader.LOCAL_PLAYER_ANDROID,
-                System.getProperty("battleArena.remoteHost", "172.168.64.106"),
+                System.getProperty("battleArena.remoteHost", "52.66.201.70"),
                 BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT);
     }
 

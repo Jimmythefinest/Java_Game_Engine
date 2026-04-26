@@ -144,7 +144,6 @@ Renderer initialized
 Renderer initialized
 Renderer initialized
 Renderer initialized
-Renderer initialized
 Failed to load text resource: resources/shaders/vert11.glsl
 com.njst.gaming.Natives.ShaderProgramloadTextResource125
 com.njst.gaming.Natives.ShaderProgramloadShader75
@@ -242,6 +241,15 @@ com.njst.gaming.RendereronDrawFrame161
 com.njst.gaming.Engineloop156
 com.njst.gaming.Enginerun29
 com.njst.gaming.ri.battlearena.BattleArenaAppmain65
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
 Renderer initialized
 Renderer initialized
 Renderer initialized

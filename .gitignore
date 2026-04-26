@@ -12,3 +12,4 @@ android/engine-platform-android/.cxx/
 backups
 engine-platform-desktop/src/main/resources/render.log
 engine-platform-desktop/src/main/resources/Scene.log
+engine-platform-desktop/src/main/resources/render.log
