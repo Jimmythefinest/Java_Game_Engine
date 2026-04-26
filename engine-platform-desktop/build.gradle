@@ -68,6 +68,12 @@ tasks.register('runBattleground', JavaExec) {
     description = 'Run the battle arena skybox demo'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
+    if (project.hasProperty('serverIp')) {
+        args project.property('serverIp')
+    }
+    if (project.hasProperty('serverPort')) {
+        args project.property('serverPort')
+    }
     if (project.hasProperty('remoteHost')) {
         systemProperty 'battleArena.remoteHost', project.property('remoteHost')
     }
@@ -111,6 +117,7 @@ tasks.register('battleArenaTcpControlServerJar', Jar) {
         include 'com/njst/gaming/Networking/NetworkSettings.class'
         include 'com/njst/gaming/Networking/TcpConnection*.class'
         include 'com/njst/gaming/Networking/TcpNetworkServer*.class'
+        include 'com/njst/gaming/ri/battlearena/BattleArenaTcpSessionMessage.class'
     }
 
     manifest {

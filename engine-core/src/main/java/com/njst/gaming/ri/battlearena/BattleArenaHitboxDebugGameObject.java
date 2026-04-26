@@ -26,6 +26,10 @@ final class BattleArenaHitboxDebugGameObject extends GameObject {
         this.enabled = enabled;
     }
 
+    BattleArenaHitboxCollider getCollider() {
+        return collider;
+    }
+
     @Override
     public void updateModelMatrix() {
         modelMatrix.identity();

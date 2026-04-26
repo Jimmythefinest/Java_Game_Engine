@@ -2,6 +2,7 @@ package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
+import com.njst.gaming.objects.GameObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +13,11 @@ final class BattleArenaControlledCharacter {
     final BattleArenaCharacterRuntime runtime;
     final BattleArenaCharacterController controller;
     final BattleArenaCharacterControlState controls = new BattleArenaCharacterControlState();
+    final String playerId;
     final BattleArenaCharacterBrain brain;
     final boolean playerControlled;
     final List<BattleArenaSkill> skills = new ArrayList<>();
+    GameObject healthBarObject;
     boolean castLatched;
     private final float maxHealth;
     private float currentHealth;
@@ -22,10 +25,12 @@ final class BattleArenaControlledCharacter {
     BattleArenaControlledCharacter(BattleArenaCharacterRuntime runtime,
                                    BattleArenaCharacterController controller,
                                    List<BattleArenaSkill> skills,
+                                   String playerId,
                                    BattleArenaCharacterBrain brain,
                                    boolean playerControlled) {
         this.runtime = runtime;
         this.controller = controller;
+        this.playerId = playerId;
         this.brain = brain;
         this.playerControlled = playerControlled;
         this.castLatched = false;

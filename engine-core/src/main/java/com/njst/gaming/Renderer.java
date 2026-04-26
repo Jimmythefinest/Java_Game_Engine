@@ -361,6 +361,9 @@ public class Renderer {
                 continue;
             }
             object.setGraphicsDevice(graphicsDevice);
+            if (object.vaoIds[0] == 0) {
+                object.generateBuffers();
+            }
             object.updateModelMatrix();
             if (object instanceof Weighted_GameObject) {
                 renderSkinnedShadow((Weighted_GameObject) object);
@@ -386,6 +389,7 @@ public class Renderer {
     }
 
     private void renderSkinnedShadow(Weighted_GameObject object) {
+        object.ensureRenderResources();
         skinnedShadowShaderProgram.use();
         skinnedShadowShaderProgram.setUniformMatrix4fv("uMMatrix", object.modelMatrix);
         skinnedShadowShaderProgram.setUniformMatrix4fv("uLightSpaceMatrix", lightSpaceMatrix);

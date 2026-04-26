@@ -9,8 +9,10 @@ import com.njst.gaming.Networking.TcpNetworkClient;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 final class BattleArenaTcpControlClient {
     static final String MESSAGE_TYPE = "battle_arena.controls";
@@ -27,9 +29,11 @@ final class BattleArenaTcpControlClient {
     private final TcpNetworkClient client = new TcpNetworkClient();
     private final Map<String, BattleArenaTcpControlSnapshot> latestByPlayer =
             new HashMap<String, BattleArenaTcpControlSnapshot>();
+    private final Set<String> activePlayers = new HashSet<String>();
     private final String host;
     private final int port;
 
+    private String assignedPlayer;
     private float reconnectTimerSeconds = 0f;
     private boolean connectionLogged = false;
 
@@ -51,6 +55,14 @@ final class BattleArenaTcpControlClient {
 
     boolean hasSnapshot(String player) {
         return latestByPlayer.containsKey(player);
+    }
+
+    String getAssignedPlayer() {
+        return assignedPlayer;
+    }
+
+    Set<String> getActivePlayersSnapshot() {
+        return new HashSet<String>(activePlayers);
     }
 
     void copyControls(String player, BattleArenaCharacterControlState controls) {
@@ -106,6 +118,9 @@ final class BattleArenaTcpControlClient {
             }
             if (event.getType() == NetworkEventType.DISCONNECTED) {
                 log("control server disconnected");
+                assignedPlayer = null;
+                activePlayers.clear();
+                latestByPlayer.clear();
                 continue;
             }
             if (event.getType() == NetworkEventType.ERROR) {
@@ -119,7 +134,14 @@ final class BattleArenaTcpControlClient {
     }
 
     private void applyMessage(NetworkMessage message) {
-        if (message == null || !MESSAGE_TYPE.equals(message.getType())) {
+        if (message == null) {
+            return;
+        }
+        if (BattleArenaTcpSessionMessage.MESSAGE_TYPE.equals(message.getType())) {
+            applySessionMessage(message);
+            return;
+        }
+        if (!MESSAGE_TYPE.equals(message.getType())) {
             return;
         }
         BattleArenaTcpControlSnapshot parsed = parseJson(message.getPayloadAsText());
@@ -135,6 +157,35 @@ final class BattleArenaTcpControlClient {
             latestByPlayer.put(parsed.player, stored);
         }
         stored.copyFrom(parsed);
+    }
+
+    private void applySessionMessage(NetworkMessage message) {
+        BattleArenaTcpSessionMessage parsed;
+        try {
+            parsed = gson.fromJson(message.getPayloadAsText(), BattleArenaTcpSessionMessage.class);
+        } catch (JsonSyntaxException e) {
+            return;
+        }
+        if (parsed == null || parsed.player == null || parsed.player.trim().isEmpty()) {
+            return;
+        }
+        if (BattleArenaTcpSessionMessage.EVENT_ASSIGN.equals(parsed.event)) {
+            assignedPlayer = parsed.player;
+            activePlayers.add(parsed.player);
+            log("assigned player " + parsed.player);
+            return;
+        }
+        if (BattleArenaTcpSessionMessage.EVENT_SPAWN.equals(parsed.event)) {
+            activePlayers.add(parsed.player);
+            return;
+        }
+        if (BattleArenaTcpSessionMessage.EVENT_DESPAWN.equals(parsed.event)) {
+            activePlayers.remove(parsed.player);
+            latestByPlayer.remove(parsed.player);
+            if (parsed.player.equals(assignedPlayer)) {
+                assignedPlayer = null;
+            }
+        }
     }
 
     private BattleArenaTcpControlSnapshot parseJson(String payload) {

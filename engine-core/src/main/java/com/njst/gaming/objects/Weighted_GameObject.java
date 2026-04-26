@@ -20,6 +20,7 @@ public class Weighted_GameObject extends GameObject {
     public void generateBuffers() {
         int vaoId = graphicsDevice.createVertexArray();
         int[] vbos = graphicsDevice.createBuffers(6);
+        vboIds = vbos;
         graphicsDevice.bindVertexArray(vaoId);
         int vboId = vbos[0];
         int vboId1 = vbos[1];
@@ -45,12 +46,19 @@ public class Weighted_GameObject extends GameObject {
                 graphicsDevice.loadShaderSource(SKINNED_FRAGMENT_SHADER));
     }
 
+    public void ensureRenderResources() {
+        if (vaoIds[0] == 0 || program1 == null) {
+            generateBuffers();
+        }
+    }
+
     public ShaderHandle getSkinnedShaderProgram() {
         return program1;
     }
 
     @Override
     public void render(ShaderHandle shaderprogram, int textureHandle) {
+        ensureRenderResources();
         program1.use();
         program1.setUniformVector3("properties", new Vector3(shininess, ambientlight_multiplier, 0));
         program1.setUniformMatrix4fv("uMMatrix", modelMatrix);

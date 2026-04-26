@@ -22,7 +22,12 @@ import com.njst.gaming.objects.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
     public static final String LOCAL_PLAYER_ANDROID = "android";
@@ -58,9 +63,16 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private final BattleArenaSkillSystem skillSystem = new BattleArenaSkillSystem();
     private final List<BattleArenaControlledCharacter> arenaCharacters = new ArrayList<>();
     private final List<BattleArenaControlledCharacter> npcCharacters = new ArrayList<>();
+    private final Map<String, BattleArenaControlledCharacter> charactersByPlayer =
+            new LinkedHashMap<String, BattleArenaControlledCharacter>();
     private BattleArenaControlledCharacter playerCharacter;
     private BattleArenaControlledCharacter activeCharacter;
     private BattleArenaTcpControlClient tcpControlClient;
+    private GraphicsDevice loadedGraphicsDevice;
+    private WeightedGeometry characterGeometry;
+    private BattleArenaCharacterDefinition characterDefinition;
+    private int characterTexture;
+    private int nextSpawnSlot;
     private float cameraYaw = 0f;
     private float cameraPitch = -0.18f;
     private boolean debugHitboxesVisible = false;
@@ -105,9 +117,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         debugHitboxes.clear();
         arenaCharacters.clear();
         npcCharacters.clear();
+        charactersByPlayer.clear();
         activeAnimations.clear();
         playerCharacter = null;
         activeCharacter = null;
+        loadedGraphicsDevice = graphicsDevice;
+        characterGeometry = null;
+        characterDefinition = null;
+        characterTexture = 0;
+        nextSpawnSlot = 0;
         tcpControlClient = new BattleArenaTcpControlClient(tcpControlHost, tcpControlPort);
         cameraYaw = 0f;
         cameraPitch = -0.18f;
@@ -142,16 +160,13 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
        scene.addGameObject(ground);
 
         try {
-            loadPlayer(scene, graphicsDevice);
+            loadCharacterAssets(scene, graphicsDevice);
         } catch (Exception e) {
-            log("ERROR in loadPlayer: " + e.getMessage());
+            log("ERROR in loadCharacterAssets: " + e.getMessage());
             throw e;
         }
-        log("player meshes loaded=" + playerMeshes.size() + " bones=" + playerCharacter.runtime.bones.size());
-        for (BattleArenaControlledCharacter character : arenaCharacters) {
-            character.runtime.syncRig();
-            registerCharacterHitboxes(scene, character.runtime);
-        }
+        log("character assets ready; waiting for tcp player assignment from "
+                + tcpControlHost + ":" + tcpControlPort);
         scene.getCollisionWorld().addListener(this::handleHitboxCollision);
 
         ActionInput actions = scene.actionInput;
@@ -165,6 +180,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 BattleArenaSkillContext skillContext = createSkillContext();
                 if (tcpControlClient != null) {
                     tcpControlClient.update(deltaSeconds);
+                    syncTcpCharacters(scene, graphicsDevice);
                 }
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     toggleActiveCharacter();
@@ -216,9 +232,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         });
 
         updateCamera(scene.renderer.camera);
-        Vector3 playerPosition = activeCharacter.runtime.getPosition();
         playAudioSmokeTest(scene, 0.35f);
-        log("load complete playerPosition=" + playerPosition.x + "," + playerPosition.y + "," + playerPosition.z);
+        log("load complete; first tcp connection assignment will spawn the controlled character");
         // if(rootBone.parent!=null){
         	// log("Root Bone has parent");
         // }
@@ -283,15 +298,15 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         log("demo lights configured count=" + (scene.renderer.getLights().size() + 1));
     }
 
-    private void loadPlayer(Scene scene, GraphicsDevice graphicsDevice) {
-        BattleArenaCharacterDefinition definition = characterDefinitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
-        WeightedGeometry weightedGeometry = characterAssembler.loadWeightedGeometry(graphicsDevice, definition.model.mesh);
-        int vertexCount = weightedGeometry.getVertices() != null ? weightedGeometry.getVertices().length / 3 : 0;
-        int normalCount = weightedGeometry.getNormals() != null ? weightedGeometry.getNormals().length / 3 : 0;
-        int uvCount = weightedGeometry.getTextureCoordinates() != null ? weightedGeometry.getTextureCoordinates().length / 2 : 0;
-        int indexCount = weightedGeometry.getIndices() != null ? weightedGeometry.getIndices().length : 0;
-        int weightCount = weightedGeometry.getWeightss() != null ? weightedGeometry.getWeightss().length / 4 : 0;
-        int boneIdCount = weightedGeometry.getBoness() != null ? weightedGeometry.getBoness().length / 4 : 0;
+    private void loadCharacterAssets(Scene scene, GraphicsDevice graphicsDevice) {
+        characterDefinition = characterDefinitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
+        characterGeometry = characterAssembler.loadWeightedGeometry(graphicsDevice, characterDefinition.model.mesh);
+        int vertexCount = characterGeometry.getVertices() != null ? characterGeometry.getVertices().length / 3 : 0;
+        int normalCount = characterGeometry.getNormals() != null ? characterGeometry.getNormals().length / 3 : 0;
+        int uvCount = characterGeometry.getTextureCoordinates() != null ? characterGeometry.getTextureCoordinates().length / 2 : 0;
+        int indexCount = characterGeometry.getIndices() != null ? characterGeometry.getIndices().length : 0;
+        int weightCount = characterGeometry.getWeightss() != null ? characterGeometry.getWeightss().length / 4 : 0;
+        int boneIdCount = characterGeometry.getBoness() != null ? characterGeometry.getBoness().length / 4 : 0;
         log("parsed model vertices=" + vertexCount
                 + " normals=" + normalCount
                 + " uvs=" + uvCount
@@ -300,53 +315,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 + " boneIds=" + boneIdCount);
 
         activeAnimations.clear();
-        int characterTexture = loadCharacterTexture(graphicsDevice, definition);
-        boolean androidIsLocal = LOCAL_PLAYER_ANDROID.equals(localPlayer);
-        playerCharacter = spawnCharacter(
-                scene,
-                graphicsDevice,
-                weightedGeometry,
-                definition,
-                "BattleArenaPlayerMesh",
-                "BattleArenaPlayerHealthBar",
-                characterTexture,
-                0f,
-                androidIsLocal ? null : new BattleArenaTcpRemoteController(tcpControlClient, BattleArenaTcpControlClient.ANDROID_PLAYER),
-                androidIsLocal);
-
-        log("wired animation count total=" + activeAnimations.size()
-                + " idle=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
-                + " walk=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
-                + " walkBackward=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK_BACKWARD).size()
-                + " run=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_RUN).size()
-                + " jump=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_JUMP).size()
-                + " punch=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
-                + " hit=" + playerCharacter.runtime.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
-
-        log("loaded bones runtimeBones=" + playerCharacter.runtime.bones.size()
-                + " root=" + playerCharacter.runtime.rootBone.name);
-
-        Bone_object boneobj=new Bone_object(new CubeGeometry(), characterTexture);
-        boneobj.bone=playerCharacter.runtime.rootBone;
-        boneobj.scale=new float[]{0.1f,0.1f,0.1f};
-        // scene.addGameObject(boneobj);
-        log("spawned weighted mesh name=" + playerCharacter.runtime.meshObject.name + " scale=" + PLAYER_SCALE);
-
-        BattleArenaControlledCharacter secondCharacter = spawnCharacter(
-                scene,
-                graphicsDevice,
-                weightedGeometry,
-                definition,
-                "BattleArenaSecondCharacter",
-                "BattleArenaSecondCharacterHealthBar",
-                characterTexture,
-                SECOND_CHARACTER_START_X,
-                androidIsLocal ? new BattleArenaTcpRemoteController(tcpControlClient, BattleArenaTcpControlClient.DESKTOP_PLAYER) : null,
-                !androidIsLocal);
-        npcCharacters.add(secondCharacter);
-        activeCharacter = androidIsLocal ? playerCharacter : secondCharacter;
-        log("spawned second character name=" + secondCharacter.runtime.meshObject.name + " bones=" + secondCharacter.runtime.bones.size());
-        log("local player role=" + localPlayer + " activeCharacter=" + activeCharacter.runtime.meshObject.name);
+        characterTexture = loadCharacterTexture(graphicsDevice, characterDefinition);
     }
 
     private BattleArenaControlledCharacter spawnCharacter(Scene scene,
@@ -357,6 +326,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                                                           String healthBarName,
                                                           int texture,
                                                           float startX,
+                                                          String playerId,
                                                           BattleArenaCharacterBrain brain,
                                                           boolean playerControlled) {
         BattleArenaCharacterController controller = new BattleArenaCharacterController();
@@ -375,6 +345,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 runtime,
                 controller,
                 skillSystem.skills(),
+                playerId,
                 brain,
                 playerControlled);
         if (startX != 0f) {
@@ -382,15 +353,143 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         }
         runtime.syncRig();
         playerMeshes.add(runtime.meshObject);
-        scene.addGameObject(new BattleArenaHealthBarGameObject(
+        BattleArenaHealthBarGameObject healthBar = new BattleArenaHealthBarGameObject(
                 character,
                 scene.renderer.camera,
                 healthBarName,
                 HEALTH_BAR_WIDTH,
                 HEALTH_BAR_HEIGHT,
-                HEALTH_BAR_VERTICAL_OFFSET));
+                HEALTH_BAR_VERTICAL_OFFSET);
+        character.healthBarObject = healthBar;
+        scene.addGameObject(healthBar);
         arenaCharacters.add(character);
         return character;
+    }
+
+    private void syncTcpCharacters(Scene scene, GraphicsDevice graphicsDevice) {
+        if (tcpControlClient == null || characterGeometry == null || characterDefinition == null) {
+            return;
+        }
+        Set<String> activePlayers = tcpControlClient.getActivePlayersSnapshot();
+        String assignedPlayer = tcpControlClient.getAssignedPlayer();
+        if (assignedPlayer != null && !assignedPlayer.trim().isEmpty()) {
+            activePlayers.add(assignedPlayer);
+        }
+        for (String player : activePlayers) {
+            if (player == null || player.trim().isEmpty()) {
+                continue;
+            }
+            BattleArenaControlledCharacter existing = charactersByPlayer.get(player);
+            boolean shouldBeLocal = player.equals(assignedPlayer);
+            if (existing != null && existing.playerControlled != shouldBeLocal) {
+                despawnCharacter(scene, player);
+                existing = null;
+            }
+            if (existing == null) {
+                spawnTcpCharacter(scene, graphicsDevice, player, shouldBeLocal);
+            }
+        }
+
+        HashSet<String> activePlayerCopy = new HashSet<String>(activePlayers);
+        Iterator<String> playerIterator = charactersByPlayer.keySet().iterator();
+        while (playerIterator.hasNext()) {
+            String player = playerIterator.next();
+            if (activePlayerCopy.contains(player)) {
+                continue;
+            }
+            BattleArenaControlledCharacter character = charactersByPlayer.get(player);
+            removeCharacterFromScene(scene, character);
+            playerIterator.remove();
+        }
+        if (activeCharacter == null && !arenaCharacters.isEmpty()) {
+            activeCharacter = arenaCharacters.get(0);
+        }
+    }
+
+    private void spawnTcpCharacter(Scene scene, GraphicsDevice graphicsDevice, String player, boolean playerControlled) {
+        int spawnSlot = nextSpawnSlot++;
+        float startX = spawnSlot == 0 ? 0f : SECOND_CHARACTER_START_X * spawnSlot;
+        String safeName = player.replaceAll("[^A-Za-z0-9_]", "_");
+        BattleArenaCharacterBrain brain = playerControlled
+                ? null
+                : new BattleArenaTcpRemoteController(tcpControlClient, player);
+        BattleArenaControlledCharacter character = spawnCharacter(
+                scene,
+                graphicsDevice != null ? graphicsDevice : loadedGraphicsDevice,
+                characterGeometry,
+                characterDefinition,
+                "BattleArena_" + safeName,
+                "BattleArena_" + safeName + "_HealthBar",
+                characterTexture,
+                startX,
+                player,
+                brain,
+                playerControlled);
+        registerCharacterHitboxes(scene, character.runtime);
+        charactersByPlayer.put(player, character);
+        if (playerControlled) {
+            playerCharacter = character;
+            activeCharacter = character;
+        } else {
+            npcCharacters.add(character);
+        }
+        log("spawned tcp character player=" + player
+                + " local=" + playerControlled
+                + " x=" + startX
+                + " bones=" + character.runtime.bones.size());
+        logAnimationSummary(character);
+    }
+
+    private void despawnCharacter(Scene scene, String player) {
+        BattleArenaControlledCharacter character = charactersByPlayer.remove(player);
+        removeCharacterFromScene(scene, character);
+    }
+
+    private void removeCharacterFromScene(Scene scene, BattleArenaControlledCharacter character) {
+        if (scene == null || character == null) {
+            return;
+        }
+        for (Collider collider : character.runtime.getHitboxColliders()) {
+            scene.getCollisionWorld().removeCollider(collider);
+        }
+        Iterator<BattleArenaHitboxDebugGameObject> debugIterator = debugHitboxes.iterator();
+        while (debugIterator.hasNext()) {
+            BattleArenaHitboxDebugGameObject debugObject = debugIterator.next();
+            if (debugObject.getCollider().getCharacter() == character.runtime) {
+                scene.removeGameObject(debugObject);
+                debugIterator.remove();
+            }
+        }
+        scene.removeGameObject(character.runtime.meshObject);
+        if (character.healthBarObject != null) {
+            scene.removeGameObject(character.healthBarObject);
+        }
+        playerMeshes.remove(character.runtime.meshObject);
+        arenaCharacters.remove(character);
+        npcCharacters.remove(character);
+        if (playerCharacter == character) {
+            playerCharacter = null;
+        }
+        if (activeCharacter == character) {
+            activeCharacter = playerCharacter != null
+                    ? playerCharacter
+                    : (!arenaCharacters.isEmpty() ? arenaCharacters.get(0) : null);
+        }
+        log("despawned tcp character player=" + character.playerId);
+    }
+
+    private void logAnimationSummary(BattleArenaControlledCharacter character) {
+        if (character == null) {
+            return;
+        }
+        log("wired animation count total=" + activeAnimations.size()
+                + " idle=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_IDLE).size()
+                + " walk=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK).size()
+                + " walkBackward=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_WALK_BACKWARD).size()
+                + " run=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_RUN).size()
+                + " jump=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_JUMP).size()
+                + " punch=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_PUNCH).size()
+                + " hit=" + character.runtime.animationSet(BattleArenaCharacterController.ANIM_TAKE_HIT).size());
     }
 
     private void updateFireballCasting(BattleArenaSkillContext skillContext) {
@@ -417,7 +516,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
         if (tcpControlClient == null || character == null || !character.playerControlled) {
             return;
         }
-        tcpControlClient.sendControls(localPlayer, character.controls);
+        tcpControlClient.sendControls(character.playerId, character.controls);
     }
 
     private boolean updateFireballCasting(BattleArenaSkillContext skillContext,

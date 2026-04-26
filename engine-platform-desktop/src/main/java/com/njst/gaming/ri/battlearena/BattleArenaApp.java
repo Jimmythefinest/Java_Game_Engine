@@ -26,9 +26,19 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_X;
 
 public class BattleArenaApp extends Engine {
-    private final BattleArenaDemoLoader loader = new BattleArenaDemoLoader();
+    private final BattleArenaDemoLoader loader;
 
     public BattleArenaApp() {
+        this(
+                System.getProperty("battleArena.remoteHost", null),
+                readPortProperty("battleArena.remotePort", BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT));
+    }
+
+    public BattleArenaApp(String tcpControlHost, int tcpControlPort) {
+        this.loader = new BattleArenaDemoLoader(
+                System.getProperty("battleArena.localPlayer", BattleArenaDemoLoader.LOCAL_PLAYER_DESKTOP),
+                tcpControlHost,
+                tcpControlPort);
         this.title = "Battle Arena";
     }
 
@@ -64,6 +74,29 @@ public class BattleArenaApp extends Engine {
     }
 
     public static void main(String[] args) {
-        new BattleArenaApp().run();
+        String tcpControlHost = System.getProperty("battleArena.remoteHost", null);
+        int tcpControlPort = readPortProperty("battleArena.remotePort", BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT);
+        if (args != null && args.length > 0 && args[0] != null && !args[0].trim().isEmpty()) {
+            tcpControlHost = args[0].trim();
+        }
+        if (args != null && args.length > 1) {
+            tcpControlPort = parsePort(args[1], tcpControlPort);
+        }
+        new BattleArenaApp(tcpControlHost, tcpControlPort).run();
+    }
+
+    private static int readPortProperty(String name, int fallback) {
+        return parsePort(System.getProperty(name), fallback);
+    }
+
+    private static int parsePort(String value, int fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 }
