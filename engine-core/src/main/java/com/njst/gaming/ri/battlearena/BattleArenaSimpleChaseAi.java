@@ -1,6 +1,8 @@
 package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.Math.Vector3;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterBrain;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 
 final class BattleArenaSimpleChaseAi implements BattleArenaCharacterBrain {
     private static final float TURN_DEADZONE_DEGREES = 6f;

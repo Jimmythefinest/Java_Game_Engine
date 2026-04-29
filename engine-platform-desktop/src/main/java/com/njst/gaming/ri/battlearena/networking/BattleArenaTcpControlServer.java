@@ -1,10 +1,11 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.networking;
 
 import com.njst.gaming.Networking.NetworkConnection;
 import com.njst.gaming.Networking.NetworkEvent;
 import com.njst.gaming.Networking.NetworkEventType;
 import com.njst.gaming.Networking.NetworkMessage;
 import com.njst.gaming.Networking.TcpNetworkServer;
+import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpSessionMessage;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;

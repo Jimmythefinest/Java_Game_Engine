@@ -1,16 +1,19 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.skills;
 
 import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterController;
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterRuntime;
+import com.njst.gaming.ri.battlearena.BattleArenaControlledCharacter;
 import com.njst.gaming.simulation.entities.Projectile;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-final class BattleArenaFireballSkill implements BattleArenaSkill {
-    static final String ID = "fireball";
+public final class BattleArenaFireballSkill implements BattleArenaSkill {
+    public static final String ID = "fireball";
     private static final float FIREBALL_RADIUS = 0.16f;
     private static final float FIREBALL_CHARGE_SECONDS = 0.4f;
     private static final float FIREBALL_MIN_SCALE = 0.2f;

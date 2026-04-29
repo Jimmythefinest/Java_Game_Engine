@@ -1,24 +1,24 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.controls;
 
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 
-final class BattleArenaCharacterControlState {
+public final class BattleArenaCharacterControlState {
     private static final float MOVE_DEADZONE = 0.12f;
 
-    float forwardInput;
-    float turnInput;
-    boolean runDown;
-    boolean jumpPressed;
-    boolean punchPressed;
-    boolean kickPressed;
-    boolean castFireballPressed;
-    boolean castMudWallPressed;
-    boolean stepLeftPressed;
-    boolean stepRightPressed;
-    boolean burstPressed;
+    public float forwardInput;
+    public float turnInput;
+    public boolean runDown;
+    public boolean jumpPressed;
+    public boolean punchPressed;
+    public boolean kickPressed;
+    public boolean castFireballPressed;
+    public boolean castMudWallPressed;
+    public boolean stepLeftPressed;
+    public boolean stepRightPressed;
+    public boolean burstPressed;
 
-    void clear() {
+    public void clear() {
         forwardInput = 0f;
         turnInput = 0f;
         runDown = false;
@@ -32,7 +32,7 @@ final class BattleArenaCharacterControlState {
         burstPressed = false;
     }
 
-    void capturePlayerInput(ActionInput actions, PointerState movementPointer) {
+    public void capturePlayerInput(ActionInput actions, PointerState movementPointer) {
         clear();
         if (movementPointer != null && movementPointer.isActive()) {
             forwardInput += -applyDeadzone(movementPointer.getY());

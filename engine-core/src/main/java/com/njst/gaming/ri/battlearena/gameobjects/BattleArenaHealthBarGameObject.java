@@ -1,4 +1,4 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.gameobjects;
 
 import com.njst.gaming.Camera;
 import com.njst.gaming.Geometries.CustomGeometry;
@@ -7,8 +7,9 @@ import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.ri.battlearena.BattleArenaControlledCharacter;
 
-final class BattleArenaHealthBarGameObject extends GameObject {
+public final class BattleArenaHealthBarGameObject extends GameObject {
     private static final int TEXTURE_WIDTH = 96;
     private static final int TEXTURE_HEIGHT = 12;
 
@@ -20,12 +21,12 @@ final class BattleArenaHealthBarGameObject extends GameObject {
     private float lastRenderedHealthRatio = -1f;
     private int generatedTextureId = 0;
 
-    BattleArenaHealthBarGameObject(BattleArenaControlledCharacter character,
-                                   Camera camera,
-                                   String name,
-                                   float widthWorldUnits,
-                                   float heightWorldUnits,
-                                   float verticalOffset) {
+    public BattleArenaHealthBarGameObject(BattleArenaControlledCharacter character,
+                                          Camera camera,
+                                          String name,
+                                          float widthWorldUnits,
+                                          float heightWorldUnits,
+                                          float verticalOffset) {
         super(createQuadGeometry(), 0);
         this.character = character;
         this.camera = camera;

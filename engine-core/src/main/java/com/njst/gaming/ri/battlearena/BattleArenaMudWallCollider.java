@@ -7,7 +7,7 @@ import com.njst.gaming.collision.Collider;
 import com.njst.gaming.collision.CollisionShape;
 import com.njst.gaming.objects.GameObject;
 
-final class BattleArenaMudWallCollider implements Collider {
+public final class BattleArenaMudWallCollider implements Collider {
     private static final int LAYER_OBSTACLE = 1 << 2;
     private static final Bounds3 INACTIVE_BOUNDS =
             new Bounds3(new Vector3(100000f, 100000f, 100000f), new Vector3(100001f, 100001f, 100001f));
@@ -15,7 +15,7 @@ final class BattleArenaMudWallCollider implements Collider {
     private final GameObject mudWallObject;
     private final CollisionShape shape;
 
-    BattleArenaMudWallCollider(GameObject mudWallObject) {
+    public BattleArenaMudWallCollider(GameObject mudWallObject) {
         this.mudWallObject = mudWallObject;
         this.shape = new AabbShape(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, 0.5f));
     }

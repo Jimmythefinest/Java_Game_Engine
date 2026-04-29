@@ -1,6 +1,10 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.networking;
 
-final class BattleArenaTcpRemoteController implements BattleArenaCharacterBrain {
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterRuntime;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterBrain;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
+
+public final class BattleArenaTcpRemoteController implements BattleArenaCharacterBrain {
     private final BattleArenaTcpControlClient controlClient;
     private final String remotePlayer;
     private boolean previousJump;
@@ -12,7 +16,7 @@ final class BattleArenaTcpRemoteController implements BattleArenaCharacterBrain 
     private boolean previousStepRight;
     private boolean previousBurst;
 
-    BattleArenaTcpRemoteController(BattleArenaTcpControlClient controlClient, String remotePlayer) {
+    public BattleArenaTcpRemoteController(BattleArenaTcpControlClient controlClient, String remotePlayer) {
         this.controlClient = controlClient;
         this.remotePlayer = remotePlayer;
     }

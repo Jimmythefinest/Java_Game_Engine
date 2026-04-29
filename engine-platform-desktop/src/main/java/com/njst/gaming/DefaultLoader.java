@@ -26,7 +26,7 @@ import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.Weighted_GameObject;
-import com.njst.gaming.ri.battlearena.BattleArenaActions;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 

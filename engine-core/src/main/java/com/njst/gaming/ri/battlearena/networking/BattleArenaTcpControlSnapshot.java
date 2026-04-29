@@ -1,6 +1,7 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.networking;
 
 import com.google.gson.annotations.SerializedName;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 
 final class BattleArenaTcpControlSnapshot {
     String player;

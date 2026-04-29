@@ -1,4 +1,4 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.skills;
 
 import com.njst.gaming.Geometries.CubeGeometry;
 import com.njst.gaming.Math.Vector3;
@@ -6,13 +6,18 @@ import com.njst.gaming.collision.Bounds3;
 import com.njst.gaming.collision.CollisionEvent;
 import com.njst.gaming.collision.CollisionEventType;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterRuntime;
+import com.njst.gaming.ri.battlearena.BattleArenaControlledCharacter;
+import com.njst.gaming.ri.battlearena.BattleArenaHitboxCollider;
+import com.njst.gaming.ri.battlearena.BattleArenaMudWallCollider;
+import com.njst.gaming.ri.battlearena.gameobjects.BattleArenaMudWallDebugGameObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-final class BattleArenaMudWallSkill implements BattleArenaSkill {
-    static final String ID = "mud_wall";
+public final class BattleArenaMudWallSkill implements BattleArenaSkill {
+    public static final String ID = "mud_wall";
     private static final float MUD_WALL_WIDTH = 1.8f;
     private static final float MUD_WALL_HEIGHT = 1.35f;
     private static final float MUD_WALL_DEPTH = 0.6f;

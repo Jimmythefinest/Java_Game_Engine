@@ -4,6 +4,7 @@ import com.njst.gaming.input.InputBindings;
 import com.njst.gaming.*;
 
 import com.njst.gaming.input.MouseButtons;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;

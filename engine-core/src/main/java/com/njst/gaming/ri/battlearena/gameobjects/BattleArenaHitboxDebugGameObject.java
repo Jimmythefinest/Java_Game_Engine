@@ -1,30 +1,34 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.gameobjects;
 
 import com.njst.gaming.Geometries.CollisionBoxGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.collision.Bounds3;
 import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.ri.battlearena.BattleArenaHitboxCollider;
 
-final class BattleArenaMudWallDebugGameObject extends GameObject {
-    private final BattleArenaMudWallCollider collider;
+public final class BattleArenaHitboxDebugGameObject extends GameObject {
+    private final BattleArenaHitboxCollider collider;
     private final CollisionBoxGeometry boxGeometry;
     private boolean enabled;
 
-    BattleArenaMudWallDebugGameObject(BattleArenaMudWallCollider collider) {
-        super(new CollisionBoxGeometry(new Vector3(-0.5f), new Vector3(0.5f)), 0);
+    public BattleArenaHitboxDebugGameObject(BattleArenaHitboxCollider collider, int texture) {
+        super(new CollisionBoxGeometry(new Vector3(-0.5f), new Vector3(0.5f)), texture);
         this.collider = collider;
         this.boxGeometry = (CollisionBoxGeometry) geometry;
         this.enabled = false;
-        this.name = "MudWall_Debug";
+        this.name = collider.getName() + "_Debug";
         this.modelMatrix.identity();
         this.shininess = 0f;
-        this.ambientlight_multiplier = 2.2f;
-        this.castsShadows = false;
+        this.ambientlight_multiplier = collider.getType() == BattleArenaHitboxCollider.Type.HITBOX ? 3f : 1.5f;
     }
 
-    void setEnabled(boolean enabled) {
+    public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public BattleArenaHitboxCollider getCollider() {
+        return collider;
     }
 
     @Override
@@ -34,7 +38,7 @@ final class BattleArenaMudWallDebugGameObject extends GameObject {
 
     @Override
     public void render(ShaderHandle shader, int textureHandle) {
-        if (!enabled) {
+        if (!enabled || !collider.isDebugVisible()) {
             return;
         }
 

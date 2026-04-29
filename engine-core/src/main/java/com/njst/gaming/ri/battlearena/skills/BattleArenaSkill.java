@@ -1,8 +1,10 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.skills;
 
 import com.njst.gaming.collision.CollisionEvent;
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterRuntime;
+import com.njst.gaming.ri.battlearena.BattleArenaControlledCharacter;
 
-interface BattleArenaSkill {
+public interface BattleArenaSkill {
     String id();
 
     boolean run(BattleArenaControlledCharacter user,

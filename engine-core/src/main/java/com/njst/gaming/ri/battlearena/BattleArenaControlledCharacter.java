@@ -3,14 +3,18 @@ package com.njst.gaming.ri.battlearena;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterBrain;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
+import com.njst.gaming.ri.battlearena.skills.BattleArenaSkill;
+import com.njst.gaming.ri.battlearena.skills.BattleArenaSkillContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
-final class BattleArenaControlledCharacter {
+public final class BattleArenaControlledCharacter {
     private static final float DEFAULT_MAX_HEALTH = 100f;
 
-    final BattleArenaCharacterRuntime runtime;
+    public final BattleArenaCharacterRuntime runtime;
     final BattleArenaCharacterController controller;
     final BattleArenaCharacterControlState controls = new BattleArenaCharacterControlState();
     final String playerId;
@@ -67,15 +71,15 @@ final class BattleArenaControlledCharacter {
         controller.update(controls, deltaSeconds);
     }
 
-    float getCurrentHealth() {
+    public float getCurrentHealth() {
         return currentHealth;
     }
 
-    float getMaxHealth() {
+    public float getMaxHealth() {
         return maxHealth;
     }
 
-    float getHealthRatio() {
+    public float getHealthRatio() {
         if (maxHealth <= 0f) {
             return 0f;
         }

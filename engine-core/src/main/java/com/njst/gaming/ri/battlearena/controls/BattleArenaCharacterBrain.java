@@ -1,6 +1,8 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.controls;
 
-interface BattleArenaCharacterBrain {
+import com.njst.gaming.ri.battlearena.BattleArenaCharacterRuntime;
+
+public interface BattleArenaCharacterBrain {
     void update(BattleArenaCharacterRuntime self,
                 BattleArenaCharacterRuntime opponent,
                 BattleArenaCharacterControlState controls,

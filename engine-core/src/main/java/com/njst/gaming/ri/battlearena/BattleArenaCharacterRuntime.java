@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class BattleArenaCharacterRuntime {
+public final class BattleArenaCharacterRuntime {
     private static final float DEFAULT_HIT_DAMAGE = 10f;
     private static final float PUNCH_RECOIL_STRENGTH = 0.22f;
     private static final float KICK_RECOIL_STRENGTH = 0.32f;
@@ -22,7 +22,7 @@ final class BattleArenaCharacterRuntime {
     final Bone rootBone;
     final Bone hipBone;
     final Vector3 rootBasePosition;
-    final Weighted_GameObject meshObject;
+    public final Weighted_GameObject meshObject;
     final BattleArenaCharacterDefinition definition;
     final Map<String, ArrayList<KeyframeAnimation>> animationSets;
     final Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions;
@@ -50,35 +50,35 @@ final class BattleArenaCharacterRuntime {
         this.character = character;
     }
 
-    Vector3 getPosition() {
+    public Vector3 getPosition() {
         return controller.getPlayerPosition();
     }
 
-    float getHeadingDegrees() {
+    public float getHeadingDegrees() {
         return controller.getPlayerHeadingDegrees();
     }
 
-    boolean isPunching() {
+    public boolean isPunching() {
         return controller.isPunching();
     }
 
-    boolean isKicking() {
+    public boolean isKicking() {
         return controller.isKicking();
     }
 
-    boolean isCasting() {
+    public boolean isCasting() {
         return controller.isCasting();
     }
 
-    boolean isSideSteppingLeft() {
+    public boolean isSideSteppingLeft() {
         return controller.isSideSteppingLeft();
     }
 
-    boolean isSideSteppingRight() {
+    public boolean isSideSteppingRight() {
         return controller.isSideSteppingRight();
     }
 
-    boolean isAnimationActive(String animationKey) {
+    public boolean isAnimationActive(String animationKey) {
         if (BattleArenaCharacterController.ANIM_PUNCH.equals(animationKey)) {
             return controller.isPunching();
         }
@@ -100,18 +100,18 @@ final class BattleArenaCharacterRuntime {
         return character != null ? character.getHealthRatio() : 0f;
     }
 
-    void onHitTaken(String hitboxName, String onHitAnimation) {
+    public void onHitTaken(String hitboxName, String onHitAnimation) {
         applyDamage(DEFAULT_HIT_DAMAGE);
         controller.triggerHitReact(hitboxName, onHitAnimation);
     }
 
-    void onHitTaken(BattleArenaCharacterRuntime attacker, String hitboxName, String onHitAnimation) {
+    public void onHitTaken(BattleArenaCharacterRuntime attacker, String hitboxName, String onHitAnimation) {
         applyDamage(DEFAULT_HIT_DAMAGE);
         controller.triggerHitReact(hitboxName, onHitAnimation);
         controller.applyHitRecoil(resolveHitDirection(attacker), resolveRecoilStrength(attacker));
     }
 
-    List<Collider> getHitboxColliders() {
+    public List<Collider> getHitboxColliders() {
         return hitboxColliders;
     }
 

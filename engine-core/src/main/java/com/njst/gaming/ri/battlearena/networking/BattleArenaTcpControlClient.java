@@ -1,4 +1,4 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.networking;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -6,6 +6,7 @@ import com.njst.gaming.Networking.NetworkEvent;
 import com.njst.gaming.Networking.NetworkEventType;
 import com.njst.gaming.Networking.NetworkMessage;
 import com.njst.gaming.Networking.TcpNetworkClient;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-final class BattleArenaTcpControlClient {
-    static final String MESSAGE_TYPE = "battle_arena.controls";
-    static final String ANDROID_PLAYER = "android";
-    static final String DESKTOP_PLAYER = "desktop";
-    static final String DEFAULT_HOST = "52.66.201.70";
-    static final int DEFAULT_PORT = 7777;
+public final class BattleArenaTcpControlClient {
+    public static final String MESSAGE_TYPE = "battle_arena.controls";
+    public static final String ANDROID_PLAYER = "android";
+    public static final String DESKTOP_PLAYER = "desktop";
+    public static final String DEFAULT_HOST = "52.66.201.70";
+    public static final int DEFAULT_PORT = 7777;
 
     private static final int CONNECT_TIMEOUT_MILLIS = 150;
     private static final float RECONNECT_INTERVAL_SECONDS = 2f;
@@ -37,35 +38,35 @@ final class BattleArenaTcpControlClient {
     private float reconnectTimerSeconds = 0f;
     private boolean connectionLogged = false;
 
-    BattleArenaTcpControlClient() {
+    public BattleArenaTcpControlClient() {
         this(
                 System.getProperty("battleArena.remoteHost", DEFAULT_HOST),
                 readPortProperty("battleArena.remotePort", DEFAULT_PORT));
     }
 
-    BattleArenaTcpControlClient(String host, int port) {
+    public BattleArenaTcpControlClient(String host, int port) {
         this.host = host == null || host.trim().isEmpty() ? DEFAULT_HOST : host;
         this.port = port;
     }
 
-    void update(float deltaSeconds) {
+    public void update(float deltaSeconds) {
         connectIfNeeded(deltaSeconds);
         drainNetworkEvents();
     }
 
-    boolean hasSnapshot(String player) {
+    public boolean hasSnapshot(String player) {
         return latestByPlayer.containsKey(player);
     }
 
-    String getAssignedPlayer() {
+    public String getAssignedPlayer() {
         return assignedPlayer;
     }
 
-    Set<String> getActivePlayersSnapshot() {
+    public Set<String> getActivePlayersSnapshot() {
         return new HashSet<String>(activePlayers);
     }
 
-    void copyControls(String player, BattleArenaCharacterControlState controls) {
+    public void copyControls(String player, BattleArenaCharacterControlState controls) {
         BattleArenaTcpControlSnapshot snapshot = latestByPlayer.get(player);
         if (snapshot == null) {
             controls.clear();
@@ -74,7 +75,7 @@ final class BattleArenaTcpControlClient {
         snapshot.copyTo(controls);
     }
 
-    void sendControls(String player, BattleArenaCharacterControlState controls) {
+    public void sendControls(String player, BattleArenaCharacterControlState controls) {
         if (!client.isConnected()) {
             return;
         }

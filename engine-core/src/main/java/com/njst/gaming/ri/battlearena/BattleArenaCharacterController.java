@@ -4,12 +4,13 @@ import com.njst.gaming.Animations.KeyframeAnimation;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-final class BattleArenaCharacterController {
+public final class BattleArenaCharacterController {
     static final String EVENT_PUNCH_STARTED = "punch_started";
     static final String EVENT_KICK_STARTED = "kick_started";
     static final String EVENT_CAST_STARTED = "cast_started";
@@ -28,7 +29,7 @@ final class BattleArenaCharacterController {
     static final String ANIM_CAST = "cast";
     static final String ANIM_LEFTSIDE_STEP = "leftside_step";
     static final String ANIM_RIGHTSIDE_STEP = "rightside_step";
-    static final String ANIM_TAKE_HIT = "take_hit";
+    public static final String ANIM_TAKE_HIT = "take_hit";
 
     private static final float WALK_SPEED = 0.02f;
     private static final float RUN_SPEED = 0.035f;

@@ -89,7 +89,7 @@ tasks.register('runBattleArenaTcpControlServer', JavaExec) {
     group = 'application'
     description = 'Run the TCP relay server for battle arena remote controls'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaTcpControlServer'
+    mainClass = 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
     if (project.hasProperty('port')) {
         args project.property('port')
     }
@@ -103,7 +103,7 @@ tasks.register('battleArenaTcpControlServerJar', Jar) {
     dependsOn(':engine-core:classes', 'classes')
 
     from(sourceSets.main.output) {
-        include 'com/njst/gaming/ri/battlearena/BattleArenaTcpControlServer*.class'
+        include 'com/njst/gaming/ri/battlearena/networking/BattleArenaTcpControlServer*.class'
     }
     from(project(':engine-core').sourceSets.main.output) {
         include 'com/njst/gaming/Networking/AbstractNetworkPeer.class'
@@ -117,12 +117,12 @@ tasks.register('battleArenaTcpControlServerJar', Jar) {
         include 'com/njst/gaming/Networking/NetworkSettings.class'
         include 'com/njst/gaming/Networking/TcpConnection*.class'
         include 'com/njst/gaming/Networking/TcpNetworkServer*.class'
-        include 'com/njst/gaming/ri/battlearena/BattleArenaTcpSessionMessage.class'
+        include 'com/njst/gaming/ri/battlearena/networking/BattleArenaTcpSessionMessage.class'
     }
 
     manifest {
         attributes(
-                'Main-Class': 'com.njst.gaming.ri.battlearena.BattleArenaTcpControlServer'
+                'Main-Class': 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
         )
     }
 }

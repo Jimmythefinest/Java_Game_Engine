@@ -7,11 +7,11 @@ import com.njst.gaming.collision.Bounds3;
 import com.njst.gaming.collision.Collider;
 import com.njst.gaming.collision.CollisionShape;
 
-final class BattleArenaHitboxCollider implements Collider {
-    static final int LAYER_HURTBOX = 1;
+public final class BattleArenaHitboxCollider implements Collider {
+    public static final int LAYER_HURTBOX = 1;
     static final int LAYER_HITBOX = 1 << 1;
 
-    enum Type {
+    public enum Type {
         HURTBOX,
         HITBOX
     }
@@ -49,23 +49,23 @@ final class BattleArenaHitboxCollider implements Collider {
                 new Vector3(localCenter).add(new Vector3(halfExtents)));
     }
 
-    BattleArenaCharacterRuntime getCharacter() {
+    public BattleArenaCharacterRuntime getCharacter() {
         return character;
     }
 
-    Type getType() {
+    public Type getType() {
         return type;
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    String getOnHitAnimation() {
+    public String getOnHitAnimation() {
         return onHitAnimation;
     }
 
-    boolean isDebugVisible() {
+    public boolean isDebugVisible() {
         return isEnabled();
     }
 

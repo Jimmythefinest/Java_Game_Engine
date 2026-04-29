@@ -1,4 +1,4 @@
-package com.njst.gaming.ri.battlearena;
+package com.njst.gaming.ri.battlearena.controls;
 
 public final class BattleArenaActions {
     public static final String FORWARD = "forward";
