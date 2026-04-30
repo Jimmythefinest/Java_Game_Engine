@@ -33,6 +33,7 @@ dependencies {
     implementation project(':engine-platform-desktop')
     implementation platform("org.lwjgl:lwjgl-bom:${lwjglVersion}")
     implementation 'org.lwjgl:lwjgl-glfw'
+    implementation 'com.google.code.gson:gson:2.10.1'
 }
 
 tasks.named('processResources') {
@@ -74,6 +75,21 @@ tasks.register('runBattleArenaTcpControlServer', JavaExec) {
     mainClass = 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
     if (project.hasProperty('port')) {
         args project.property('port')
+    }
+}
+
+tasks.register('runBattleArenaGpuBoneCompare', JavaExec) {
+    group = 'verification'
+    description = 'Run Battle Arena GPU bone compute beside the CPU path in a headless context and compare matrices'
+    dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuBoneCompare'
+    args rootProject.file('battle-arena-core/src/main/resources').absolutePath
+    if (project.hasProperty('clip')) {
+        args project.property('clip')
+    }
+    if (project.hasProperty('frame')) {
+        args project.property('frame')
     }
 }
 

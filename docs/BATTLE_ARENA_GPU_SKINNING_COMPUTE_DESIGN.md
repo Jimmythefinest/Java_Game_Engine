@@ -359,6 +359,297 @@ Android implementation maps to GLES 3.1:
 
 ## Integration Plan
 
+## Build Sub-Goals and Checkpoints
+
+This section is the working checklist for total integration. Each sub-goal should be landed as a small commit with its validation evidence in the commit message or PR notes.
+
+### Sub-Goal 0: Baseline and Safety Nets
+
+Status: partially done.
+
+Deliverables:
+
+- Desktop compute smoke test task:
+  `./gradlew :engine-platform-desktop:runComputeShaderSmokeTest`
+- CPU bone benchmark task:
+  `./gradlew :engine-platform-desktop:runBoneCpuBenchmark`
+- Android instrumentation benchmark:
+  `./gradlew :engine-platform-android:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.njst.gaming.android.BoneCpuBenchmarkInstrumentedTest`
+- Feature flag policy:
+  GPU bones must be opt-in until visual parity is proven.
+
+Exit criteria:
+
+- Desktop compute shader SSBO dispatch/readback passes.
+- Desktop and Android CPU bone benchmarks run and produce recorded numbers.
+- `gradle build` passes.
+
+Current reference numbers:
+
+- Desktop, 96 bones after CPU optimization:
+  `updateOnly = 16.340 us`, `updateAndPack = 48.309 us`.
+- Android SM-M145F, 96 bones after CPU optimization:
+  `updateOnly = 381.585 us`, `updateAndPack = 1602.187 us`.
+
+### Sub-Goal 1: GPU Skeleton Asset Exporter
+
+Purpose: create the static data the compute shader will consume.
+
+Status: complete.
+
+Deliverables:
+
+- `BattleArenaGpuSkeletonAssetExporter`.
+- Gradle task:
+  `gradle :battle-arena-core:exportBattleArenaGpuSkeletonAsset`
+- Generated asset:
+  `battle-arena-core/src/main/resources/battle_arena/defeated.gpu_skeleton.json`
+
+Asset must contain:
+
+- bone names in runtime order,
+- parent index for each bone,
+- depth for each bone,
+- max depth,
+- max bones,
+- local rest position per bone,
+- local rest scale per bone,
+- inverse bind pose matrix per bone,
+- clip metadata,
+- sampled quaternion rotations per clip/frame/bone.
+
+Validation:
+
+- Exporter logs bone count, max depth, clip count, and total quaternion count.
+- All configured animations in `defeated.character.json` are present.
+- Every clip has `frameCount * boneCount` quaternion records.
+- Quaternion sign continuity is applied per bone/clip.
+
+Stop/go:
+
+- Complete: exporter produced 86 bones, max depth 14, 11 clips, and 123668 sampled quaternions.
+
+### Sub-Goal 2: Compute Shader API Completion
+
+Purpose: make the compute layer able to support persistent skeletal SSBOs rather than neural-network-only buffer ownership.
+
+Deliverables:
+
+- `ComputeBackend` supports:
+  - `bindBuffer(int, float[])`,
+  - `bindBuffer(int, int[])`,
+  - `updateBuffer(int, float[])`,
+  - `updateBuffer(int, int[])`,
+  - future or immediate support for existing `BufferHandle` binding if needed.
+- Desktop and Android implementations stay API-compatible.
+- Existing compute smoke test still passes.
+
+Validation:
+
+- `./gradlew :engine-platform-desktop:runComputeShaderSmokeTest`
+- `gradle build`
+
+Stop/go:
+
+- If Android compute APIs compile but are not runtime-tested, keep Android GPU bones disabled by default with a clear log.
+
+### Sub-Goal 3: CPU Reference Matrix Capture
+
+Purpose: create a reliable reference for GPU matrix comparison.
+
+Status: complete for the headless Battle Arena comparison path.
+
+Deliverables:
+
+- A diagnostic-only CPU method that packs final bone matrices for one Battle Arena character without changing gameplay.
+- A comparison utility:
+  - accepts CPU matrices,
+  - accepts GPU readback matrices,
+  - reports max absolute difference and first mismatching bone.
+
+Validation:
+
+- With CPU path active, reference matrix capture equals current `Scene.uploadSkeletonBuffer(...)` output for the character.
+- Implemented as `BattleArenaGpuBoneCompare`, which loads the serialized CPU bones and animation map, computes CPU matrices, runs the compute shader in a headless desktop context, reads back GPU matrices, and reports max absolute difference.
+
+Stop/go:
+
+- Complete for compute proofing: idle frame 0 compared at max difference `8.34465E-7`.
+
+### Sub-Goal 4: First Compute Shader Prototype
+
+Purpose: prove one character, one clip, one frame.
+
+Status: complete for one character in headless desktop mode.
+
+Deliverables:
+
+- `battle_arena_bone_compute.glsl`.
+- Headless comparison runner:
+  `gradle :battle-arena-desktop:runBattleArenaGpuBoneCompare`
+- Persistent buffers:
+  - bone metadata,
+  - baked rotation data,
+  - local rest positions,
+  - local rest scales,
+  - inverse bind matrices,
+  - rotations,
+  - output matrices.
+- Debug readback method.
+
+Scope:
+
+- One character.
+- Idle clip only is acceptable.
+- One frame or frozen frame is acceptable.
+- CPU rendering can still be active; this step only proves compute output.
+
+Validation:
+
+- GPU output matrix count equals bone count.
+- Root and first child matrices are close to CPU reference.
+- Max matrix difference is logged.
+
+Stop/go:
+
+- Complete: transform conventions were matched to CPU `Bone` behavior. Parent hierarchy propagates translation and rotation; local scale is applied only when packing each final bone matrix.
+
+### Sub-Goal 5: Depth-by-Depth Full Skeleton Compute
+
+Purpose: calculate the whole hierarchy in one workgroup per character.
+
+Status: complete for one character; multi-character dispatch remains Sub-Goal 6.
+
+Deliverables:
+
+- Depth loop in compute shader.
+- Workgroup barriers between depth passes.
+- Shared memory path preferred:
+  `shared mat4 sharedGlobal[MAX_BONES_PER_CHARACTER]`.
+- SSBO fallback path only if shared memory causes platform issues.
+
+Validation:
+
+- Compare all bones against CPU reference for:
+  - idle frame 0,
+  - idle mid-frame,
+  - punch mid-frame,
+  - kick mid-frame,
+  - walk mid-frame.
+- Log max difference per clip.
+
+Stop/go:
+
+- Current headless checks pass with max differences under `0.01`:
+  idle frame 0 `8.34465E-7`, idle frame 90 `8.34465E-7`, punch frame 30 `9.536743E-7`, kick frame 48 `1.4305115E-6`, walk frame 30 `7.1525574E-7`.
+
+### Sub-Goal 6: Multi-Character Dispatch
+
+Purpose: dispatch all active Battle Arena characters in one compute call.
+
+Deliverables:
+
+- One workgroup per active character.
+- Instance state buffer updated once per tick.
+- Output bone offsets assigned per character.
+
+Validation:
+
+- Two connected characters get different output bone ranges.
+- Both characters render/compare correctly when assigned different animations.
+- No CPU `Bone.update()` required for GPU-driven characters during the tick.
+
+Stop/go:
+
+- Verify character 1 and character 2 do not overwrite each other’s bone ranges.
+
+### Sub-Goal 7: Render Integration Behind Feature Flag
+
+Purpose: let the actual game render from GPU-computed matrices.
+
+Deliverables:
+
+- Feature flag:
+  `-DbattleArena.gpuBones=true`
+- `Scene.uploadSkeletonBuffer(...)` must skip CPU bone upload when the GPU skeleton provider owns binding `2`.
+- `Weighted_GameObject.boneBufferStartIndex` points into GPU output matrix ranges.
+- CPU fallback remains the default.
+
+Validation:
+
+- CPU path still works with flag off.
+- GPU path renders one local character with flag on.
+- Shadow pass also uses the same GPU-computed matrices.
+
+Stop/go:
+
+- If shadow pass breaks, keep GPU path disabled for shadows or route shadow shader through same binding fix before continuing.
+
+### Sub-Goal 8: Runtime Animation State Integration
+
+Purpose: make gameplay animation state drive the GPU instance buffer.
+
+Deliverables:
+
+- Controller exposes:
+  - current animation key,
+  - current frame,
+  - root position,
+  - heading.
+- GPU system maps animation key to clip index.
+- Per tick, update instance state only; do not traverse bones on CPU.
+
+Validation:
+
+- Idle, walk, run, jump, punch, kick, cast, side-step, and take-hit all select expected clips.
+- Animation frame progression matches CPU path timing.
+
+Stop/go:
+
+- If event animations finish at different times than CPU path, fix frame source before tuning visuals.
+
+### Sub-Goal 9: Android Runtime Trial
+
+Purpose: prove the Android GLES 3.1 path can run the shader and improve the current bottleneck.
+
+Deliverables:
+
+- Android shader asset synced.
+- Android compute backend can create/update all required SSBOs.
+- Device-side smoke command documented.
+
+Validation:
+
+- Run battle arena with GPU bones flag on-device.
+- Compare FPS/profiler before and after on the same scene.
+- Check logcat for GPU fallback/errors.
+
+Stop/go:
+
+- If Android compute shader compiles but render output is wrong, keep desktop GPU path available and Android fallback active while debugging.
+
+### Sub-Goal 10: Cleanup and Removal of CPU Hot Path
+
+Purpose: remove the old CPU costs for Battle Arena after GPU parity is proven.
+
+Deliverables:
+
+- Battle Arena GPU characters do not register into CPU `Scene.skeletons`, or CPU upload ignores them.
+- No `ParallelKeyframeAnimator.animateSkeletons(...)` call for GPU-driven characters.
+- CPU `Bone` objects remain only for:
+  - export tools,
+  - CPU fallback,
+  - debug comparison.
+
+Validation:
+
+- Allocation profiling shows no per-tick Java bone traversal/matrix packing for GPU-driven Battle Arena.
+- CPU fallback still passes build and runs.
+
+Stop/go:
+
+- Do not delete CPU fallback until Android and desktop GPU paths have both been played through normal combat interactions.
+
 ### Phase 1: Data Bake
 
 - Create GPU skeleton exporter.

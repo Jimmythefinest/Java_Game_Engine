@@ -53,3 +53,18 @@ tasks.register('exportBattleArenaHitboxTracks', JavaExec) {
         args project.property('output')
     }
 }
+
+tasks.register('exportBattleArenaGpuSkeletonAsset', JavaExec) {
+    group = 'build'
+    description = 'Export Battle Arena GPU skeleton metadata and sampled local bone rotations'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuSkeletonAssetExporter'
+    args sourceSets.main.resources.srcDirs.iterator().next().path
+    if (project.hasProperty('characterDefinition')) {
+        args project.property('characterDefinition')
+    }
+    if (project.hasProperty('output')) {
+        args project.property('output')
+    }
+}
