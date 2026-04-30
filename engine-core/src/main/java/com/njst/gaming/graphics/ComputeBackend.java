@@ -15,6 +15,8 @@ public interface ComputeBackend {
 
     void updateBuffer(int bindingIndex, float[] data);
 
+    void updateBuffer(int bindingIndex, int[] data);
+
     void dispatch(int x, int y, int z);
 
     float[] readBuffer(int bindingIndex);

@@ -53,9 +53,20 @@ public class SSBO implements BufferHandle {
     @Override
     public void updateData(float[] data) {
         bind();
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(data.length);
-        buffer.put(data).flip();
+        if (reusableBuffer == null || reusableBuffer.capacity() < data.length) {
+            reusableBuffer = BufferUtils.createFloatBuffer(data.length);
+        }
+        reusableBuffer.clear();
+        reusableBuffer.put(data).flip();
 
+        GL43.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0, reusableBuffer);
+        unbind();
+    }
+
+    @Override
+    public void updateData(int[] data) {
+        bind();
+        IntBuffer buffer = Utils.Array_to_Buffer(data);
         GL43.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0, buffer);
         unbind();
     }

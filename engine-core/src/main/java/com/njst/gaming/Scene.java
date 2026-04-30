@@ -64,6 +64,7 @@ public class Scene {
     public boolean camera_should_move_up = false;
     private final ArrayList<List<Bone>> skeletons = new ArrayList<>();
     private BufferHandle skeletonBuffer;
+    private boolean externalSkeletonBufferActive;
 
     public Scene() {
         objects = new CopyOnWriteArrayList<>();
@@ -257,7 +258,7 @@ public class Scene {
     }
 
     public void uploadSkeletonBuffer(GraphicsDevice graphicsDevice) {
-        if (graphicsDevice == null || skeletons.isEmpty()) {
+        if (externalSkeletonBufferActive || graphicsDevice == null || skeletons.isEmpty()) {
             return;
         }
         if (skeletonBuffer == null) {
@@ -283,6 +284,10 @@ public class Scene {
             }
         }
         return boneData;
+    }
+
+    public void setExternalSkeletonBufferActive(boolean externalSkeletonBufferActive) {
+        this.externalSkeletonBufferActive = externalSkeletonBufferActive;
     }
 
     public boolean removeGameObject(GameObject obj) {

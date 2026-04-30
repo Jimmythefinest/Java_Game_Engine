@@ -66,6 +66,15 @@ public class AndroidComputeShader {
         }
     }
 
+    public void updateBuffer(int bindingIndex, int[] data) {
+        AndroidShaderStorageBuffer buffer = buffers.get(bindingIndex);
+        if (buffer != null) {
+            bufferSizes.put(bindingIndex, data.length);
+            buffer.updateData(data);
+            buffer.bindToShader(bindingIndex);
+        }
+    }
+
     public void dispatch(int x, int y, int z) {
         if (program == 0) {
             return;

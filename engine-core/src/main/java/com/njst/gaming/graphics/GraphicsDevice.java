@@ -10,6 +10,8 @@ public interface GraphicsDevice {
 
     BufferHandle createShaderStorageBuffer();
 
+    ComputeBackend createComputeBackend(String shaderSource);
+
     String loadShaderSource(String filePath);
 
     String loadTextResource(String filePath);

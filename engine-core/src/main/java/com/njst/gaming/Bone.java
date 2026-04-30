@@ -54,6 +54,12 @@ public Vector3 position_to_parent = new Vector3();
         return modelMatrix.multiply(inverse_bindpose);
         
     }
+
+    public float[] copyInverseBindPose() {
+        return inverse_bindpose != null && inverse_bindpose.r != null
+                ? inverse_bindpose.r.clone()
+                : new Matrix4().identity().r;
+    }
     public void translate(Vector3 r) {
         position_to_parent.add(r);
         update();

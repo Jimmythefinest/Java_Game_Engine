@@ -25,6 +25,7 @@ import com.njst.gaming.Renderer;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.collision.SphericalHeightmapShape;
 import com.njst.gaming.graphics.BufferHandle;
+import com.njst.gaming.graphics.ComputeBackend;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.graphics.ImposterBakeResult;
 import com.njst.gaming.graphics.ShaderHandle;
@@ -42,6 +43,11 @@ public class DesktopGraphicsDevice implements GraphicsDevice {
     @Override
     public BufferHandle createShaderStorageBuffer() {
         return new SSBO();
+    }
+
+    @Override
+    public ComputeBackend createComputeBackend(String shaderSource) {
+        return new DesktopComputeBackend(shaderSource);
     }
 
     @Override

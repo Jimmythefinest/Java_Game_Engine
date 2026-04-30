@@ -21,6 +21,11 @@ public class NullGraphicsDevice implements GraphicsDevice {
     }
 
     @Override
+    public ComputeBackend createComputeBackend(String shaderSource) {
+        throw unsupported();
+    }
+
+    @Override
     public String loadShaderSource(String filePath) {
         throw unsupported();
     }

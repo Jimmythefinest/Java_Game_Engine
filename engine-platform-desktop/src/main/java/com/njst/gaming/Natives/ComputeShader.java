@@ -67,6 +67,14 @@ public class ComputeShader {
         }
     }
 
+    public void updateBuffer(int bindingIndex, int[] data) {
+        BufferHandle buffer = buffers.get(bindingIndex);
+        bufferSizes.put(bindingIndex, data.length);
+        if (buffer != null) {
+            buffer.updateData(data);
+        }
+    }
+
     public void dispatch(int x, int y, int z) {
         if (program == 0) return;
 

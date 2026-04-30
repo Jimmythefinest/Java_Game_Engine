@@ -51,6 +51,11 @@ public class AndroidComputeBackend implements ComputeBackend {
     }
 
     @Override
+    public void updateBuffer(int bindingIndex, int[] data) {
+        computeShader.updateBuffer(bindingIndex, data);
+    }
+
+    @Override
     public void dispatch(int x, int y, int z) {
         computeShader.dispatch(x, y, z);
     }

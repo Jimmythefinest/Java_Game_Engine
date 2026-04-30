@@ -64,6 +64,17 @@ public class AndroidShaderStorageBuffer implements BufferHandle {
     }
 
     @Override
+    public void updateData(int[] data) {
+        bind();
+        IntBuffer buffer = ByteBuffer.allocateDirect(data.length * Integer.BYTES)
+                .order(ByteOrder.nativeOrder())
+                .asIntBuffer();
+        buffer.put(data).position(0);
+        GLES31.glBufferSubData(GLES31.GL_SHADER_STORAGE_BUFFER, 0, data.length * Integer.BYTES, buffer);
+        unbind();
+    }
+
+    @Override
     public void bindToShader(int bindingPoint) {
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, bindingPoint, bufferId);
     }

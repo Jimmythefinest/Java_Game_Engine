@@ -11,6 +11,8 @@ public interface BufferHandle {
 
     void updateData(float[] data);
 
+    void updateData(int[] data);
+
     void bindToShader(int bindingPoint);
 
     float[] getData(int numElements);
