@@ -23,6 +23,7 @@ android {
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     externalNativeBuild {
       cmake {
@@ -53,6 +54,9 @@ android {
 dependencies {
   api(project(":engine-core"))
   implementation("com.google.code.gson:gson:2.10.1")
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.ext.junit)
+  androidTestImplementation("androidx.test:runner:1.5.2")
 }
 
 tasks.named("preBuild") {

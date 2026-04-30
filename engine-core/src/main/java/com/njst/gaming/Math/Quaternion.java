@@ -14,6 +14,21 @@ public class Quaternion implements Serializable {
         this.x = x; this.y = y; this.z = z; this.w = w;
     }
 
+    public Quaternion set(Quaternion other) {
+        if (other == null) {
+            x = 0f;
+            y = 0f;
+            z = 0f;
+            w = 1f;
+            return this;
+        }
+        x = other.x;
+        y = other.y;
+        z = other.z;
+        w = other.w;
+        return this;
+    }
+
     public static Quaternion fromAxisAngle(float axisX, float axisY, float axisZ, float angleRad) {
         float halfAngle = angleRad / 2f;
         float sin = (float) Math.sin(halfAngle);
@@ -29,6 +44,13 @@ public class Quaternion implements Serializable {
 
     public Quaternion normalize() {
         float mag = (float) Math.sqrt(x*x + y*y + z*z + w*w);
+        if (mag <= 0f) {
+            x = 0f;
+            y = 0f;
+            z = 0f;
+            w = 1f;
+            return this;
+        }
         x /= mag; y /= mag; z /= mag; w /= mag;
         return this;
     }
@@ -46,6 +68,21 @@ public class Quaternion implements Serializable {
         );
     }
 
+    public Quaternion multiply(Quaternion q, Quaternion dest) {
+        if (dest == null) {
+            return multiply(q);
+        }
+        float nx = w*q.x + x*q.w + y*q.z - z*q.y;
+        float ny = w*q.y - x*q.z + y*q.w + z*q.x;
+        float nz = w*q.z + x*q.y - y*q.x + z*q.w;
+        float nw = w*q.w - x*q.x - y*q.y - z*q.z;
+        dest.x = nx;
+        dest.y = ny;
+        dest.z = nz;
+        dest.w = nw;
+        return dest;
+    }
+
     public float[] rotateVector(float vx, float vy, float vz) {
         Quaternion v = new Quaternion(vx, vy, vz, 0);
         Quaternion result = this.multiply(v).multiply(this.conjugate());
@@ -54,6 +91,31 @@ public class Quaternion implements Serializable {
 
     public Vector3 rotateVector(Vector3 vec) {
         return new Vector3(rotateVector(vec.x, vec.y, vec.z));
+    }
+
+    public Vector3 rotateVector(Vector3 vec, Vector3 dest) {
+        if (dest == null) {
+            dest = new Vector3();
+        }
+        float vx = vec.x;
+        float vy = vec.y;
+        float vz = vec.z;
+        float qx2 = x + x;
+        float qy2 = y + y;
+        float qz2 = z + z;
+        float xx = x * qx2;
+        float yy = y * qy2;
+        float zz = z * qz2;
+        float xy = x * qy2;
+        float xz = x * qz2;
+        float yz = y * qz2;
+        float wx = w * qx2;
+        float wy = w * qy2;
+        float wz = w * qz2;
+        dest.x = (1f - (yy + zz)) * vx + (xy - wz) * vy + (xz + wy) * vz;
+        dest.y = (xy + wz) * vx + (1f - (xx + zz)) * vy + (yz - wx) * vz;
+        dest.z = (xz - wy) * vx + (yz + wx) * vy + (1f - (xx + yy)) * vz;
+        return dest;
     }
 
     public float[] toMatrix4() {
@@ -148,6 +210,47 @@ public class Quaternion implements Serializable {
         // Combine quaternions (q = qz * qy * qx)
         return qz.multiply(qy).multiply(qx);
     }
+
+    public Quaternion setFromEuler(float rollDeg, float pitchDeg, float yawDeg) {
+        float roll = (float) Math.toRadians(rollDeg);
+        float pitch = (float) Math.toRadians(pitchDeg);
+        float yaw = (float) Math.toRadians(yawDeg);
+
+        float halfRoll = roll / 2f;
+        float halfPitch = pitch / 2f;
+        float halfYaw = yaw / 2f;
+
+        float cosRoll = (float) Math.cos(halfRoll);
+        float sinRoll = (float) Math.sin(halfRoll);
+        float cosPitch = (float) Math.cos(halfPitch);
+        float sinPitch = (float) Math.sin(halfPitch);
+        float cosYaw = (float) Math.cos(halfYaw);
+        float sinYaw = (float) Math.sin(halfYaw);
+
+        float qxX = sinRoll;
+        float qxY = 0f;
+        float qxZ = 0f;
+        float qxW = cosRoll;
+        float qyX = 0f;
+        float qyY = sinPitch;
+        float qyZ = 0f;
+        float qyW = cosPitch;
+        float qzX = 0f;
+        float qzY = 0f;
+        float qzZ = sinYaw;
+        float qzW = cosYaw;
+
+        float zyX = qzW*qyX + qzX*qyW + qzY*qyZ - qzZ*qyY;
+        float zyY = qzW*qyY - qzX*qyZ + qzY*qyW + qzZ*qyX;
+        float zyZ = qzW*qyZ + qzX*qyY - qzY*qyX + qzZ*qyW;
+        float zyW = qzW*qyW - qzX*qyX - qzY*qyY - qzZ*qyZ;
+
+        x = zyW*qxX + zyX*qxW + zyY*qxZ - zyZ*qxY;
+        y = zyW*qxY - zyX*qxZ + zyY*qxW + zyZ*qxX;
+        z = zyW*qxZ + zyX*qxY - zyY*qxX + zyZ*qxW;
+        w = zyW*qxW - zyX*qxX - zyY*qxY - zyZ*qxZ;
+        return normalize();
+    }
     public static Quaternion fromEuler(float[] data){
       return fromEuler(data[0],data[1],data[2]);
     }
@@ -177,6 +280,28 @@ public class Quaternion implements Serializable {
         euler[2] = (float) Math.toDegrees(euler[2]);
 
         return euler; // euler[0] = roll, euler[1] = pitch, euler[2] = yaw
+    }
+
+    public Vector3 toEuler(Vector3 dest) {
+        if (dest == null) {
+            dest = new Vector3();
+        }
+
+        float sinr_cosp = 2 * (w * x + y * z);
+        float cosr_cosp = 1 - 2 * (x * x + y * y);
+        dest.x = (float) Math.toDegrees(Math.atan2(sinr_cosp, cosr_cosp));
+
+        float sinp = 2 * (w * y - z * x);
+        if (Math.abs(sinp) >= 1) {
+            dest.y = (float) Math.toDegrees(Math.copySign(Math.PI / 2, sinp));
+        } else {
+            dest.y = (float) Math.toDegrees(Math.asin(sinp));
+        }
+
+        float siny_cosp = 2 * (w * z + x * y);
+        float cosy_cosp = 1 - 2 * (y * y + z * z);
+        dest.z = (float) Math.toDegrees(Math.atan2(siny_cosp, cosy_cosp));
+        return dest;
     }
 
     

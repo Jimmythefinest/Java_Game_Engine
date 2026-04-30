@@ -91,6 +91,13 @@ tasks.register('runComputeShaderSmokeTest', JavaExec) {
     mainClass = 'com.njst.gaming.ComputeShaderSmokeTest'
 }
 
+tasks.register('runBoneCpuBenchmark', JavaExec) {
+    group = 'verification'
+    description = 'Benchmark CPU bone update and matrix packing hot paths'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.BoneCpuBenchmark'
+}
+
 tasks.register('exportDefeatedSkinnedAsset', JavaExec) {
     group = 'build'
     description = 'Bake Defeated.fbx into the internal skinned model asset format'

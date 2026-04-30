@@ -24,6 +24,7 @@ public Vector3 position_to_parent = new Vector3();
     public Vector3 parentposition = new Vector3(), parent_rotation = new Vector3();
     private Quaternion parent_orientation = new Quaternion();
     private Quaternion global_orientation = new Quaternion();
+    private transient Quaternion local_orientation = new Quaternion();
 
     public Bone() {
         Children = new ArrayList<>();
@@ -66,12 +67,12 @@ public Vector3 position_to_parent = new Vector3();
     }
 
     public void set_Parent_position(Vector3 pos) {
-        parentposition = pos.clone();
+        parentposition.set(pos);
     }
 
     public void set_Parent_rotation(Vector3 rot) {
-        parent_rotation = rot.clone();
-        parent_orientation = Quaternion.fromEuler(rot.x, rot.y, rot.z).normalize();
+        parent_rotation.set(rot);
+        parent_orientation.setFromEuler(rot.x, rot.y, rot.z);
     }
 
     public void rotate(Vector3 rotation1) {
@@ -81,18 +82,15 @@ public Vector3 position_to_parent = new Vector3();
 
     public void update() {
         ensureQuaternionState();
-        global_orientation = getParentQuaternion().multiply(getLocalQuaternion()).normalize();
-        global_rotation.set(new Vector3(global_orientation.toEuler()));
-        global_position.set(get_globalposition());
+        local_orientation.setFromEuler(rotation.x, rotation.y, rotation.z);
+        parent_orientation.multiply(local_orientation, global_orientation).normalize();
+        global_orientation.toEuler(global_rotation);
+        parent_orientation.rotateVector(position_to_parent, global_position);
+        global_position.add(parentposition);
         for (Bone child : Children) {
-            child.parent_orientation = new Quaternion(
-                global_orientation.x,
-                global_orientation.y,
-                global_orientation.z,
-                global_orientation.w
-            );
+            child.parent_orientation.set(global_orientation);
             child.parent_rotation.set(global_rotation);
-            child.set_Parent_position(global_position);
+            child.parentposition.set(global_position);
             child.update();
         }
     }
@@ -134,7 +132,8 @@ public Vector3 position_to_parent = new Vector3();
     }
 
     private Quaternion getLocalQuaternion() {
-        return Quaternion.fromEuler(rotation.x, rotation.y, rotation.z).normalize();
+        ensureQuaternionState();
+        return local_orientation.setFromEuler(rotation.x, rotation.y, rotation.z);
     }
 
     private Quaternion getParentQuaternion() {
@@ -156,6 +155,9 @@ public Vector3 position_to_parent = new Vector3();
         if (parent_orientation == null) {
             parent_orientation = Quaternion.fromEuler(parent_rotation.x, parent_rotation.y, parent_rotation.z)
                 .normalize();
+        }
+        if (local_orientation == null) {
+            local_orientation = new Quaternion();
         }
         if (global_orientation == null) {
             global_orientation = parent_orientation.multiply(getLocalQuaternion()).normalize();
