@@ -67,6 +67,10 @@ public final class BattleArenaControlledCharacter {
         }
     }
 
+    void applyPlayerControls(BattleArenaCharacterControlState capturedControls) {
+        controls.copyFrom(capturedControls);
+    }
+
     void updateController(float deltaSeconds) {
         controller.update(controls, deltaSeconds);
     }

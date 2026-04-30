@@ -229,6 +229,31 @@ public final class BattleArenaCharacterController {
         return sideSteppingRight;
     }
 
+    String getCurrentAnimationKey() {
+        if (currentAnimationSet == null) {
+            return ANIM_IDLE;
+        }
+        for (Map.Entry<String, ArrayList<KeyframeAnimation>> entry : animationSets.entrySet()) {
+            if (entry.getValue() == currentAnimationSet) {
+                return entry.getKey();
+            }
+        }
+        return ANIM_IDLE;
+    }
+
+    float getCurrentAnimationFrame() {
+        if (currentAnimationSet == null || currentAnimationSet.isEmpty()) {
+            return 0f;
+        }
+        for (KeyframeAnimation animation : currentAnimationSet) {
+            if (animation != null && animation.isActive()) {
+                return Math.max(0f, animation.time);
+            }
+        }
+        KeyframeAnimation animation = currentAnimationSet.get(0);
+        return animation != null ? Math.max(0f, animation.time) : 0f;
+    }
+
     void triggerHitReact(String hitboxName, String animationKey) {
         String resolvedAnimationKey = animationKey;
         if (resolvedAnimationKey == null || resolvedAnimationKey.trim().isEmpty()) {

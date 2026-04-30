@@ -5,6 +5,7 @@
     "boneNames": "weighted_geometry/defeated_bone_names.json",
     "texture": "skin.jpg"
   },
+  "hitboxTracks": "battle_arena/defeated.hitbox_tracks.json",
   "animations": {
     "idle": {
       "asset": "weighted_geometry/bouncing fight idle_animation_0.ser",

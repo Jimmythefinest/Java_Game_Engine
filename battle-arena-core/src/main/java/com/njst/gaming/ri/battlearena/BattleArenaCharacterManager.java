@@ -8,10 +8,9 @@ import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Scene;
 import com.njst.gaming.graphics.GraphicsDevice;
-import com.njst.gaming.input.ActionInput;
-import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterBrain;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 import com.njst.gaming.ri.battlearena.gameobjects.BattleArenaHealthBarGameObject;
 import com.njst.gaming.ri.battlearena.gameobjects.BattleArenaHitboxDebugGameObject;
 import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlClient;
@@ -52,8 +51,8 @@ final class BattleArenaCharacterManager {
     private BattleArenaControlledCharacter activeCharacter;
     private WeightedGeometry characterGeometry;
     private BattleArenaCharacterDefinition characterDefinition;
+    private BattleArenaHitboxTracks hitboxTracks;
     private int characterTexture;
-    private int nextSpawnSlot;
     private boolean debugHitboxesVisible;
     private BattleArenaSkillContext.TerrainSampler terrainSampler;
 
@@ -68,8 +67,8 @@ final class BattleArenaCharacterManager {
         activeCharacter = null;
         characterGeometry = null;
         characterDefinition = null;
+        hitboxTracks = null;
         characterTexture = 0;
-        nextSpawnSlot = 0;
         debugHitboxesVisible = false;
         terrainSampler = null;
     }
@@ -82,6 +81,7 @@ final class BattleArenaCharacterManager {
         characterDefinition = characterDefinitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
         characterGeometry = characterAssembler.loadWeightedGeometry(graphicsDevice, characterDefinition.model.mesh);
         activeAnimations.clear();
+        hitboxTracks = BattleArenaHitboxTracks.load(graphicsDevice, resolveHitboxTrackPath(characterDefinition));
         characterTexture = loadCharacterTexture(graphicsDevice, characterDefinition);
     }
 
@@ -129,13 +129,12 @@ final class BattleArenaCharacterManager {
 
     void updateCharacters(Scene scene,
                           BattleArenaTcpControlClient tcpControlClient,
-                          ActionInput actions,
-                          PointerState movementPointer,
+                          BattleArenaCharacterControlState playerControls,
                           BattleArenaSkillContext.TerrainSampler terrainSampler,
                           float deltaSeconds) {
         BattleArenaSkillContext skillContext = createSkillContext(scene, terrainSampler);
         if (playerCharacter != null) {
-            playerCharacter.captureControls(actions, movementPointer, primaryOpponentRuntime(), deltaSeconds);
+            playerCharacter.applyPlayerControls(playerControls);
             sendLocalControls(tcpControlClient, playerCharacter);
             playerCharacter.updateController(deltaSeconds);
             updateControlTriggeredSkills(playerCharacter, skillContext);
@@ -147,7 +146,7 @@ final class BattleArenaCharacterManager {
                                 npc.runtime,
                                 playerCharacter != null ? playerCharacter.runtime : null));
             }
-            npc.captureControls(actions, movementPointer, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
+            npc.captureControls(null, null, playerCharacter != null ? playerCharacter.runtime : null, deltaSeconds);
             sendLocalControls(tcpControlClient, npc);
             npc.updateController(deltaSeconds);
             updateControlTriggeredSkills(npc, skillContext);
@@ -249,6 +248,13 @@ final class BattleArenaCharacterManager {
         return texture;
     }
 
+    private String resolveHitboxTrackPath(BattleArenaCharacterDefinition definition) {
+        if (definition != null && definition.hitboxTracks != null && !definition.hitboxTracks.trim().isEmpty()) {
+            return definition.hitboxTracks;
+        }
+        return "battle_arena/defeated.hitbox_tracks.json";
+    }
+
     private BattleArenaControlledCharacter spawnCharacter(Scene scene,
                                                           GraphicsDevice graphicsDevice,
                                                           WeightedGeometry weightedGeometry,
@@ -271,7 +277,12 @@ final class BattleArenaCharacterManager {
                 texture,
                 PLAYER_SCALE,
                 activeAnimations);
-        BattleArenaCharacterRuntime runtime = new BattleArenaCharacterRuntime(controller, assembly, definition, activeAnimations);
+        BattleArenaCharacterRuntime runtime = new BattleArenaCharacterRuntime(
+                controller,
+                assembly,
+                definition,
+                hitboxTracks,
+                activeAnimations);
         BattleArenaControlledCharacter character = new BattleArenaControlledCharacter(
                 runtime,
                 controller,
@@ -311,7 +322,7 @@ final class BattleArenaCharacterManager {
                                    BattleArenaTcpControlClient tcpControlClient,
                                    String player,
                                    boolean playerControlled) {
-        int spawnSlot = nextSpawnSlot++;
+        int spawnSlot = resolveSpawnSlot(player);
         float startX = spawnSlot == 0 ? 0f : SECOND_CHARACTER_START_X * spawnSlot;
         String safeName = player.replaceAll("[^A-Za-z0-9_]", "_");
         BattleArenaCharacterBrain brain = playerControlled
@@ -342,6 +353,29 @@ final class BattleArenaCharacterManager {
                 + " x=" + startX
                 + " bones=" + character.runtime.bones.size());
         logAnimationSummary(character);
+    }
+
+    private int resolveSpawnSlot(String player) {
+        int numericPlayerId = parseTrailingPlayerNumber(player);
+        if (numericPlayerId > 0) {
+            return numericPlayerId - 1;
+        }
+        return charactersByPlayer.size();
+    }
+
+    private int parseTrailingPlayerNumber(String player) {
+        if (player == null) {
+            return -1;
+        }
+        int dashIndex = player.lastIndexOf('-');
+        if (dashIndex < 0 || dashIndex >= player.length() - 1) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(player.substring(dashIndex + 1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private void despawnCharacter(Scene scene, String player) {

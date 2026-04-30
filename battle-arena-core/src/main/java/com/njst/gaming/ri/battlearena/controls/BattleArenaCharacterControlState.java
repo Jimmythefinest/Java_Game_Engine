@@ -63,6 +63,49 @@ public final class BattleArenaCharacterControlState {
         turnInput = clamp(turnInput);
     }
 
+    public void copyFrom(BattleArenaCharacterControlState other) {
+        if (other == null) {
+            clear();
+            return;
+        }
+        forwardInput = other.forwardInput;
+        turnInput = other.turnInput;
+        runDown = other.runDown;
+        jumpPressed = other.jumpPressed;
+        punchPressed = other.punchPressed;
+        kickPressed = other.kickPressed;
+        castFireballPressed = other.castFireballPressed;
+        castMudWallPressed = other.castMudWallPressed;
+        stepLeftPressed = other.stepLeftPressed;
+        stepRightPressed = other.stepRightPressed;
+        burstPressed = other.burstPressed;
+    }
+
+    public void mergePressedEdgesFrom(BattleArenaCharacterControlState other) {
+        if (other == null) {
+            return;
+        }
+        jumpPressed |= other.jumpPressed;
+        punchPressed |= other.punchPressed;
+        kickPressed |= other.kickPressed;
+        castFireballPressed |= other.castFireballPressed;
+        castMudWallPressed |= other.castMudWallPressed;
+        stepLeftPressed |= other.stepLeftPressed;
+        stepRightPressed |= other.stepRightPressed;
+        burstPressed |= other.burstPressed;
+    }
+
+    public void clearPressedEdges() {
+        jumpPressed = false;
+        punchPressed = false;
+        kickPressed = false;
+        castFireballPressed = false;
+        castMudWallPressed = false;
+        stepLeftPressed = false;
+        stepRightPressed = false;
+        burstPressed = false;
+    }
+
     private float applyDeadzone(float value) {
         if (Math.abs(value) < MOVE_DEADZONE) {
             return 0f;

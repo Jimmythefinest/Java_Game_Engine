@@ -11,6 +11,7 @@ import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
 import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlClient;
 
 public class BattleArenaDemoLoader implements Scene.SceneLoader {
@@ -25,6 +26,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     private static final float MIN_PITCH = -0.8f;
     private static final float MAX_PITCH = 0.45f;
     private static final float PLAYER_FOCUS_HEIGHT = 1.6f;
+    private static final float SIMULATION_TICK_SECONDS = 1f / 60f;
+    private static final float MAX_ACCUMULATED_SECONDS = SIMULATION_TICK_SECONDS * 6f;
     private static final boolean DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING = false;
     private static final String LOG_PREFIX = "[BattleArena] ";
 
@@ -100,12 +103,18 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 (activeScene, pointer) -> handlePointerLook(actions, pointer));
 
         scene.animations.add(new Animation() {
+            private final BattleArenaCharacterControlState framePlayerControls =
+                    new BattleArenaCharacterControlState();
+            private final BattleArenaCharacterControlState pendingPlayerControls =
+                    new BattleArenaCharacterControlState();
+            private float accumulatedSeconds;
+
             @Override
             public void animate(float deltaSeconds) {
                 if (tcpControlClient != null) {
                     tcpControlClient.update(deltaSeconds);
-                    characterManager.syncTcpCharacters(scene, graphicsDevice, tcpControlClient);
                 }
+                capturePendingPlayerControls(actions, movementPointer);
                 if (actions.button(BattleArenaActions.SNAP).pressed()) {
                     characterManager.toggleActiveCharacter();
                 }
@@ -119,27 +128,50 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                     playAudioSmokeTest(scene, 0.55f);
                 }
 
+                accumulatedSeconds = Math.min(
+                        accumulatedSeconds + Math.max(0f, deltaSeconds),
+                        MAX_ACCUMULATED_SECONDS);
+                while (accumulatedSeconds >= SIMULATION_TICK_SECONDS) {
+                    tickSimulation(scene, graphicsDevice);
+                    accumulatedSeconds -= SIMULATION_TICK_SECONDS;
+                }
+                logFrameSnapshot(scene);
+                characterManager.syncRigs();
+                updateCamera(scene.renderer.camera);
+            }
+
+            private void capturePendingPlayerControls(ActionInput actions, PointerState movementPointer) {
+                framePlayerControls.capturePlayerInput(actions, movementPointer);
+                pendingPlayerControls.forwardInput = framePlayerControls.forwardInput;
+                pendingPlayerControls.turnInput = framePlayerControls.turnInput;
+                pendingPlayerControls.runDown = framePlayerControls.runDown;
+                pendingPlayerControls.mergePressedEdgesFrom(framePlayerControls);
+            }
+
+            private void tickSimulation(Scene scene, GraphicsDevice graphicsDevice) {
+                if (tcpControlClient != null) {
+                    characterManager.syncTcpCharacters(scene, graphicsDevice, tcpControlClient);
+                }
                 characterManager.updateCharacters(
                         scene,
                         tcpControlClient,
-                        actions,
-                        movementPointer,
+                        pendingPlayerControls,
                         environmentLoader::sampleTerrainHeight,
-                        deltaSeconds);
-                logFrameSnapshot(scene);
+                        SIMULATION_TICK_SECONDS);
+                pendingPlayerControls.clearPressedEdges();
                 if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
                     ParallelKeyframeAnimator.animateSkeletons(
                             characterManager.collectActiveSkeletonAnimations(),
-                            deltaSeconds);
+                            SIMULATION_TICK_SECONDS);
                 }
                 characterManager.syncRigs();
-                updateCamera(scene.renderer.camera);
             }
         });
 
         updateCamera(scene.renderer.camera);
         playAudioSmokeTest(scene, 0.35f);
-        log("load complete; first tcp connection assignment will spawn the controlled character");
+        log("load complete; fixed simulation tick=" + SIMULATION_TICK_SECONDS
+                + "s; first tcp connection assignment will spawn the controlled character");
     }
 
     private void initAudioSmokeTest(Scene scene) {

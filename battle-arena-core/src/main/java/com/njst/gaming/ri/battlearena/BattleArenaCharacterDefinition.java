@@ -12,6 +12,7 @@ final class BattleArenaCharacterDefinition {
     Map<String, AnimationDefinition> animations = new LinkedHashMap<String, AnimationDefinition>();
     Map<String, EventDefinition> events = new LinkedHashMap<String, EventDefinition>();
     Map<String, HitboxDefinition> hitboxes = new LinkedHashMap<String, HitboxDefinition>();
+    String hitboxTracks;
 
     static final class ModelDefinition {
         String mesh;

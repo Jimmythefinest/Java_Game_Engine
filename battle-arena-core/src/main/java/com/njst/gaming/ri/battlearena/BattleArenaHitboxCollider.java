@@ -24,8 +24,7 @@ public final class BattleArenaHitboxCollider implements Collider {
     private final String name;
     private final String activeWhen;
     private final String onHitAnimation;
-    private final Bone anchorBone;
-    private final Vector3 localCenter;
+    private final Vector3 fallbackRootRelativeCenter;
     private final Vector3 halfExtents;
     private final CollisionShape shape;
 
@@ -42,8 +41,7 @@ public final class BattleArenaHitboxCollider implements Collider {
         this.name = name;
         this.activeWhen = activeWhen;
         this.onHitAnimation = onHitAnimation;
-        this.anchorBone = anchorBone;
-        this.localCenter = new Vector3(localCenter);
+        this.fallbackRootRelativeCenter = resolveFallbackRootRelativeCenter(character, anchorBone, localCenter);
         this.halfExtents = new Vector3(halfExtents);
         this.shape = new AabbShape(new Vector3(localCenter).sub(new Vector3(halfExtents)),
                 new Vector3(localCenter).add(new Vector3(halfExtents)));
@@ -98,14 +96,7 @@ public final class BattleArenaHitboxCollider implements Collider {
     }
 
     Vector3 getWorldCenter() {
-        if (anchorBone != null) {
-            Vector3 base = new Vector3(anchorBone.global_position);
-            Vector3 rotatedOffset = localCenter.rotateY((float) Math.toRadians(character.getHeadingDegrees()));
-            return base.add(rotatedOffset);
-        }
-        Vector3 base = character.getPosition().clone();
-        Vector3 rotatedOffset = localCenter.rotateY((float) Math.toRadians(character.getHeadingDegrees()));
-        return base.add(rotatedOffset);
+        return character.resolveHitboxCenter(name, fallbackRootRelativeCenter);
     }
 
     @Override
@@ -153,12 +144,23 @@ public final class BattleArenaHitboxCollider implements Collider {
     }
 
     private boolean isEnabled() {
-        if (type == Type.HURTBOX) {
-            return true;
-        }
+        boolean fallbackActive = type == Type.HURTBOX;
         if (activeWhen == null || activeWhen.trim().isEmpty()) {
-            return true;
+            fallbackActive = true;
+        } else {
+            fallbackActive = character.isAnimationActive(activeWhen);
         }
-        return character.isAnimationActive(activeWhen);
+        return character.isHitboxTrackActive(name, fallbackActive);
+    }
+
+    private Vector3 resolveFallbackRootRelativeCenter(BattleArenaCharacterRuntime character,
+                                                      Bone anchorBone,
+                                                      Vector3 localCenter) {
+        if (anchorBone != null && character != null && character.rootBone != null) {
+            return new Vector3(anchorBone.global_position)
+                    .add(new Vector3(localCenter))
+                    .sub(new Vector3(character.rootBone.global_position));
+        }
+        return new Vector3(localCenter);
     }
 }

@@ -38,3 +38,18 @@ tasks.register('syncBattleArenaAssetsToAndroid', Sync) {
     include 'desertstorm.jpg'
     include 'skin.jpg'
 }
+
+tasks.register('exportBattleArenaHitboxTracks', JavaExec) {
+    group = 'build'
+    description = 'Sample Battle Arena hitbox and hurtbox tracks relative to the character root'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaHitboxTrackExporter'
+    args sourceSets.main.resources.srcDirs.iterator().next().path
+    if (project.hasProperty('characterDefinition')) {
+        args project.property('characterDefinition')
+    }
+    if (project.hasProperty('output')) {
+        args project.property('output')
+    }
+}

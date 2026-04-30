@@ -24,6 +24,7 @@ public final class BattleArenaCharacterRuntime {
     final Vector3 rootBasePosition;
     public final Weighted_GameObject meshObject;
     final BattleArenaCharacterDefinition definition;
+    final BattleArenaHitboxTracks hitboxTracks;
     final Map<String, ArrayList<KeyframeAnimation>> animationSets;
     final Map<String, BattleArenaCharacterDefinition.EventDefinition> eventDefinitions;
     final ArrayList<Collider> hitboxColliders;
@@ -32,6 +33,7 @@ public final class BattleArenaCharacterRuntime {
     BattleArenaCharacterRuntime(BattleArenaCharacterController controller,
                                 BattleArenaCharacterAssembly assembly,
                                 BattleArenaCharacterDefinition definition,
+                                BattleArenaHitboxTracks hitboxTracks,
                                 ArrayList<KeyframeAnimation> activeAnimations) {
         this.controller = controller;
         this.bones = assembly.bones;
@@ -40,6 +42,7 @@ public final class BattleArenaCharacterRuntime {
         this.rootBasePosition = assembly.rootBasePosition;
         this.meshObject = assembly.meshObject;
         this.definition = definition;
+        this.hitboxTracks = hitboxTracks;
         this.animationSets = createAnimationSets(assembly);
         this.eventDefinitions = createEventDefinitions(definition);
         this.hitboxColliders = createHitboxColliders();
@@ -86,6 +89,35 @@ public final class BattleArenaCharacterRuntime {
             return controller.isKicking();
         }
         return false;
+    }
+
+    Vector3 resolveHitboxCenter(String boxName, Vector3 fallbackRootRelativeCenter) {
+        Vector3 rootRelativeCenter = null;
+        if (hitboxTracks != null) {
+            rootRelativeCenter = hitboxTracks.sampleCenter(
+                    controller.getCurrentAnimationKey(),
+                    controller.getCurrentAnimationFrame(),
+                    boxName);
+        }
+        if (rootRelativeCenter == null) {
+            rootRelativeCenter = fallbackRootRelativeCenter;
+        }
+        if (rootRelativeCenter == null) {
+            rootRelativeCenter = new Vector3(0f, 0f, 0f);
+        }
+        Vector3 rotatedOffset = rootRelativeCenter.rotateY((float) Math.toRadians(getHeadingDegrees()));
+        return getPosition().clone().add(rotatedOffset);
+    }
+
+    boolean isHitboxTrackActive(String boxName, boolean fallbackActive) {
+        if (hitboxTracks == null) {
+            return fallbackActive;
+        }
+        return hitboxTracks.isActive(
+                controller.getCurrentAnimationKey(),
+                controller.getCurrentAnimationFrame(),
+                boxName,
+                fallbackActive);
     }
 
     float getCurrentHealth() {
