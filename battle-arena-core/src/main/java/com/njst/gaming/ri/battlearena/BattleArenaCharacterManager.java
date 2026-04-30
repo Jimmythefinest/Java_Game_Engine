@@ -283,6 +283,15 @@ final class BattleArenaCharacterManager {
             controller.setPlayerPosition(startX, 0f, 0f);
         }
         runtime.syncRig();
+        log("spawned character runtime mesh=" + runtime.meshObject.name
+                + " playerId=" + playerId
+                + " playerControlled=" + playerControlled
+                + " texture=" + runtime.meshObject.texture
+                + " startPosition=" + runtime.getPosition().x + ","
+                + runtime.getPosition().y + ","
+                + runtime.getPosition().z
+                + " bones=" + runtime.bones.size()
+                + " hitboxes=" + runtime.getHitboxColliders().size());
         playerMeshes.add(runtime.meshObject);
         BattleArenaHealthBarGameObject healthBar = new BattleArenaHealthBarGameObject(
                 character,

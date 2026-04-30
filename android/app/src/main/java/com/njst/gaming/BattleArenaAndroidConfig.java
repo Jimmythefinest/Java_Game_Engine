@@ -3,8 +3,9 @@ package com.njst.gaming;
 import com.njst.gaming.android.AndroidActionButton;
 import com.njst.gaming.android.AndroidGameConfig;
 import com.njst.gaming.android.AndroidPointerBinding;
-import com.njst.gaming.ri.battlearena.BattleArenaActions;
 import com.njst.gaming.ri.battlearena.BattleArenaDemoLoader;
+import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
+import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlClient;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +16,7 @@ public class BattleArenaAndroidConfig implements AndroidGameConfig {
     public void configureScene(Scene scene) {
         scene.loader = new BattleArenaDemoLoader(
                 BattleArenaDemoLoader.LOCAL_PLAYER_ANDROID,
-                System.getProperty("battleArena.remoteHost", "52.66.201.70"),
+                System.getProperty("battleArena.remoteHost", BattleArenaTcpControlClient.DEFAULT_HOST),
                 BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT);
     }
 

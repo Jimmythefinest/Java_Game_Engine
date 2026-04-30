@@ -1,0 +1,112 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.njst'
+version = '1.0.0'
+
+def lwjglVersion = '3.3.6'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = [
+                    'src/main/resources',
+                    '../battle-arena-core/src/main/resources',
+                    '../engine-platform-desktop/src/main/resources'
+            ]
+        }
+    }
+}
+
+dependencies {
+    implementation project(':battle-arena-core')
+    implementation project(':engine-platform-desktop')
+    implementation platform("org.lwjgl:lwjgl-bom:${lwjglVersion}")
+    implementation 'org.lwjgl:lwjgl-glfw'
+}
+
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+application {
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
+}
+
+tasks.register('runBattleground', JavaExec) {
+    group = 'application'
+    description = 'Run the battle arena skybox demo'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaApp'
+    if (project.hasProperty('serverIp')) {
+        args project.property('serverIp')
+    }
+    if (project.hasProperty('serverPort')) {
+        args project.property('serverPort')
+    }
+    if (project.hasProperty('remoteHost')) {
+        systemProperty 'battleArena.remoteHost', project.property('remoteHost')
+    }
+    if (project.hasProperty('remotePort')) {
+        systemProperty 'battleArena.remotePort', project.property('remotePort')
+    }
+    if (project.hasProperty('localPlayer')) {
+        systemProperty 'battleArena.localPlayer', project.property('localPlayer')
+    }
+}
+
+tasks.register('runBattleArenaTcpControlServer', JavaExec) {
+    group = 'application'
+    description = 'Run the TCP relay server for battle arena remote controls'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
+    if (project.hasProperty('port')) {
+        args project.property('port')
+    }
+}
+
+tasks.register('battleArenaTcpControlServerJar', Jar) {
+    group = 'build'
+    description = 'Build a tiny standalone jar for the battle arena TCP relay server'
+    archiveBaseName = 'battle-arena-tcp-control-server'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn(':engine-core:classes', ':battle-arena-core:classes', 'classes')
+
+    from(sourceSets.main.output) {
+        include 'com/njst/gaming/ri/battlearena/networking/BattleArenaTcpControlServer*.class'
+    }
+    from(project(':battle-arena-core').sourceSets.main.output) {
+        include 'com/njst/gaming/ri/battlearena/networking/BattleArenaTcpSessionMessage.class'
+    }
+    from(project(':engine-core').sourceSets.main.output) {
+        include 'com/njst/gaming/Networking/AbstractNetworkPeer.class'
+        include 'com/njst/gaming/Networking/MessageFramer.class'
+        include 'com/njst/gaming/Networking/NetworkConnection.class'
+        include 'com/njst/gaming/Networking/NetworkEvent.class'
+        include 'com/njst/gaming/Networking/NetworkEventType.class'
+        include 'com/njst/gaming/Networking/NetworkListener.class'
+        include 'com/njst/gaming/Networking/NetworkMessage.class'
+        include 'com/njst/gaming/Networking/NetworkPeer.class'
+        include 'com/njst/gaming/Networking/NetworkSettings.class'
+        include 'com/njst/gaming/Networking/TcpConnection*.class'
+        include 'com/njst/gaming/Networking/TcpNetworkServer*.class'
+    }
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
+        )
+    }
+}

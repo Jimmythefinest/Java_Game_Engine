@@ -26,7 +26,6 @@ import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.Weighted_GameObject;
-import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
 import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
@@ -53,9 +52,6 @@ public class DefaultLoader implements Scene.SceneLoader {
   }
 
   private void handlePointerLook(ActionInput actions, PointerState pointer) {
-    if (!actions.button(BattleArenaActions.LOOK).isDown()) {
-      return;
-    }
     if (pointer.getDeltaX() == 0f && pointer.getDeltaY() == 0f) {
       return;
     }
@@ -155,15 +151,6 @@ public class DefaultLoader implements Scene.SceneLoader {
   public void load(final Scene scene) {
     try {
       anims = new ArrayList<>();
-      scene.cameraForwardAction = BattleArenaActions.FORWARD;
-      scene.cameraBackwardAction = BattleArenaActions.BACKWARD;
-      scene.cameraLeftAction = BattleArenaActions.TURN_LEFT;
-      scene.cameraRightAction = BattleArenaActions.ROTATE;
-      initializeCameraControls(scene.renderer.camera);
-      ActionInput actions = scene.actionInput;
-      scene.registerPointerInput(BattleArenaActions.LOOK_POINTER,
-          (activeScene, pointer) -> handlePointerLook(actions, pointer));
-
       int skyboxTex = ShaderProgram.loadTexture(data.rootDirectory + "/desertstorm.jpg");
       int groundTex = ShaderProgram.loadTexture(data.rootDirectory + "/WaterPlain0012_1_350.jpg");
       int modelTex = ShaderProgram.loadTexture(data.rootDirectory + "/j.jpg");

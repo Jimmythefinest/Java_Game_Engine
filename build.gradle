@@ -15,3 +15,15 @@ tasks.register('exportFbxAnimation') {
     description = 'Export an FBX animation into the serialized .ser animation asset format'
     dependsOn(':engine-platform-desktop:exportFbxAnimation')
 }
+
+tasks.register('runBattleground') {
+    group = 'application'
+    description = 'Run the Battle Arena desktop app'
+    dependsOn(':battle-arena-desktop:runBattleground')
+}
+
+tasks.register('syncBattleArenaAssetsToAndroid') {
+    group = 'build'
+    description = 'Copy shared Battle Arena assets into Android assets'
+    dependsOn(':battle-arena-core:syncBattleArenaAssetsToAndroid')
+}

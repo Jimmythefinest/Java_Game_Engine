@@ -2,8 +2,8 @@
 
 This document covers the Battle Arena desktop entry point and its core scene loader:
 
-- `engine-platform-desktop/src/main/java/com/njst/gaming/ri/battlearena/BattleArenaApp.java`
-- `engine-core/src/main/java/com/njst/gaming/ri/battlearena/BattleArenaDemoLoader.java`
+- `battle-arena-desktop/src/main/java/com/njst/gaming/ri/battlearena/BattleArenaApp.java`
+- `battle-arena-core/src/main/java/com/njst/gaming/ri/battlearena/BattleArenaDemoLoader.java`
 
 `BattleArenaApp` owns desktop startup and input binding. `BattleArenaDemoLoader` builds the playable scene, loads assets, manages TCP-controlled characters, updates combat systems, and positions the camera.
 

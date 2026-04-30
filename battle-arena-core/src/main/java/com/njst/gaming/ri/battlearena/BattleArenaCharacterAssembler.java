@@ -179,6 +179,13 @@ final class BattleArenaCharacterAssembler {
         assembly.meshObject.setScale(playerScale, playerScale, playerScale);
         assembly.meshObject.boneBufferStartIndex = scene.registerSkeleton(assembly.bones);
         scene.addGameObject(assembly.meshObject);
+        log("assembled mesh name=" + meshName
+                + " texture=" + texture
+                + " playerScale=" + playerScale
+                + " boneBufferStartIndex=" + assembly.meshObject.boneBufferStartIndex
+                + " sceneObjects=" + scene.objects.size()
+                + " vertices=" + (weightedGeometry.getVertices() != null ? weightedGeometry.getVertices().length / 3 : 0)
+                + " indices=" + (weightedGeometry.getIndices() != null ? weightedGeometry.getIndices().length : 0));
         return assembly;
     }
 

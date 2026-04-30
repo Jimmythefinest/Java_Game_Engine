@@ -32,7 +32,7 @@ public class BattleArenaApp extends Engine {
     public BattleArenaApp() {
         this(
                 System.getProperty("battleArena.remoteHost", null),
-                readPortProperty("battleArena.remotePort", BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT));
+                readPortProperty("battleArena.remotePort",BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT));
     }
 
     public BattleArenaApp(String tcpControlHost, int tcpControlPort) {
@@ -98,6 +98,12 @@ public class BattleArenaApp extends Engine {
             return Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    class ExampleLoader implements Scene.SceneLoader {
+        @Override
+        public void load(Scene scene) {
         }
     }
 }

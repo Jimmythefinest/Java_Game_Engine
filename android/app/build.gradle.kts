@@ -29,4 +29,5 @@ android {
 
 dependencies {
   implementation(project(":engine-platform-android"))
+  implementation(project(":battle-arena-core"))
 }

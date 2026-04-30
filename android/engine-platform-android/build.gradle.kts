@@ -3,13 +3,16 @@ plugins {
 }
 
 val desktopResourcesDir = rootProject.projectDir.resolve("../engine-platform-desktop/src/main/resources")
+val battleArenaResourcesDir = rootProject.projectDir.resolve("../battle-arena-core/src/main/resources")
 val androidAssetsDir = projectDir.resolve("src/main/assets")
 
 val syncDesktopResourcesToAndroidAssets by tasks.registering(Sync::class) {
   group = "build"
   description = "Sync desktop resources into Android assets before debug builds."
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
   from(desktopResourcesDir)
+  from(battleArenaResourcesDir)
   into(androidAssetsDir)
 }
 

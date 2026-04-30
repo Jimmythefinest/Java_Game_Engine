@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.njst'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+dependencies {
+    api project(':engine-core')
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+tasks.register('syncBattleArenaAssetsToAndroid', Sync) {
+    group = 'build'
+    description = 'Copy shared Battle Arena assets into the Android engine assets folder'
+    from(sourceSets.main.resources.srcDirs)
+    into(rootProject.file('android/engine-platform-android/src/main/assets'))
+    include 'battle_arena/**'
+    include 'audio/battle_arena_test.wav'
+    include 'weighted_geometry/**'
+    include 'j.jpg'
+    include 'desertstorm.jpg'
+    include 'skin.jpg'
+}

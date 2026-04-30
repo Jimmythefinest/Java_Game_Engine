@@ -35,7 +35,7 @@
       "framesPerSecond": 144
     },
     "punch": {
-      "asset": "weighted_geometry//right hook_animation_0.ser",
+      "asset": "weighted_geometry/right hook_animation_0.ser",
       "framesPerSecond": 144
     },
     "kick": {
@@ -43,7 +43,7 @@
       "framesPerSecond": 144
     },
     "cast": {
-      "asset": "weighted_geometry//right hook_animation_0.ser",
+      "asset": "weighted_geometry/right hook_animation_0.ser",
       "framesPerSecond": 144
     },
     "take_hit": {

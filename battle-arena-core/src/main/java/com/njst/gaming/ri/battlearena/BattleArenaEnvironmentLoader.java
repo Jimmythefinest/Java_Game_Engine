@@ -8,6 +8,8 @@ import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.objects.GameObject;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 final class BattleArenaEnvironmentLoader {
     private static final String SKYBOX_FILE = "desertstorm.jpg";
@@ -56,10 +58,35 @@ final class BattleArenaEnvironmentLoader {
     }
 
     static String resolveResourcePath(String fileName) {
-        File desktopResource = new File(com.njst.gaming.data.rootDirectory, fileName);
-        if (desktopResource.isFile()) {
-            return desktopResource.getPath();
+        String normalized = fileName != null ? fileName.replace('\\', '/') : "";
+        Path workDir = Paths.get(System.getProperty("user.dir"));
+        Path[] roots = new Path[] {
+                workDir.resolve(Paths.get("build", "resources", "main")),
+                workDir.resolve(Paths.get("src", "main", "resources")),
+                workDir.resolve(Paths.get("..", "battle-arena-desktop", "build", "resources", "main")),
+                workDir.resolve(Paths.get("..", "battle-arena-desktop", "src", "main", "resources")),
+                workDir.resolve(Paths.get("..", "battle-arena-core", "build", "resources", "main")),
+                workDir.resolve(Paths.get("..", "battle-arena-core", "src", "main", "resources")),
+                workDir.resolve(Paths.get("..", "engine-platform-desktop", "build", "resources", "main")),
+                workDir.resolve(Paths.get("..", "engine-platform-desktop", "src", "main", "resources")),
+                workDir.resolve(Paths.get("battle-arena-desktop", "build", "resources", "main")),
+                workDir.resolve(Paths.get("battle-arena-core", "build", "resources", "main")),
+                workDir.resolve(Paths.get("battle-arena-core", "src", "main", "resources")),
+                workDir.resolve(Paths.get("engine-platform-desktop", "build", "resources", "main")),
+                workDir.resolve(Paths.get("engine-platform-desktop", "src", "main", "resources")),
+                Paths.get(com.njst.gaming.data.rootDirectory)
+        };
+        for (Path root : roots) {
+            File resource = root.resolve(normalized).normalize().toFile();
+            if (resource.isFile()) {
+                String absolutePath = resource.getAbsolutePath();
+                log("resolved resource file=" + normalized + " absolute=" + absolutePath);
+                return absolutePath;
+            }
         }
+        log("resource not found on filesystem file=" + normalized
+                + " userDir=" + System.getProperty("user.dir")
+                + " root=" + com.njst.gaming.data.rootDirectory);
         // On Android rootDirectory is not set; fall back to asset name directly.
         return fileName;
     }

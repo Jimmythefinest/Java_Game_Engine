@@ -19,7 +19,7 @@ public final class BattleArenaTcpControlClient {
     public static final String MESSAGE_TYPE = "battle_arena.controls";
     public static final String ANDROID_PLAYER = "android";
     public static final String DESKTOP_PLAYER = "desktop";
-    public static final String DEFAULT_HOST = "52.66.201.70";
+    public static final String DEFAULT_HOST = "10.42.0.1";
     public static final int DEFAULT_PORT = 7777;
 
     private static final int CONNECT_TIMEOUT_MILLIS = 150;
@@ -45,7 +45,7 @@ public final class BattleArenaTcpControlClient {
     }
 
     public BattleArenaTcpControlClient(String host, int port) {
-        this.host = host == null || host.trim().isEmpty() ? DEFAULT_HOST : host;
+        this.host = normalizeHost(host);
         this.port = port;
     }
 
@@ -223,6 +223,13 @@ public final class BattleArenaTcpControlClient {
         } catch (NumberFormatException e) {
             return fallback;
         }
+    }
+
+    private static String normalizeHost(String host) {
+        if (host == null || host.trim().isEmpty()) {
+            return DEFAULT_HOST;
+        }
+        return host.trim();
     }
 
     private static void log(String message) {

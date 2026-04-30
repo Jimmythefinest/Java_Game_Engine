@@ -61,7 +61,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 : LOCAL_PLAYER_DESKTOP;
         this.tcpControlHost = tcpControlHost == null || tcpControlHost.trim().isEmpty()
                 ? BattleArenaTcpControlClient.DEFAULT_HOST
-                : tcpControlHost;
+                : tcpControlHost.trim();
         this.tcpControlPort = tcpControlPort > 0 ? tcpControlPort : DEFAULT_TCP_CONTROL_PORT;
     }
 
@@ -69,7 +69,8 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
     public void load(Scene scene) {
         GraphicsDevice graphicsDevice = scene.renderer.getGraphicsDevice();
         loadedScene = scene;
-        log("load start root=" + com.njst.gaming.data.rootDirectory);
+        log("load start root=" + com.njst.gaming.data.rootDirectory
+                + " graphicsDevice=" + graphicsDevice.getClass().getName());
 
         characterManager.reset();
         characterManager.setTerrainSampler(environmentLoader::sampleTerrainHeight);
@@ -125,6 +126,7 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                         movementPointer,
                         environmentLoader::sampleTerrainHeight,
                         deltaSeconds);
+                logFrameSnapshot(scene);
                 if (!DISABLE_ACTIVE_ANIMATIONS_FOR_PROFILING) {
                     ParallelKeyframeAnimator.animateSkeletons(
                             characterManager.collectActiveSkeletonAnimations(),
@@ -191,6 +193,20 @@ public class BattleArenaDemoLoader implements Scene.SceneLoader {
                 focus.y + CAMERA_HEIGHT + verticalOffset,
                 focus.z - ((float) Math.cos(cameraYaw) * horizontalDistance));
         camera.lookAt(cameraPosition, focus, new Vector3(0f, 1f, 0f));
+    }
+
+    private boolean frameSnapshotLogged = false;
+
+    private void logFrameSnapshot(Scene scene) {
+        if (frameSnapshotLogged || scene == null) {
+            return;
+        }
+        frameSnapshotLogged = true;
+        log("first frame sceneObjects=" + scene.objects.size()
+                + " animations=" + scene.animations.size()
+                + " activeCharacter=" + (characterManager.getActiveCharacter() != null
+                ? characterManager.getActiveCharacter().runtime.meshObject.name
+                : "none"));
     }
 
     private float clamp(float value, float min, float max) {

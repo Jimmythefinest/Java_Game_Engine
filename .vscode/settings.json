@@ -36,5 +36,5 @@
         "c:\\Users\\User\\Downloads\\lwjgl-release-3.4.1-custom\\lwjgl-openal-sources.jar",
         "c:\\Users\\User\\Downloads\\gson-2.10.1.jar"
     ],
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "disabled"
 }

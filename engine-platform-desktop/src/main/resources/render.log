@@ -266,3 +266,23 @@ Renderer initialized
 Renderer initialized
 Renderer initialized
 Renderer initialized
+Renderer initialized
+Renderer initialized
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.use()" because "this.program1" is null
+com.njst.gaming.objects.Weighted_GameObjectrender54
+com.njst.gaming.RendereronDrawFrame204
+com.njst.gaming.Engineloop164
+com.njst.gaming.Enginerun33
+com.njst.gaming.ri.battlearena.BattleArenaAppmain85
+Renderer initialized
+Cannot invoke "com.njst.gaming.graphics.ShaderHandle.use()" because "this.program1" is null
+com.njst.gaming.objects.Weighted_GameObjectrender54
+com.njst.gaming.RendereronDrawFrame204
+com.njst.gaming.Engineloop164
+com.njst.gaming.Enginerun33
+com.njst.gaming.ri.battlearena.BattleArenaAppmain85
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized
+Renderer initialized

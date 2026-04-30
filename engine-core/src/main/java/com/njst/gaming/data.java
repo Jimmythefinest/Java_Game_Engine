@@ -201,6 +201,10 @@ public class data {
                 }
 
                 Path[] candidates = new Path[] {
+                                Paths.get("battle-arena-desktop", "build", "resources", "main"),
+                                Paths.get("battle-arena-desktop", "src", "main", "resources"),
+                                Paths.get("battle-arena-core", "build", "resources", "main"),
+                                Paths.get("battle-arena-core", "src", "main", "resources"),
                                 Paths.get("engine-platform-desktop", "src", "main", "resources"),
                                 Paths.get("engine-platform-desktop", "build", "resources", "main"),
                                 Paths.get("src", "main", "resources"),
