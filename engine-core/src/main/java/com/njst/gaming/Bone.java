@@ -152,6 +152,12 @@ public Vector3 position_to_parent = new Vector3();
     }
 
     private void ensureQuaternionState() {
+        if (rotation == null) {
+            rotation = new Vector3();
+        }
+        if (parent_rotation == null) {
+            parent_rotation = new Vector3();
+        }
         if (parent_orientation == null) {
             parent_orientation = Quaternion.fromEuler(parent_rotation.x, parent_rotation.y, parent_rotation.z)
                 .normalize();
@@ -160,7 +166,8 @@ public Vector3 position_to_parent = new Vector3();
             local_orientation = new Quaternion();
         }
         if (global_orientation == null) {
-            global_orientation = parent_orientation.multiply(getLocalQuaternion()).normalize();
+            local_orientation.setFromEuler(rotation.x, rotation.y, rotation.z);
+            global_orientation = parent_orientation.multiply(local_orientation).normalize();
         }
     }
 

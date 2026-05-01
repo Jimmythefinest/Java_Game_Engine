@@ -8,7 +8,6 @@ import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Physics.*;
 import com.njst.gaming.collision.CollisionWorld;
 import com.njst.gaming.collision.DefaultCollisionWorld;
-import com.njst.gaming.graphics.BufferHandle;
 import com.njst.gaming.graphics.GraphicsDevice;
 import com.njst.gaming.audio.AudioDevice;
 import com.njst.gaming.audio.NullAudioDevice;
@@ -62,9 +61,7 @@ public class Scene {
     public boolean object_should_move = false;
     public boolean camera_should_move = false;
     public boolean camera_should_move_up = false;
-    private final ArrayList<List<Bone>> skeletons = new ArrayList<>();
-    private BufferHandle skeletonBuffer;
-    private boolean externalSkeletonBufferActive;
+    private final BoneSsboManager boneSsboManager = new BoneSsboManager();
 
     public Scene() {
         objects = new CopyOnWriteArrayList<>();
@@ -246,48 +243,19 @@ public class Scene {
     }
 
     public int registerSkeleton(List<Bone> bones) {
-        if (bones == null || bones.isEmpty()) {
-            return 0;
-        }
-        int startIndex = 0;
-        for (List<Bone> skeleton : skeletons) {
-            startIndex += skeleton.size();
-        }
-        skeletons.add(bones);
-        return startIndex;
+        return boneSsboManager.registerSkeleton(bones);
+    }
+
+    public int reserveSkeleton(int boneCount) {
+        return boneSsboManager.reserveSkeleton(boneCount);
     }
 
     public void uploadSkeletonBuffer(GraphicsDevice graphicsDevice) {
-        if (externalSkeletonBufferActive || graphicsDevice == null || skeletons.isEmpty()) {
-            return;
-        }
-        if (skeletonBuffer == null) {
-            skeletonBuffer = graphicsDevice.createShaderStorageBuffer();
-        }
-        float[] boneData = createPackedBoneData();
-        skeletonBuffer.setData(boneData, graphicsDevice.dynamicDrawUsage());
-        skeletonBuffer.bind();
-        skeletonBuffer.bindToShader(2);
-    }
-
-    private float[] createPackedBoneData() {
-        int totalBones = 0;
-        for (List<Bone> skeleton : skeletons) {
-            totalBones += skeleton.size();
-        }
-        float[] boneData = new float[totalBones * 16];
-        int offset = 0;
-        for (List<Bone> skeleton : skeletons) {
-            for (Bone bone : skeleton) {
-                System.arraycopy(bone.getAnimationMatrix().r, 0, boneData, offset, 16);
-                offset += 16;
-            }
-        }
-        return boneData;
+        boneSsboManager.upload(graphicsDevice);
     }
 
     public void setExternalSkeletonBufferActive(boolean externalSkeletonBufferActive) {
-        this.externalSkeletonBufferActive = externalSkeletonBufferActive;
+        boneSsboManager.setExternalSkeletonBufferActive(externalSkeletonBufferActive);
     }
 
     public boolean removeGameObject(GameObject obj) {

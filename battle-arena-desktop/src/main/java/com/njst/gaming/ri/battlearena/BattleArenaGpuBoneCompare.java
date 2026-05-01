@@ -77,14 +77,16 @@ public final class BattleArenaGpuBoneCompare {
                 throw new IllegalStateException(compute.getError());
             }
 
-            compute.bindBuffer(0, createMetadata(asset, clip, frameIndex));
-            compute.bindBuffer(1, asset.localRestPositions);
-            compute.bindBuffer(2, asset.rotations);
-            compute.bindBuffer(3, asset.inverseBindMatrices);
-            compute.bindBuffer(4, new float[asset.boneCount * 16]);
-            compute.bindBuffer(5, asset.localRestScales);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.METADATA_BINDING, createMetadata(asset));
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.LOCAL_REST_POSITION_BINDING, asset.localRestPositions);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.LOCAL_ROTATION_BINDING, asset.rotations);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.INVERSE_BIND_MATRIX_BINDING, asset.inverseBindMatrices);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.OUTPUT_MATRIX_BINDING, new float[asset.boneCount * 16]);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.LOCAL_REST_SCALE_BINDING, asset.localRestScales);
+            compute.bindBuffer(BattleArenaGpuBoneSsboManager.INSTANCE_STATE_BINDING,
+                    createInstanceState(clip, frameIndex));
             compute.dispatch(1, 1, 1);
-            return compute.readBuffer(4);
+            return compute.readBuffer(BattleArenaGpuBoneSsboManager.OUTPUT_MATRIX_BINDING);
         } finally {
             if (compute != null) {
                 compute.release();
@@ -93,19 +95,20 @@ public final class BattleArenaGpuBoneCompare {
         }
     }
 
-    private static int[] createMetadata(GpuSkeletonAsset asset, Clip clip, int frameIndex) {
-        int[] metadata = new int[5 + asset.boneCount * 2];
+    private static int[] createMetadata(GpuSkeletonAsset asset) {
+        int[] metadata = new int[2 + asset.boneCount * 2];
         metadata[0] = asset.boneCount;
         metadata[1] = asset.maxDepth;
-        metadata[2] = clip.rotationOffset;
-        metadata[3] = frameIndex;
-        metadata[4] = 0;
         for (int i = 0; i < asset.boneCount; i++) {
-            int offset = 5 + i * 2;
+            int offset = 2 + i * 2;
             metadata[offset] = asset.parentIndices[i];
             metadata[offset + 1] = asset.depths[i];
         }
         return metadata;
+    }
+
+    private static int[] createInstanceState(Clip clip, int frameIndex) {
+        return new int[] {clip.rotationOffset, frameIndex, 0, 0};
     }
 
     private static float[] calculateCpuMatrices(File resourceRoot, String clipName, int frameIndex)

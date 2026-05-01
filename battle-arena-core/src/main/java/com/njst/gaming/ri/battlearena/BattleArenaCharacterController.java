@@ -201,6 +201,29 @@ public final class BattleArenaCharacterController {
         snapPlayerToGround();
     }
 
+    void advanceAnimationClockOnly(float deltaSeconds) {
+        if (currentAnimationSet == null || currentAnimationSet.isEmpty()) {
+            return;
+        }
+        float safeDeltaSeconds = Math.max(0f, deltaSeconds);
+        ArrayList<KeyframeAnimation> animations = new ArrayList<KeyframeAnimation>(currentAnimationSet);
+        for (KeyframeAnimation animation : animations) {
+            if (animation == null || !animation.isActive()
+                    || animation.keyframes == null || animation.keyframes.isEmpty()) {
+                continue;
+            }
+            float framesPerSecond = animation.framesPerSecond > 0f
+                    ? animation.framesPerSecond
+                    : TUNING_FRAME_RATE;
+            animation.time += safeDeltaSeconds * framesPerSecond * animation.speed;
+            if (!hasNextKeyframe(animation)) {
+                if (animation.onfinish != null) {
+                    animation.onfinish.run();
+                }
+            }
+        }
+    }
+
     Vector3 getPlayerPosition() {
         return playerPosition;
     }
@@ -245,10 +268,14 @@ public final class BattleArenaCharacterController {
         if (currentAnimationSet == null || currentAnimationSet.isEmpty()) {
             return 0f;
         }
+        float currentFrame = 0f;
         for (KeyframeAnimation animation : currentAnimationSet) {
             if (animation != null && animation.isActive()) {
-                return Math.max(0f, animation.time);
+                currentFrame = Math.max(currentFrame, Math.max(0f, animation.time));
             }
+        }
+        if (currentFrame > 0f) {
+            return currentFrame;
         }
         KeyframeAnimation animation = currentAnimationSet.get(0);
         return animation != null ? Math.max(0f, animation.time) : 0f;
@@ -583,6 +610,15 @@ public final class BattleArenaCharacterController {
     private ArrayList<KeyframeAnimation> animationSet(String key) {
         ArrayList<KeyframeAnimation> animations = animationSets.get(key);
         return animations != null ? animations : new ArrayList<KeyframeAnimation>();
+    }
+
+    private boolean hasNextKeyframe(KeyframeAnimation animation) {
+        for (KeyframeAnimation.Keyframe keyframe : animation.keyframes) {
+            if (keyframe.time > animation.time) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void triggerConfiguredEvent(String eventName, Runnable onEventStarted, Runnable onEventFinished) {

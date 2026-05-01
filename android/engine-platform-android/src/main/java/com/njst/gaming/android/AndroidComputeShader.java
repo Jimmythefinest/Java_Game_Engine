@@ -90,6 +90,13 @@ public class AndroidComputeShader {
         return buffer != null && size != null ? buffer.getData(size) : null;
     }
 
+    public void bindBufferToShaderBinding(int sourceBindingIndex, int targetBindingIndex) {
+        AndroidShaderStorageBuffer buffer = buffers.get(sourceBindingIndex);
+        if (buffer != null) {
+            buffer.bindToShader(targetBindingIndex);
+        }
+    }
+
     public void release() {
         if (program != 0) {
             GLES31.glDeleteProgram(program);

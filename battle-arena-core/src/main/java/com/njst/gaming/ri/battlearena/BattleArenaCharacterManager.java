@@ -175,6 +175,23 @@ final class BattleArenaCharacterManager {
         return skeletonAnimations;
     }
 
+    ArrayList<BattleArenaGpuSkeletonPoseSource> collectGpuSkeletonPoseSources() {
+        ArrayList<BattleArenaGpuSkeletonPoseSource> poseSources =
+                new ArrayList<BattleArenaGpuSkeletonPoseSource>();
+        for (BattleArenaControlledCharacter character : arenaCharacters) {
+            if (character != null && character.runtime != null) {
+                poseSources.add(character.runtime);
+            }
+        }
+        return poseSources;
+    }
+
+    void syncGpuSkeletonPoses(BattleArenaGpuBoneSsboManager gpuBoneSsboManager) {
+        if (gpuBoneSsboManager != null) {
+            gpuBoneSsboManager.syncPoses(collectGpuSkeletonPoseSources());
+        }
+    }
+
     void syncRigs() {
         for (BattleArenaControlledCharacter character : arenaCharacters) {
             character.runtime.syncRig();

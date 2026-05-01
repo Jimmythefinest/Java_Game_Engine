@@ -84,7 +84,7 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
         }
 
         if (shaderSource.startsWith("#version 310 es")) {
-            return shaderSource;
+            return ensureDefaultPrecision(shaderSource);
         }
 
         if (shaderSource.startsWith("#version 450 core")
@@ -93,12 +93,27 @@ public class AndroidGraphicsDevice implements GraphicsDevice {
             Log.i(TAG, "Rewriting desktop GLSL version for Android asset: " + assetPath);
             int newlineIndex = shaderSource.indexOf('\n');
             if (newlineIndex < 0) {
-                return "#version 310 es\n";
+                return "#version 310 es\nprecision highp float;\nprecision highp int;\n";
             }
-            return "#version 310 es\n" + shaderSource.substring(newlineIndex + 1);
+            return ensureDefaultPrecision("#version 310 es\n" + shaderSource.substring(newlineIndex + 1));
         }
 
         return shaderSource;
+    }
+
+    private String ensureDefaultPrecision(String shaderSource) {
+        if (shaderSource.contains("precision highp float")
+                || shaderSource.contains("precision mediump float")
+                || shaderSource.contains("precision lowp float")) {
+            return shaderSource;
+        }
+        int newlineIndex = shaderSource.indexOf('\n');
+        if (newlineIndex < 0) {
+            return shaderSource + "\nprecision highp float;\nprecision highp int;\n";
+        }
+        return shaderSource.substring(0, newlineIndex + 1)
+                + "precision highp float;\nprecision highp int;\n"
+                + shaderSource.substring(newlineIndex + 1);
     }
 
     @Override

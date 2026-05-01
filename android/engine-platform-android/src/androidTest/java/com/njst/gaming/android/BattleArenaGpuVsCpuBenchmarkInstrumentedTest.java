@@ -44,6 +44,13 @@ public class BattleArenaGpuVsCpuBenchmarkInstrumentedTest {
     private static final String COMPUTE_SHADER = "resources/shaders/battle_arena_bone_compute.glsl";
     private static final float DEFAULT_TOLERANCE = 0.01f;
     private static final int EGL_OPENGL_ES3_BIT_KHR = 0x00000040;
+    private static final int METADATA_BINDING = 6;
+    private static final int LOCAL_REST_POSITION_BINDING = 7;
+    private static final int LOCAL_ROTATION_BINDING = 8;
+    private static final int INVERSE_BIND_MATRIX_BINDING = 9;
+    private static final int OUTPUT_MATRIX_BINDING = 10;
+    private static final int LOCAL_REST_SCALE_BINDING = 11;
+    private static final int INSTANCE_STATE_BINDING = 12;
     private static final Gson GSON = new Gson();
 
     @Test
@@ -103,12 +110,13 @@ public class BattleArenaGpuVsCpuBenchmarkInstrumentedTest {
                 throw new IllegalStateException(compute.getError());
             }
 
-            compute.bindBuffer(0, createMetadata(gpuAsset, clip, 0));
-            compute.bindBuffer(1, gpuAsset.localRestPositions);
-            compute.bindBuffer(2, gpuAsset.rotations);
-            compute.bindBuffer(3, gpuAsset.inverseBindMatrices);
-            compute.bindBuffer(4, new float[gpuAsset.boneCount * 16]);
-            compute.bindBuffer(5, gpuAsset.localRestScales);
+            compute.bindBuffer(METADATA_BINDING, createMetadata(gpuAsset));
+            compute.bindBuffer(LOCAL_REST_POSITION_BINDING, gpuAsset.localRestPositions);
+            compute.bindBuffer(LOCAL_ROTATION_BINDING, gpuAsset.rotations);
+            compute.bindBuffer(INVERSE_BIND_MATRIX_BINDING, gpuAsset.inverseBindMatrices);
+            compute.bindBuffer(OUTPUT_MATRIX_BINDING, new float[gpuAsset.boneCount * 16]);
+            compute.bindBuffer(LOCAL_REST_SCALE_BINDING, gpuAsset.localRestScales);
+            compute.bindBuffer(INSTANCE_STATE_BINDING, createInstanceState(clip, 0));
 
             calculateGpuMatrices(compute, gpuAsset, clip, 0);
             for (int iter = 0; iter < iterations; iter++) {
@@ -167,26 +175,27 @@ public class BattleArenaGpuVsCpuBenchmarkInstrumentedTest {
 
     private static float[] calculateGpuMatrices(AndroidComputeBackend compute,
                                                 GpuSkeletonAsset asset,
-                                                Clip clip,
+        Clip clip,
                                                 int frameIndex) {
-        compute.updateBuffer(0, createMetadata(asset, clip, frameIndex));
+        compute.updateBuffer(INSTANCE_STATE_BINDING, createInstanceState(clip, frameIndex));
         compute.dispatch(1, 1, 1);
-        return compute.readBuffer(4);
+        return compute.readBuffer(OUTPUT_MATRIX_BINDING);
     }
 
-    private static int[] createMetadata(GpuSkeletonAsset asset, Clip clip, int frameIndex) {
-        int[] metadata = new int[5 + asset.boneCount * 2];
+    private static int[] createMetadata(GpuSkeletonAsset asset) {
+        int[] metadata = new int[2 + asset.boneCount * 2];
         metadata[0] = asset.boneCount;
         metadata[1] = asset.maxDepth;
-        metadata[2] = clip.rotationOffset;
-        metadata[3] = frameIndex;
-        metadata[4] = 0;
         for (int i = 0; i < asset.boneCount; i++) {
-            int offset = 5 + i * 2;
+            int offset = 2 + i * 2;
             metadata[offset] = asset.parentIndices[i];
             metadata[offset + 1] = asset.depths[i];
         }
         return metadata;
+    }
+
+    private static int[] createInstanceState(Clip clip, int frameIndex) {
+        return new int[] {clip.rotationOffset, frameIndex, 0, 0};
     }
 
     private static float[] calculateCpuMatrices(ArrayList<Bone> bones,

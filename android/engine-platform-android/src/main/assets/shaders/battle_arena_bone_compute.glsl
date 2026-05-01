@@ -4,28 +4,32 @@
 
 layout(local_size_x = 128) in;
 
-layout(std430, binding = 0) readonly buffer BoneMetadataBuffer {
+layout(std430, binding = 6) readonly buffer BoneMetadataBuffer {
     int metadata[];
 };
 
-layout(std430, binding = 1) readonly buffer LocalRestPositionBuffer {
+layout(std430, binding = 7) readonly buffer LocalRestPositionBuffer {
     vec4 localRestPositions[];
 };
 
-layout(std430, binding = 2) readonly buffer LocalRotationBuffer {
+layout(std430, binding = 8) readonly buffer LocalRotationBuffer {
     vec4 localRotations[];
 };
 
-layout(std430, binding = 3) readonly buffer InverseBindMatrixBuffer {
+layout(std430, binding = 9) readonly buffer InverseBindMatrixBuffer {
     mat4 inverseBindMatrices[];
 };
 
-layout(std430, binding = 4) writeonly buffer OutputMatrixBuffer {
+layout(std430, binding = 10) writeonly buffer OutputMatrixBuffer {
     mat4 outputMatrices[];
 };
 
-layout(std430, binding = 5) readonly buffer LocalRestScaleBuffer {
+layout(std430, binding = 11) readonly buffer LocalRestScaleBuffer {
     vec4 localRestScales[];
+};
+
+layout(std430, binding = 12) readonly buffer InstanceStateBuffer {
+    int instanceState[];
 };
 
 shared mat4 sharedGlobalMatrices[MAX_BONES_PER_CHARACTER];
@@ -68,11 +72,13 @@ mat4 scaleMatrix(vec3 scale) {
 
 void main() {
     int boneIndex = int(gl_LocalInvocationID.x);
+    int instanceIndex = int(gl_WorkGroupID.x);
     int boneCount = metadata[0];
     int maxDepth = metadata[1];
-    int rotationOffset = metadata[2];
-    int frameIndex = metadata[3];
-    int characterOutputOffset = metadata[4];
+    int instanceStateOffset = instanceIndex * 4;
+    int rotationOffset = instanceState[instanceStateOffset];
+    int frameIndex = instanceState[instanceStateOffset + 1];
+    int characterOutputOffset = instanceState[instanceStateOffset + 2];
 
     if (boneCount > MAX_BONES_PER_CHARACTER) {
         return;
@@ -81,7 +87,7 @@ void main() {
     for (int depth = 0; depth <= maxDepth; depth++) {
         barrier();
         if (boneIndex < boneCount) {
-            int boneMetadataOffset = 5 + boneIndex * 2;
+            int boneMetadataOffset = 2 + boneIndex * 2;
             int parentIndex = metadata[boneMetadataOffset];
             int boneDepth = metadata[boneMetadataOffset + 1];
             if (boneDepth == depth) {

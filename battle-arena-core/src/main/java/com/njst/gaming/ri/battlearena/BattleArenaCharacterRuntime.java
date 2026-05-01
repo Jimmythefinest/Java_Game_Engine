@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class BattleArenaCharacterRuntime {
+public final class BattleArenaCharacterRuntime implements BattleArenaGpuSkeletonPoseSource {
     private static final float DEFAULT_HIT_DAMAGE = 10f;
     private static final float PUNCH_RECOIL_STRENGTH = 0.22f;
     private static final float KICK_RECOIL_STRENGTH = 0.32f;
@@ -145,6 +145,30 @@ public final class BattleArenaCharacterRuntime {
 
     public List<Collider> getHitboxColliders() {
         return hitboxColliders;
+    }
+
+    @Override
+    public String currentGpuAnimationKey() {
+        return controller.getCurrentAnimationKey();
+    }
+
+    @Override
+    public float currentGpuAnimationFrame() {
+        return controller.getCurrentAnimationFrame();
+    }
+
+    @Override
+    public int gpuBoneBufferStartIndex() {
+        return meshObject.boneBufferStartIndex;
+    }
+
+    @Override
+    public int gpuBoneCount() {
+        return bones.size();
+    }
+
+    void advanceGpuAnimationClock(float deltaSeconds) {
+        controller.advanceAnimationClockOnly(deltaSeconds);
     }
 
     ArrayList<KeyframeAnimation> animationSet(String key) {

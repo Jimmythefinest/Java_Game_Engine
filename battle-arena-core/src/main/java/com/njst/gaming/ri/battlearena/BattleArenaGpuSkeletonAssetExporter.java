@@ -10,6 +10,8 @@ import com.njst.gaming.skeleton.Skeleton;
 import com.njst.gaming.skeleton.Skeleton.Skeletal_Animation;
 
 import java.io.ByteArrayInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -30,6 +32,9 @@ public final class BattleArenaGpuSkeletonAssetExporter {
             "battle_arena/defeated.character.json";
     private static final String DEFAULT_OUTPUT =
             "battle_arena/defeated.gpu_skeleton.json";
+    private static final String BINARY_OUTPUT_SUFFIX = ".bin";
+    private static final int BINARY_MAGIC = 0x42414753;
+    private static final int BINARY_VERSION = 1;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private BattleArenaGpuSkeletonAssetExporter() {
@@ -52,7 +57,10 @@ public final class BattleArenaGpuSkeletonAssetExporter {
         try (Writer writer = new FileWriter(outputFile)) {
             GSON.toJson(exportRoot, writer);
         }
+        File binaryOutputFile = binaryOutputFile(outputFile);
+        writeBinary(exportRoot, binaryOutputFile);
         log("wrote " + outputFile.getPath()
+                + " and " + binaryOutputFile.getPath()
                 + " bones=" + exportRoot.boneCount
                 + " maxDepth=" + exportRoot.maxDepth
                 + " clips=" + exportRoot.clips.size()
@@ -447,6 +455,76 @@ public final class BattleArenaGpuSkeletonAssetExporter {
         File parent = file.getParentFile();
         if (parent != null && !parent.exists() && !parent.mkdirs()) {
             throw new IllegalStateException("Unable to create directory: " + parent.getPath());
+        }
+    }
+
+    private static File binaryOutputFile(File jsonOutputFile) {
+        String path = jsonOutputFile.getPath();
+        if (path.endsWith(".json")) {
+            return new File(path.substring(0, path.length() - ".json".length()) + BINARY_OUTPUT_SUFFIX);
+        }
+        return new File(path + BINARY_OUTPUT_SUFFIX);
+    }
+
+    private static void writeBinary(ExportRoot exportRoot, File outputFile) throws IOException {
+        ensureParentDirectory(outputFile);
+        try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new java.io.FileOutputStream(outputFile)))) {
+            output.writeInt(BINARY_MAGIC);
+            output.writeInt(BINARY_VERSION);
+            output.writeInt(exportRoot.boneCount);
+            output.writeInt(exportRoot.maxBones);
+            output.writeInt(exportRoot.maxDepth);
+            writeStringArray(output, exportRoot.boneNames);
+            writeIntArray(output, exportRoot.parentIndices);
+            writeIntArray(output, exportRoot.depths);
+            writeFloatArray(output, exportRoot.localRestPositions);
+            writeFloatArray(output, exportRoot.localRestScales);
+            writeFloatArray(output, exportRoot.inverseBindMatrices);
+            output.writeInt(exportRoot.clips.size());
+            for (ClipExport clip : exportRoot.clips) {
+                writeString(output, clip.name);
+                writeString(output, clip.asset);
+                output.writeFloat(clip.framesPerSecond);
+                output.writeFloat(clip.durationFrames);
+                output.writeInt(clip.frameCount);
+                output.writeInt(clip.boneCount);
+                output.writeInt(clip.rotationOffset);
+            }
+            writeFloatArray(output, exportRoot.rotations);
+        }
+    }
+
+    private static void writeStringArray(DataOutputStream output, String[] values) throws IOException {
+        output.writeInt(values != null ? values.length : 0);
+        if (values == null) {
+            return;
+        }
+        for (String value : values) {
+            writeString(output, value);
+        }
+    }
+
+    private static void writeString(DataOutputStream output, String value) throws IOException {
+        output.writeUTF(value != null ? value : "");
+    }
+
+    private static void writeIntArray(DataOutputStream output, int[] values) throws IOException {
+        output.writeInt(values != null ? values.length : 0);
+        if (values == null) {
+            return;
+        }
+        for (int value : values) {
+            output.writeInt(value);
+        }
+    }
+
+    private static void writeFloatArray(DataOutputStream output, float[] values) throws IOException {
+        output.writeInt(values != null ? values.length : 0);
+        if (values == null) {
+            return;
+        }
+        for (float value : values) {
+            output.writeFloat(value);
         }
     }
 

@@ -66,6 +66,11 @@ public class AndroidComputeBackend implements ComputeBackend {
     }
 
     @Override
+    public void bindBufferToShaderBinding(int sourceBindingIndex, int targetBindingIndex) {
+        computeShader.bindBufferToShaderBinding(sourceBindingIndex, targetBindingIndex);
+    }
+
+    @Override
     public void release() {
         computeShader.release();
     }

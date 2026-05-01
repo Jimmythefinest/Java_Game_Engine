@@ -88,6 +88,13 @@ public class ComputeShader {
         return buffer != null ? buffer.getData(bufferSizes.get(bindingIndex)) : null;
     }
 
+    public void bindBufferToShaderBinding(int sourceBindingIndex, int targetBindingIndex) {
+        BufferHandle buffer = buffers.get(sourceBindingIndex);
+        if (buffer != null) {
+            buffer.bindToShader(targetBindingIndex);
+        }
+    }
+
     public void recompile(String shaderCode) {
         release();
         createShaderProgram(shaderCode);

@@ -21,5 +21,7 @@ public interface ComputeBackend {
 
     float[] readBuffer(int bindingIndex);
 
+    void bindBufferToShaderBinding(int sourceBindingIndex, int targetBindingIndex);
+
     void release();
 }

@@ -67,6 +67,14 @@ tasks.register('runBattleground', JavaExec) {
     }
 }
 
+tasks.register('runBattleArenaGpuSkinningDemo', JavaExec) {
+    group = 'application'
+    description = 'Render one Battle Arena character using GPU-computed bone matrices'
+    dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuSkinningDemoApp'
+}
+
 tasks.register('runBattleArenaTcpControlServer', JavaExec) {
     group = 'application'
     description = 'Run the TCP relay server for battle arena remote controls'
