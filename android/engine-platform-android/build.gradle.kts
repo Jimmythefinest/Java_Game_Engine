@@ -10,6 +10,7 @@ val syncDesktopResourcesToAndroidAssets by tasks.registering(Sync::class) {
   group = "build"
   description = "Sync desktop resources into Android assets before debug builds."
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  dependsOn(":battle-arena-core:exportBattleArenaGpuSkeletonAsset")
 
   from(desktopResourcesDir)
   from(battleArenaResourcesDir)

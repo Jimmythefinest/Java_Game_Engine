@@ -41,7 +41,7 @@ public final class GPUvsCPUBenchmark {
                 ? args[0]
                 : "battle-arena-core/src/main/resources");
         String clipName = args != null && args.length > 1 ? args[1] : "idle";
-        int iterations = args != null && args.length > 2 ? Integer.parseInt(args[2]) : 100;
+        int iterations = args != null && args.length > 2 ? Integer.parseInt(args[2]) : 1000;
 
         GpuSkeletonAsset gpuAsset = loadGpuAsset(resourceRoot);
         Clip clip = findClip(gpuAsset, clipName);
@@ -67,6 +67,12 @@ public final class GPUvsCPUBenchmark {
         Bone rootBone = findRootBone(bones);
         if (rootBone == null) {
             throw new IllegalStateException("Unable to find root bone");
+        }
+        rootBone.set_Parent_position(new Vector3(0f, 0f, 0f));
+        rootBone.set_Parent_rotation(new Vector3(0f, 0f, 0f));
+        rootBone.update();
+        for (Bone bone : bones) {
+            bone.calculate_bind_matrix();
         }
         Map<String, KeyframeAnimation> animations = loadAnimationMap(resourceRoot, animationDefinition.asset);
         bindAnimations(rootBone, animations);
@@ -180,7 +186,7 @@ public final class GPUvsCPUBenchmark {
     }
 
     private static float[] calculateGpuMatricesOptimized(GpuComputeResources resources, GpuSkeletonAsset asset, Clip clip, int frameIndex) {
-        
+        resources.compute.updateBuffer(0, createMetadata(asset, clip, frameIndex));
         resources.compute.dispatch(1, 1, 1);
         return resources.compute.readBuffer(4);
     }

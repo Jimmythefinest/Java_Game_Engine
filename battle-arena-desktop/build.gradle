@@ -93,6 +93,21 @@ tasks.register('runBattleArenaGpuBoneCompare', JavaExec) {
     }
 }
 
+tasks.register('runBattleArenaGpuVsCpuBenchmark', JavaExec) {
+    group = 'verification'
+    description = 'Benchmark Battle Arena CPU bone packing against the headless GPU compute path'
+    dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.GPUvsCPUBenchmark'
+    args rootProject.file('battle-arena-core/src/main/resources').absolutePath
+    if (project.hasProperty('clip')) {
+        args project.property('clip')
+    }
+    if (project.hasProperty('iterations')) {
+        args project.property('iterations')
+    }
+}
+
 tasks.register('battleArenaTcpControlServerJar', Jar) {
     group = 'build'
     description = 'Build a tiny standalone jar for the battle arena TCP relay server'
