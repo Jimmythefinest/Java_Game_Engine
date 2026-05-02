@@ -13,11 +13,28 @@ import java.util.ArrayList;
 public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader {
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
     private static final float PLAYER_SCALE = 1f;
+    private static final boolean RENDER_CHARACTERS = true;
+    private static final boolean ANIMATE_CHARACTERS = true;
     private static final float[][] CHARACTER_POSITIONS = new float[][] {
             {-1.6f, 0f, 0f},
             {0f, 0f, 0f},
             {1.6f, 0f, 0f},
-            {1.6f*2, 0f, 0f}
+            {1.6f*2, 0f, 0f},
+            {1.6f*3, 0f, 0f},
+            {1.6f*4, 0f, 0f},
+            {1.6f*5, 0f, 0f},
+            {1.6f*6, 0f, 0f},
+            {1.6f*7, 0f, 0f},
+            {1.6f*8, 0f, 0f},
+            {1.6f*9, 0f, 0f},
+            {-1.6f*2, 0f, 0f},
+            {-1.6f*3, 0f, 0f},
+            {-1.6f*4, 0f, 0f},
+            {-1.6f*5, 0f, 0f},
+            {-1.6f*6, 0f, 0f},
+            {-1.6f*7, 0f, 0f},
+            {-1.6f*8, 0f, 0f},
+            {-1.6f*9, 0f, 0f}
     };
     private static final float[][] SINGLE_CHARACTER_POSITION = new float[][] {
             {0f, 0f, 0f}
@@ -38,13 +55,17 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
         scene.renderer.setShadowMapEnabled(false);
         environmentLoader.load(scene, graphicsDevice);
 
-        BattleArenaCharacterDefinition definition =
-                definitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
-        WeightedGeometry geometry = characterAssembler.loadWeightedGeometry(
-                graphicsDevice,
-                definition.model.mesh);
-        int texture = graphicsDevice.loadTexture(
-                BattleArenaEnvironmentLoader.resolveResourcePath(definition.model.texture));
+        WeightedGeometry geometry = null;
+        int texture = 0;
+        if (RENDER_CHARACTERS) {
+            BattleArenaCharacterDefinition definition =
+                    definitionLoader.load(graphicsDevice, CHARACTER_DEFINITION_FILE);
+            geometry = characterAssembler.loadWeightedGeometry(
+                    graphicsDevice,
+                    definition.model.mesh);
+            texture = graphicsDevice.loadTexture(
+                    BattleArenaEnvironmentLoader.resolveResourcePath(definition.model.texture));
+        }
 
         BattleArenaGpuBoneSsboManager gpuBoneSsboManager =
                 new BattleArenaGpuBoneSsboManager(graphicsDevice);
@@ -64,13 +85,25 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
         }
 
         scene.animations.add(new Animation() {
+            private boolean staticPoseUploaded;
+
             @Override
             public void animate(float deltaSeconds) {
+                if (!ANIMATE_CHARACTERS && staticPoseUploaded) {
+                    scene.renderer.recordBoneCalculationNanos(0L);
+                    updateCamera(scene.renderer.camera);
+                    return;
+                }
                 for (DemoPoseSource poseSource : poseSources) {
-                    poseSource.advance(deltaSeconds);
+                    if (ANIMATE_CHARACTERS) {
+                        poseSource.advance(deltaSeconds);
+                    }
                     gpuBoneSsboManager.syncPose(poseSource);
                 }
+                long boneStartNanos = System.nanoTime();
                 gpuBoneSsboManager.dispatchAll(graphicsDevice);
+                scene.renderer.recordBoneCalculationNanos(System.nanoTime() - boneStartNanos);
+                staticPoseUploaded = true;
                 updateCamera(scene.renderer.camera);
             }
         });
@@ -87,16 +120,19 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                                            float[][] characterPositions,
                                            int boneCount,
                                            int characterIndex) {
-        Weighted_GameObject meshObject = new Weighted_GameObject(geometry, texture);
-        meshObject.name = "BattleArena_GpuSkinning_Probe_" + characterIndex;
-        meshObject.shininess = 18f;
-        meshObject.ambientlight_multiplier = 1.2f;
-        meshObject.setScale(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE);
-        float[] position = characterPositions[characterIndex];
-        meshObject.setPosition(position[0], position[1], position[2]);
-        meshObject.boneBufferStartIndex = scene.reserveSkeleton(boneCount);
-        scene.addGameObject(meshObject);
-        return new DemoPoseSource(meshObject.boneBufferStartIndex, boneCount);
+        int boneBufferStartIndex = scene.reserveSkeleton(boneCount);
+        if (RENDER_CHARACTERS) {
+            Weighted_GameObject meshObject = new Weighted_GameObject(geometry, texture);
+            meshObject.name = "BattleArena_GpuSkinning_Probe_" + characterIndex;
+            meshObject.shininess = 18f;
+            meshObject.ambientlight_multiplier = 1.2f;
+            meshObject.setScale(PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE);
+            float[] position = characterPositions[characterIndex];
+            meshObject.setPosition(position[0], position[1], position[2]);
+            meshObject.boneBufferStartIndex = boneBufferStartIndex;
+            scene.addGameObject(meshObject);
+        }
+        return new DemoPoseSource(boneBufferStartIndex, boneCount);
     }
 
     private float[][] resolveCharacterPositions() {
@@ -109,7 +145,7 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
 
     private void updateCamera(Camera camera) {
         camera.lookAt(
-                new Vector3(0f, 1.7f, -5.2f),
+                new Vector3(0f, 1.7f, -15.2f),
                 new Vector3(0f, 1.1f, 0f),
                 new Vector3(0f, 1f, 0f));
     }

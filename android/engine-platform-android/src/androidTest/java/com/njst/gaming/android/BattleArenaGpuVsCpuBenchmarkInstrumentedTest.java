@@ -48,7 +48,7 @@ public class BattleArenaGpuVsCpuBenchmarkInstrumentedTest {
     private static final int LOCAL_REST_POSITION_BINDING = 7;
     private static final int LOCAL_ROTATION_BINDING = 8;
     private static final int INVERSE_BIND_MATRIX_BINDING = 9;
-    private static final int OUTPUT_MATRIX_BINDING = 10;
+    private static final int OUTPUT_MATRIX_BINDING = 2;
     private static final int LOCAL_REST_SCALE_BINDING = 11;
     private static final int INSTANCE_STATE_BINDING = 12;
     private static final Gson GSON = new Gson();

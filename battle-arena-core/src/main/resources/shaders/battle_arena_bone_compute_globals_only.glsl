@@ -1,5 +1,5 @@
 #version 430 core
-// DISPATCH_LABEL: sequential_full
+// DISPATCH_LABEL: globals_only
 
 #define MAX_BONES_PER_CHARACTER 128
 
@@ -15,18 +15,6 @@ layout(std430, binding = 7) readonly buffer LocalRestPositionBuffer {
 
 layout(std430, binding = 8) readonly buffer LocalRotationBuffer {
     vec4 localRotations[];
-};
-
-layout(std430, binding = 9) readonly buffer InverseBindMatrixBuffer {
-    mat4 inverseBindMatrices[];
-};
-
-layout(std430, binding = 2) writeonly buffer OutputMatrixBuffer {
-    mat4 outputMatrices[];
-};
-
-layout(std430, binding = 11) readonly buffer LocalRestScaleBuffer {
-    vec4 localRestScales[];
 };
 
 layout(std430, binding = 12) readonly buffer InstanceStateBuffer {
@@ -62,22 +50,12 @@ mat4 localMatrix(vec3 translation, vec4 q) {
     );
 }
 
-mat4 scaleMatrix(vec3 scale) {
-    return mat4(
-        vec4(scale.x, 0.0, 0.0, 0.0),
-        vec4(0.0, scale.y, 0.0, 0.0),
-        vec4(0.0, 0.0, scale.z, 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0)
-    );
-}
-
 void main() {
     int instanceIndex = int(gl_WorkGroupID.x);
     int boneCount = metadata[0];
     int instanceStateOffset = instanceIndex * 4;
     int rotationOffset = instanceState[instanceStateOffset];
     int frameIndex = instanceState[instanceStateOffset + 1];
-    int characterOutputOffset = instanceState[instanceStateOffset + 2];
 
     if (boneCount > MAX_BONES_PER_CHARACTER) {
         return;
@@ -95,12 +73,5 @@ void main() {
         } else {
             sharedGlobalMatrices[boneIndex] = sharedGlobalMatrices[parentIndex] * local;
         }
-    }
-
-    for (int boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-        outputMatrices[characterOutputOffset + boneIndex] =
-            sharedGlobalMatrices[boneIndex]
-            * scaleMatrix(localRestScales[boneIndex].xyz)
-            * inverseBindMatrices[boneIndex];
     }
 }

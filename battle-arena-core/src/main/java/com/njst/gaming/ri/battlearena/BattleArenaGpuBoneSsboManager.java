@@ -19,13 +19,21 @@ public final class BattleArenaGpuBoneSsboManager {
     public static final int LOCAL_REST_POSITION_BINDING = 7;
     public static final int LOCAL_ROTATION_BINDING = 8;
     public static final int INVERSE_BIND_MATRIX_BINDING = 9;
-    public static final int OUTPUT_MATRIX_BINDING = 10;
+    public static final int OUTPUT_MATRIX_BINDING = 2;
     public static final int LOCAL_REST_SCALE_BINDING = 11;
     public static final int INSTANCE_STATE_BINDING = 12;
     public static final int RENDER_BONE_MATRIX_BINDING = 2;
+    private static final int OUTPUT_BUFFER_BINDING_START = 13;
+    private static final int OUTPUT_BUFFER_COUNT = 3;
     private static final String GPU_SKELETON_ASSET = "battle_arena/defeated.gpu_skeleton.json";
     private static final String GPU_SKELETON_BINARY_ASSET = "battle_arena/defeated.gpu_skeleton.bin";
     private static final String COMPUTE_SHADER = "resources/shaders/battle_arena_bone_compute.glsl";
+    private static final boolean RUN_DISPATCH_DIAGNOSTIC_SWEEP = false;
+    private static final String[] DIAGNOSTIC_COMPUTE_SHADERS = {
+            "resources/shaders/battle_arena_bone_compute_noop.glsl",
+            "resources/shaders/battle_arena_bone_compute_identity_output.glsl",
+            "resources/shaders/battle_arena_bone_compute_globals_only.glsl"
+    };
     private static final int INSTANCE_STATE_STRIDE = 4;
     private static final int BINARY_MAGIC = 0x42414753;
     private static final int BINARY_VERSION = 1;
@@ -36,13 +44,15 @@ public final class BattleArenaGpuBoneSsboManager {
     private final ArrayList<InstanceState> instances = new ArrayList<InstanceState>();
     private final IdentityHashMap<BattleArenaGpuSkeletonPoseSource, Integer> instanceBySource =
             new IdentityHashMap<BattleArenaGpuSkeletonPoseSource, Integer>();
+    private final ArrayList<DiagnosticBackend> diagnosticBackends = new ArrayList<DiagnosticBackend>();
     private ComputeBackend computeBackend;
-    private boolean instanceStateBufferBound;
     private boolean computeBuffersBound;
     private int outputBoneCapacity;
+    private int outputBufferIndex;
 
     public BattleArenaGpuBoneSsboManager(GraphicsDevice graphicsDevice) {
         this.asset = loadAsset(graphicsDevice);
+        validateParentBeforeChildOrder(asset);
         for (int i = 0; i < asset.clips.size(); i++) {
             Clip clip = asset.clips.get(i);
             if (clip != null && clip.name != null) {
@@ -120,13 +130,7 @@ public final class BattleArenaGpuBoneSsboManager {
             return;
         }
         this.computeBackend = computeBackend;
-        int[] state = createInstanceStateBuffer();
-        if (!instanceStateBufferBound || !computeBackend.hasBuffer(INSTANCE_STATE_BINDING)) {
-            computeBackend.bindBuffer(INSTANCE_STATE_BINDING, state);
-            instanceStateBufferBound = true;
-            return;
-        }
-        computeBackend.updateBuffer(INSTANCE_STATE_BINDING, state);
+        bindOrUpdateInstanceStateOnly(computeBackend, createInstanceStateBuffer());
     }
 
     public void dispatchSingle(GraphicsDevice graphicsDevice, BattleArenaGpuSkeletonPoseSource source) {
@@ -143,14 +147,22 @@ public final class BattleArenaGpuBoneSsboManager {
             return;
         }
         ensureComputeBuffers(graphicsDevice);
-        bindOrUpdateInstanceState(computeBackend);
+        int[] state = createInstanceStateBuffer();
+        if (RUN_DISPATCH_DIAGNOSTIC_SWEEP) {
+            ensureDiagnosticBackends(graphicsDevice);
+            for (DiagnosticBackend diagnosticBackend : diagnosticBackends) {
+                bindOrUpdateInstanceStateOnly(diagnosticBackend.backend, state);
+                diagnosticBackend.backend.dispatch(instances.size(), 1, 1);
+            }
+        }
+        bindOrUpdateInstanceStateOnly(computeBackend, state);
+        advanceOutputBuffer(computeBackend);
         computeBackend.dispatch(instances.size(), 1, 1);
-        bindOutputForRendering();
     }
 
     public void bindOutputForRendering() {
         if (computeBackend != null) {
-            computeBackend.bindBufferToShaderBinding(OUTPUT_MATRIX_BINDING, RENDER_BONE_MATRIX_BINDING);
+            computeBackend.bindBufferToShaderBinding(currentOutputBufferBinding(), RENDER_BONE_MATRIX_BINDING);
         }
     }
 
@@ -219,25 +231,88 @@ public final class BattleArenaGpuBoneSsboManager {
             ensureOutputCapacity();
             return;
         }
-        computeBackend.bindBuffer(METADATA_BINDING, createSkeletonMetadata());
-        computeBackend.bindBuffer(LOCAL_REST_POSITION_BINDING, asset.localRestPositions);
-        computeBackend.bindBuffer(LOCAL_ROTATION_BINDING, asset.rotations);
-        computeBackend.bindBuffer(INVERSE_BIND_MATRIX_BINDING, asset.inverseBindMatrices);
-        bindOutputBuffer();
-        computeBackend.bindBuffer(LOCAL_REST_SCALE_BINDING, asset.localRestScales);
+        bindStaticBuffers(computeBackend);
         computeBuffersBound = true;
     }
 
-    private void ensureOutputCapacity() {
-        int requiredBones = Math.max(asset.boneCount, totalOutputBoneCount());
-        if (requiredBones > outputBoneCapacity) {
-            bindOutputBuffer();
+    private void ensureDiagnosticBackends(GraphicsDevice graphicsDevice) {
+        if (diagnosticBackends.isEmpty()) {
+            for (String shaderPath : DIAGNOSTIC_COMPUTE_SHADERS) {
+                String shaderSource = graphicsDevice.loadShaderSource(shaderPath);
+                ComputeBackend backend = graphicsDevice.createComputeBackend(shaderSource);
+                if (backend == null || backend.hasError()) {
+                    throw new IllegalStateException("Battle Arena GPU diagnostic compute unavailable: "
+                            + shaderPath + " "
+                            + (backend != null ? backend.getError() : "null backend"));
+                }
+                bindStaticBuffers(backend);
+                diagnosticBackends.add(new DiagnosticBackend(backend));
+            }
+            return;
+        }
+        for (DiagnosticBackend diagnosticBackend : diagnosticBackends) {
+            ensureOutputCapacity(diagnosticBackend.backend);
         }
     }
 
-    private void bindOutputBuffer() {
+    private void bindStaticBuffers(ComputeBackend backend) {
+        backend.bindBuffer(METADATA_BINDING, createSkeletonMetadata());
+        backend.bindBuffer(LOCAL_REST_POSITION_BINDING, asset.localRestPositions);
+        backend.bindBuffer(LOCAL_ROTATION_BINDING, asset.rotations);
+        backend.bindBuffer(INVERSE_BIND_MATRIX_BINDING, asset.inverseBindMatrices);
+        bindOutputBuffers(backend);
+        backend.bindBuffer(LOCAL_REST_SCALE_BINDING, asset.localRestScales);
+    }
+
+    private void bindOrUpdateInstanceStateOnly(ComputeBackend backend, int[] state) {
+        if (!backend.hasBuffer(INSTANCE_STATE_BINDING)) {
+            backend.bindBuffer(INSTANCE_STATE_BINDING, state);
+        } else {
+            backend.updateBuffer(INSTANCE_STATE_BINDING, state);
+        }
+    }
+
+    private void ensureOutputCapacity() {
+        ensureOutputCapacity(computeBackend);
+    }
+
+    private void ensureOutputCapacity(ComputeBackend backend) {
+        int requiredBones = Math.max(asset.boneCount, totalOutputBoneCount());
+        if (requiredBones > outputBoneCapacity) {
+            outputBoneCapacity = requiredBones;
+        }
+        int requiredFloats = outputBoneCapacity * 16;
+        if (backend == null) {
+            return;
+        }
+        for (int i = 0; i < OUTPUT_BUFFER_COUNT; i++) {
+            int binding = outputBufferBinding(i);
+            if (backend.getBufferSize(binding) < requiredFloats) {
+                backend.bindBuffer(binding, new float[requiredFloats]);
+            }
+        }
+    }
+
+    private void bindOutputBuffers(ComputeBackend backend) {
         outputBoneCapacity = Math.max(asset.boneCount, totalOutputBoneCount());
-        computeBackend.bindBuffer(OUTPUT_MATRIX_BINDING, new float[outputBoneCapacity * 16]);
+        float[] initialData = new float[outputBoneCapacity * 16];
+        for (int i = 0; i < OUTPUT_BUFFER_COUNT; i++) {
+            backend.bindBuffer(outputBufferBinding(i), initialData);
+        }
+        backend.bindBufferToShaderBinding(currentOutputBufferBinding(), OUTPUT_MATRIX_BINDING);
+    }
+
+    private void advanceOutputBuffer(ComputeBackend backend) {
+        outputBufferIndex = (outputBufferIndex + 1) % OUTPUT_BUFFER_COUNT;
+        backend.bindBufferToShaderBinding(currentOutputBufferBinding(), OUTPUT_MATRIX_BINDING);
+    }
+
+    private int currentOutputBufferBinding() {
+        return outputBufferBinding(outputBufferIndex);
+    }
+
+    private int outputBufferBinding(int index) {
+        return OUTPUT_BUFFER_BINDING_START + index;
     }
 
     private int totalOutputBoneCount() {
@@ -286,6 +361,22 @@ public final class BattleArenaGpuBoneSsboManager {
             throw new IllegalStateException("Unable to load GPU skeleton asset: " + GPU_SKELETON_ASSET);
         }
         return asset;
+    }
+
+    private static void validateParentBeforeChildOrder(GpuSkeletonAsset asset) {
+        if (asset == null || asset.parentIndices == null) {
+            throw new IllegalStateException("GPU skeleton asset is missing parent indices");
+        }
+        for (int i = 0; i < asset.parentIndices.length; i++) {
+            int parentIndex = asset.parentIndices[i];
+            if (parentIndex >= i) {
+                String boneName = asset.boneNames != null && i < asset.boneNames.length
+                        ? asset.boneNames[i]
+                        : String.valueOf(i);
+                throw new IllegalStateException("GPU skeleton asset must be parent-before-child for sequential compute: "
+                        + boneName + " parentIndex=" + parentIndex + " boneIndex=" + i);
+            }
+        }
     }
 
     private static GpuSkeletonAsset readBinaryAsset(byte[] bytes) {
@@ -360,6 +451,14 @@ public final class BattleArenaGpuBoneSsboManager {
         int boneOffset;
         int boneCount;
         int flags;
+    }
+
+    private static final class DiagnosticBackend {
+        final ComputeBackend backend;
+
+        DiagnosticBackend(ComputeBackend backend) {
+            this.backend = backend;
+        }
     }
 
     private static final class GpuSkeletonAsset {

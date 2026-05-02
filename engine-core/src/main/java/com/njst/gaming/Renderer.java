@@ -20,15 +20,22 @@ public class Renderer {
         public final float updateMs;
         public final float skyboxMs;
         public final float renderMs;
+        public final float boneMs;
         public final int objectCount;
         public final int terrainCount;
 
         public ProfilerSnapshot(float frameMs, float updateMs, float skyboxMs, float renderMs,
                 int objectCount, int terrainCount) {
+            this(frameMs, updateMs, skyboxMs, renderMs, 0f, objectCount, terrainCount);
+        }
+
+        public ProfilerSnapshot(float frameMs, float updateMs, float skyboxMs, float renderMs,
+                float boneMs, int objectCount, int terrainCount) {
             this.frameMs = frameMs;
             this.updateMs = updateMs;
             this.skyboxMs = skyboxMs;
             this.renderMs = renderMs;
+            this.boneMs = boneMs;
             this.objectCount = objectCount;
             this.terrainCount = terrainCount;
         }
@@ -89,6 +96,7 @@ public class Renderer {
     private long profilerUpdateNanos = 0L;
     private long profilerSkyboxNanos = 0L;
     private long profilerRenderNanos = 0L;
+    private long profilerBoneNanos = 0L;
     private int profilerFrames = 0;
     private int profilerObjects = 0;
     private int profilerTerrainObjects = 0;
@@ -439,6 +447,12 @@ public class Renderer {
         return graphicsDevice;
     }
 
+    public synchronized void recordBoneCalculationNanos(long boneNanos) {
+        if (boneNanos > 0L) {
+            profilerBoneNanos += boneNanos;
+        }
+    }
+
     private void logException(Exception e) {
         log.logToRootDirectory(e.getMessage());
         for (StackTraceElement element : e.getStackTrace()) {
@@ -467,6 +481,7 @@ public class Renderer {
                 profilerUpdateNanos / divisor,
                 profilerSkyboxNanos / divisor,
                 profilerRenderNanos / divisor,
+                profilerBoneNanos / divisor,
                 Math.round(profilerObjects / (float) profilerFrames),
                 Math.round(profilerTerrainObjects / (float) profilerFrames));
 
@@ -475,6 +490,7 @@ public class Renderer {
         profilerUpdateNanos = 0L;
         profilerSkyboxNanos = 0L;
         profilerRenderNanos = 0L;
+        profilerBoneNanos = 0L;
         profilerObjects = 0;
         profilerTerrainObjects = 0;
         profilerFrames = 0;

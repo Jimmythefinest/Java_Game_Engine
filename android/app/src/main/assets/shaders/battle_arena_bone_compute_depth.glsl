@@ -1,9 +1,8 @@
 #version 430 core
-// DISPATCH_LABEL: sequential_full
 
 #define MAX_BONES_PER_CHARACTER 128
 
-layout(local_size_x = 1) in;
+layout(local_size_x = 128) in;
 
 layout(std430, binding = 6) readonly buffer BoneMetadataBuffer {
     int metadata[];
@@ -72,8 +71,10 @@ mat4 scaleMatrix(vec3 scale) {
 }
 
 void main() {
+    int boneIndex = int(gl_LocalInvocationID.x);
     int instanceIndex = int(gl_WorkGroupID.x);
     int boneCount = metadata[0];
+    int maxDepth = metadata[1];
     int instanceStateOffset = instanceIndex * 4;
     int rotationOffset = instanceState[instanceStateOffset];
     int frameIndex = instanceState[instanceStateOffset + 1];
@@ -83,21 +84,27 @@ void main() {
         return;
     }
 
-    for (int boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-        int boneMetadataOffset = 2 + boneIndex * 2;
-        int parentIndex = metadata[boneMetadataOffset];
-        int rotationIndex = rotationOffset + frameIndex * boneCount + boneIndex;
-        mat4 local = localMatrix(
-            localRestPositions[boneIndex].xyz,
-            localRotations[rotationIndex]);
-        if (parentIndex < 0) {
-            sharedGlobalMatrices[boneIndex] = local;
-        } else {
-            sharedGlobalMatrices[boneIndex] = sharedGlobalMatrices[parentIndex] * local;
+    for (int depth = 0; depth <= maxDepth; depth++) {
+        if (boneIndex < boneCount) {
+            int boneMetadataOffset = 2 + boneIndex * 2;
+            int parentIndex = metadata[boneMetadataOffset];
+            int boneDepth = metadata[boneMetadataOffset + 1];
+            if (boneDepth == depth) {
+                int rotationIndex = rotationOffset + frameIndex * boneCount + boneIndex;
+                mat4 local = localMatrix(
+                    localRestPositions[boneIndex].xyz,
+                    localRotations[rotationIndex]);
+                if (parentIndex < 0) {
+                    sharedGlobalMatrices[boneIndex] = local;
+                } else {
+                    sharedGlobalMatrices[boneIndex] = sharedGlobalMatrices[parentIndex] * local;
+                }
+            }
         }
+        barrier();
     }
 
-    for (int boneIndex = 0; boneIndex < boneCount; boneIndex++) {
+    if (boneIndex < boneCount) {
         outputMatrices[characterOutputOffset + boneIndex] =
             sharedGlobalMatrices[boneIndex]
             * scaleMatrix(localRestScales[boneIndex].xyz)

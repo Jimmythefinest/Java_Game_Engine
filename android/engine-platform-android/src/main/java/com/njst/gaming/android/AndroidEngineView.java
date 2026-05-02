@@ -153,14 +153,15 @@ public class AndroidEngineView extends FrameLayout {
 
     private String formatStats(int fps, Renderer.ProfilerSnapshot snapshot) {
         if (snapshot == null) {
-            return "FPS 0\nframe 0.0ms\nupd 0.0 sky 0.0\nrnd 0.0 obj 0 t 0";
+            return "FPS 0\nframe 0.0ms\nupd 0.0 sky 0.0\nbone 0.0 rnd 0.0\nobj 0 t 0";
         }
         return String.format(Locale.US,
-                "FPS %d\nframe %.1fms\nupd %.1f sky %.1f\nrnd %.1f obj %d t %d",
+                "FPS %d\nframe %.1fms\nupd %.1f sky %.1f\nbone %.1f rnd %.1f\nobj %d t %d",
                 fps,
                 snapshot.frameMs,
                 snapshot.updateMs,
                 snapshot.skyboxMs,
+                snapshot.boneMs,
                 snapshot.renderMs,
                 snapshot.objectCount,
                 snapshot.terrainCount);

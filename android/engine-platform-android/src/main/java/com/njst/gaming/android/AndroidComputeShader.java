@@ -1,17 +1,25 @@
 package com.njst.gaming.android;
 
 import android.opengl.GLES31;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AndroidComputeShader {
+    private static final String TAG = "NJST";
+    private static final int DISPATCH_LOG_INTERVAL = 120;
+
     private final Map<Integer, AndroidShaderStorageBuffer> buffers = new HashMap<>();
     private final Map<Integer, Integer> bufferSizes = new HashMap<>();
+    private final String label;
     private int program;
+    private long dispatchNanos;
+    private int dispatchSamples;
     public String err = "";
 
     public AndroidComputeShader(String shaderCode) {
+        this.label = parseLabel(shaderCode);
         createShaderProgram(shaderCode);
     }
 
@@ -79,9 +87,44 @@ public class AndroidComputeShader {
         if (program == 0) {
             return;
         }
+        long startNanos = System.nanoTime();
         GLES31.glUseProgram(program);
         GLES31.glDispatchCompute(x, y, z);
-        GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT | GLES31.GL_BUFFER_UPDATE_BARRIER_BIT);
+        GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT);
+        recordDispatchTime(System.nanoTime() - startNanos, x, y, z);
+    }
+
+    private void recordDispatchTime(long elapsedNanos, int x, int y, int z) {
+        dispatchNanos += elapsedNanos;
+        dispatchSamples++;
+        if (dispatchSamples < DISPATCH_LOG_INTERVAL) {
+            return;
+        }
+        float averageMs = dispatchNanos / (1_000_000f * dispatchSamples);
+        Log.i(TAG, "AndroidComputeShader.dispatchOnly label=" + label
+                + " avgMs=" + averageMs
+                + " samples=" + dispatchSamples
+                + " groups=" + x + "," + y + "," + z);
+        dispatchNanos = 0L;
+        dispatchSamples = 0;
+    }
+
+    private String parseLabel(String shaderCode) {
+        if (shaderCode == null) {
+            return "compute";
+        }
+        String marker = "DISPATCH_LABEL:";
+        int index = shaderCode.indexOf(marker);
+        if (index < 0) {
+            return "compute";
+        }
+        int start = index + marker.length();
+        int end = shaderCode.indexOf('\n', start);
+        if (end < 0) {
+            end = shaderCode.length();
+        }
+        String value = shaderCode.substring(start, end).trim();
+        return value.isEmpty() ? "compute" : value;
     }
 
     public float[] getBufferData(int bindingIndex) {
