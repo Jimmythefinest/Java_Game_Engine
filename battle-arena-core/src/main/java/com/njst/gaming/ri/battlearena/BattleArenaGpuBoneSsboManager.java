@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -205,6 +206,30 @@ public final class BattleArenaGpuBoneSsboManager {
         }
         int frame = (int) Math.floor(Math.max(0f, animationFrame));
         return frame % frameCount;
+    }
+
+    public Map<String, BattleArenaAnimationTiming> createAnimationTimings(float tickSeconds) {
+        LinkedHashMap<String, BattleArenaAnimationTiming> timings =
+                new LinkedHashMap<String, BattleArenaAnimationTiming>();
+        float safeTickSeconds = Math.max(0.0001f, tickSeconds);
+        for (Clip clip : asset.clips) {
+            if (clip == null || clip.name == null || clip.name.trim().isEmpty()) {
+                continue;
+            }
+            float framesPerSecond = clip.framesPerSecond > 0f ? clip.framesPerSecond : 60f;
+            float durationFrames = clip.durationFrames > 0f
+                    ? clip.durationFrames
+                    : Math.max(1, clip.frameCount - 1);
+            float durationSeconds = durationFrames / framesPerSecond;
+            int lockTicks = Math.max(1, (int) Math.ceil(durationSeconds / safeTickSeconds));
+            timings.put(clip.name, new BattleArenaAnimationTiming(
+                    clip.name,
+                    framesPerSecond,
+                    durationFrames,
+                    clip.frameCount,
+                    lockTicks));
+        }
+        return timings;
     }
 
     public int boneOffset(int instanceId) {
