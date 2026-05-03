@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.graphics.GraphicsDevice;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +27,28 @@ final class BattleArenaHitboxTracks {
             return null;
         }
         return GSON.fromJson(json, BattleArenaHitboxTracks.class);
+    }
+
+    static BattleArenaHitboxTracks loadFromResource(String path) {
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
+        InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+        if (stream == null) {
+            stream = BattleArenaHitboxTracks.class.getClassLoader().getResourceAsStream(path);
+        }
+        if (stream == null) {
+            return null;
+        }
+        try {
+            String json = new String(readAll(stream), "UTF-8");
+            if (json.trim().isEmpty()) {
+                return null;
+            }
+            return GSON.fromJson(json, BattleArenaHitboxTracks.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to load hitbox tracks: " + path, e);
+        }
     }
 
     Vector3 sampleCenter(String animationKey, float frame, String boxName) {
@@ -97,6 +122,17 @@ final class BattleArenaHitboxTracks {
 
     private float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private static byte[] readAll(InputStream stream) throws IOException {
+        try (InputStream input = stream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) >= 0) {
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        }
     }
 
     static final class BoxDefinitionTrack {

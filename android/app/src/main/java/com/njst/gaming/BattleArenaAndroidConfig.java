@@ -6,18 +6,37 @@ import com.njst.gaming.android.AndroidPointerBinding;
 import com.njst.gaming.ri.battlearena.*;
 import com.njst.gaming.ri.battlearena.controls.*;
 import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlClient;
+import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpSimulationClient;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class BattleArenaAndroidConfig implements AndroidGameConfig {
+    private static final String DEFAULT_SIMULATION_HOST = "10.42.0.1";
+
     @Override
     public void configureScene(Scene scene) {
+        configureNetworkSimulationDefaults();
         scene.loader = new BattleArenaGpuSkinningDemoLoader();//BattleArenaDemoLoader(
                 // BattleArenaDemoLoader.LOCAL_PLAYER_ANDROID,
                 // System.getProperty("battleArena.remoteHost", BattleArenaTcpControlClient.DEFAULT_HOST),
                 // BattleArenaDemoLoader.DEFAULT_TCP_CONTROL_PORT);
+    }
+
+    private void configureNetworkSimulationDefaults() {
+        setDefaultProperty("battleArena.networkSimulation", "true");
+        setDefaultProperty("battleArena.simulationHost", DEFAULT_SIMULATION_HOST);
+        setDefaultProperty(
+                "battleArena.simulationPort",
+                String.valueOf(BattleArenaTcpSimulationClient.DEFAULT_PORT));
+    }
+
+    private void setDefaultProperty(String key, String value) {
+        String existing = System.getProperty(key);
+        if (existing == null || existing.trim().isEmpty()) {
+            System.setProperty(key, value);
+        }
     }
 
     @Override

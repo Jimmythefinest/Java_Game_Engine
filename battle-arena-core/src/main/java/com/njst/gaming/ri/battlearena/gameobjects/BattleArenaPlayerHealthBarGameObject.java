@@ -7,20 +7,20 @@ import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.graphics.NullGraphicsDevice;
 import com.njst.gaming.graphics.ShaderHandle;
 import com.njst.gaming.objects.GameObject;
-import com.njst.gaming.ri.battlearena.BattleArenaGpuDemoCombatController;
+import com.njst.gaming.ri.battlearena.BattleArenaPlayerStatusSource;
 
 public final class BattleArenaPlayerHealthBarGameObject extends GameObject {
     private static final int TEXTURE_WIDTH = 96;
     private static final int TEXTURE_HEIGHT = 12;
 
-    private final BattleArenaGpuDemoCombatController combatController;
+    private final BattleArenaPlayerStatusSource statusSource;
     private final Camera camera;
     private final String playerId;
     private final float verticalOffset;
     private float lastRenderedHealthRatio = -1f;
     private int generatedTextureId;
 
-    public BattleArenaPlayerHealthBarGameObject(BattleArenaGpuDemoCombatController combatController,
+    public BattleArenaPlayerHealthBarGameObject(BattleArenaPlayerStatusSource statusSource,
                                                 Camera camera,
                                                 String playerId,
                                                 String name,
@@ -28,7 +28,7 @@ public final class BattleArenaPlayerHealthBarGameObject extends GameObject {
                                                 float heightWorldUnits,
                                                 float verticalOffset) {
         super(createQuadGeometry(), 0);
-        this.combatController = combatController;
+        this.statusSource = statusSource;
         this.camera = camera;
         this.playerId = playerId;
         this.verticalOffset = verticalOffset;
@@ -61,7 +61,7 @@ public final class BattleArenaPlayerHealthBarGameObject extends GameObject {
     }
 
     private void updatePlacement() {
-        Vector3 position = combatController.positionForPlayer(playerId);
+        Vector3 position = statusSource.positionForPlayer(playerId);
         setPosition(position.x, position.y + verticalOffset, position.z);
         if (camera == null || camera.cameraPosition == null) {
             return;
@@ -78,7 +78,7 @@ public final class BattleArenaPlayerHealthBarGameObject extends GameObject {
         if (graphicsDevice instanceof NullGraphicsDevice) {
             return;
         }
-        float healthRatio = combatController.healthRatio(playerId);
+        float healthRatio = statusSource.healthRatio(playerId);
         if (texture != 0 && Math.abs(healthRatio - lastRenderedHealthRatio) < 0.0001f) {
             return;
         }

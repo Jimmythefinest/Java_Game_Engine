@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class BattleArenaGpuDemoCombatController {
+public final class BattleArenaGpuDemoCombatController implements BattleArenaPlayerStatusSource {
     private static final float MAX_HEALTH = 100f;
     private static final float HIT_DAMAGE = 10f;
     private static final float HIT_KNOCKBACK_DISTANCE = 0.45f;
@@ -74,6 +74,7 @@ public final class BattleArenaGpuDemoCombatController {
         return statesByPlayer.get(playerId);
     }
 
+    @Override
     public float healthRatio(String playerId) {
         Float health = healthByPlayer.get(playerId);
         if (health == null || MAX_HEALTH <= 0f) {
@@ -82,6 +83,7 @@ public final class BattleArenaGpuDemoCombatController {
         return Math.max(0f, Math.min(1f, health.floatValue() / MAX_HEALTH));
     }
 
+    @Override
     public Vector3 positionForPlayer(String playerId) {
         BattleArenaPlayerState state = statesByPlayer.get(playerId);
         if (state == null) {

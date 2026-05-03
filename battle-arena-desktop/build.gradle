@@ -73,6 +73,30 @@ tasks.register('runBattleArenaGpuSkinningDemo', JavaExec) {
     dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuSkinningDemoApp'
+    if (project.hasProperty('networkSimulation')) {
+        systemProperty 'battleArena.networkSimulation', project.property('networkSimulation')
+    }
+    if (project.hasProperty('simulationHost')) {
+        systemProperty 'battleArena.simulationHost', project.property('simulationHost')
+    }
+    if (project.hasProperty('simulationPort')) {
+        systemProperty 'battleArena.simulationPort', project.property('simulationPort')
+    }
+}
+
+tasks.register('runBattleArenaGpuSkinningNetworkDemo', JavaExec) {
+    group = 'application'
+    description = 'Render the Battle Arena GPU skinning demo from the authoritative TCP simulation server'
+    dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuSkinningDemoApp'
+    systemProperty 'battleArena.networkSimulation', 'true'
+    systemProperty 'battleArena.simulationHost', project.hasProperty('simulationHost')
+            ? project.property('simulationHost')
+            : '127.0.0.1'
+    systemProperty 'battleArena.simulationPort', project.hasProperty('simulationPort')
+            ? project.property('simulationPort')
+            : '7788'
 }
 
 tasks.register('runBattleArenaTcpControlServer', JavaExec) {
@@ -81,6 +105,17 @@ tasks.register('runBattleArenaTcpControlServer', JavaExec) {
     dependsOn('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpControlServer'
+    if (project.hasProperty('port')) {
+        args project.property('port')
+    }
+}
+
+tasks.register('runBattleArenaTcpSimulationServer', JavaExec) {
+    group = 'application'
+    description = 'Run the authoritative TCP simulation server for the Battle Arena GPU skinning demo'
+    dependsOn(':battle-arena-core:exportBattleArenaGpuSkeletonAsset', 'classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.networking.BattleArenaTcpSimulationServerApp'
     if (project.hasProperty('port')) {
         args project.property('port')
     }

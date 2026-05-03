@@ -6,6 +6,7 @@ import java.util.Map;
 
 public final class BattleArenaSimulationServer implements BattleArenaPlayerStateProvider {
     private final BattleArenaLocalPlayerStateServer stateServer;
+    private final BattleArenaHeadlessCombatSystem combatSystem = new BattleArenaHeadlessCombatSystem();
     private final Map<String, BattleArenaNpcController> npcControllers =
             new LinkedHashMap<String, BattleArenaNpcController>();
 
@@ -27,7 +28,7 @@ public final class BattleArenaSimulationServer implements BattleArenaPlayerState
 
     @Override
     public List<BattleArenaPlayerState> initialStates() {
-        return stateServer.initialStates();
+        return combatSystem.attachHealth(stateServer.initialStates());
     }
 
     @Override
@@ -49,11 +50,12 @@ public final class BattleArenaSimulationServer implements BattleArenaPlayerState
     public void tick() {
         submitNpcInputs();
         stateServer.tick();
+        combatSystem.update(stateServer.currentTick(), stateServer.snapshotStates(), stateServer);
     }
 
     @Override
     public List<BattleArenaPlayerState> snapshotStates() {
-        return stateServer.snapshotStates();
+        return combatSystem.attachHealth(stateServer.snapshotStates());
     }
 
     public BattleArenaSimulationSnapshot snapshot() {

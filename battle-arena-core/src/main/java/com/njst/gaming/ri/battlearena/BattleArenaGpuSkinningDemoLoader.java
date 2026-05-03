@@ -10,6 +10,8 @@ import com.njst.gaming.input.ActionInput;
 import com.njst.gaming.input.PointerState;
 import com.njst.gaming.ri.battlearena.controls.BattleArenaActions;
 import com.njst.gaming.ri.battlearena.controls.BattleArenaCharacterControlState;
+import com.njst.gaming.ri.battlearena.networking.BattleArenaTcpSimulationClient;
+import com.njst.gaming.ri.battlearena.gameobjects.BattleArenaPlayerHealthBarGameObject;
 import com.njst.gaming.objects.Weighted_GameObject;
 
 import java.util.ArrayList;
@@ -24,9 +26,15 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
     private static final boolean ANIMATE_CHARACTERS = true;
     private static final String LOCAL_PLAYER_ID = "player_0";
     private static final String NPC_PLAYER_ID = "player_1";
+    private static final String NETWORK_SIMULATION_PROPERTY = "battleArena.networkSimulation";
+    private static final String SIMULATION_HOST_PROPERTY = "battleArena.simulationHost";
+    private static final String SIMULATION_PORT_PROPERTY = "battleArena.simulationPort";
     private static final float CAMERA_DISTANCE = 7.5f;
     private static final float CAMERA_HEIGHT = 2.4f;
     private static final float CAMERA_FOCUS_HEIGHT = 1.1f;
+    private static final float HEALTH_BAR_WIDTH = 0.9f;
+    private static final float HEALTH_BAR_HEIGHT = 0.12f;
+    private static final float HEALTH_BAR_VERTICAL_OFFSET = 2.15f;
     private static final float LOOK_SENSITIVITY = 0.0125f;
     private static final float MIN_CAMERA_PITCH = -0.8f;
     private static final float MAX_CAMERA_PITCH = 0.45f;
@@ -78,14 +86,20 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
 
         BattleArenaGpuBoneSsboManager gpuBoneSsboManager =
                 new BattleArenaGpuBoneSsboManager(graphicsDevice);
-        BattleArenaSimulationServer simulationServer =
-                createSimulationServer(resolveCharacterPositions(), gpuBoneSsboManager);
-        BattleArenaGpuDemoCombatController combatController =
-                new BattleArenaGpuDemoCombatController(simulationServer, graphicsDevice, definition);
+        boolean networkSimulation = Boolean.getBoolean(NETWORK_SIMULATION_PROPERTY);
+        BattleArenaSimulationServer simulationServer = networkSimulation
+                ? null
+                : createSimulationServer(resolveCharacterPositions(), gpuBoneSsboManager);
+        BattleArenaTcpSimulationClient simulationClient = networkSimulation
+                ? createSimulationClient()
+                : null;
+        BattleArenaSnapshotPlayerStatusSource statusSource = new BattleArenaSnapshotPlayerStatusSource();
         ArrayList<DemoPoseSource> poseSources = new ArrayList<DemoPoseSource>();
         Map<String, DemoPoseSource> poseSourceByPlayer =
                 new HashMap<String, DemoPoseSource>();
-        List<BattleArenaPlayerState> initialStates = simulationServer.initialStates();
+        List<BattleArenaPlayerState> initialStates = simulationServer != null
+                ? simulationServer.initialStates()
+                : createInitialStates(resolveCharacterPositions());
         for (int i = 0; i < initialStates.size(); i++) {
             BattleArenaPlayerState playerState = initialStates.get(i);
             DemoPoseSource poseSource = createCharacter(
@@ -98,9 +112,18 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
             gpuBoneSsboManager.registerSkeleton(poseSource);
             poseSources.add(poseSource);
             poseSourceByPlayer.put(playerState.playerId, poseSource);
+            scene.addGameObject(new BattleArenaPlayerHealthBarGameObject(
+                    statusSource,
+                    scene.renderer.camera,
+                    playerState.playerId,
+                    "BattleArena_" + playerState.playerId + "_HealthBar",
+                    HEALTH_BAR_WIDTH,
+                    HEALTH_BAR_HEIGHT,
+                    HEALTH_BAR_VERTICAL_OFFSET));
         }
-        combatController.register(scene, definition, initialStates);
-        combatController.updateStates(initialStates);
+        statusSource.update(new BattleArenaSimulationSnapshot(0,
+                BattleArenaLocalPlayerStateServer.TICK_SECONDS,
+                initialStates));
 
         scene.animations.add(new Animation() {
             private boolean staticPoseUploaded;
@@ -110,6 +133,10 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
 
             @Override
             public void animate(float deltaSeconds) {
+                if (simulationClient != null) {
+                    animateNetworkSimulation(deltaSeconds);
+                    return;
+                }
                 submitLocalInput(simulationServer, actions, movementPointer);
                 if (!ANIMATE_CHARACTERS && staticPoseUploaded) {
                     scene.renderer.recordBoneCalculationNanos(0L);
@@ -128,7 +155,24 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                     simulationServer.tick();
                 }
                 BattleArenaSimulationSnapshot snapshot = simulationServer.snapshot();
-                combatController.updateStates(snapshot.players);
+                statusSource.update(snapshot);
+                renderSnapshot(snapshot);
+            }
+
+            private void animateNetworkSimulation(float deltaSeconds) {
+                simulationClient.update(deltaSeconds);
+                submitNetworkInput(simulationClient, actions, movementPointer);
+                BattleArenaSimulationSnapshot snapshot = simulationClient.latestSnapshot();
+                if (snapshot == null) {
+                    scene.renderer.recordBoneCalculationNanos(0L);
+                    updateCamera(scene.renderer.camera, findPlayer(initialStates, LOCAL_PLAYER_ID));
+                    return;
+                }
+                renderSnapshot(snapshot);
+            }
+
+            private void renderSnapshot(BattleArenaSimulationSnapshot snapshot) {
+                statusSource.update(snapshot);
                 for (BattleArenaPlayerState playerState : snapshot.players) {
                     DemoPoseSource poseSource = poseSourceByPlayer.get(playerState.playerId);
                     if (poseSource != null) {
@@ -140,7 +184,7 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 gpuBoneSsboManager.dispatchAll(graphicsDevice);
                 scene.renderer.recordBoneCalculationNanos(System.nanoTime() - boneStartNanos);
                 staticPoseUploaded = true;
-                updateCamera(scene.renderer.camera, snapshot.stateForPlayer(LOCAL_PLAYER_ID));
+                updateCamera(scene.renderer.camera, snapshot.stateForPlayer(cameraPlayerId()));
             }
 
             private void submitLocalInput(BattleArenaPlayerStateProvider provider,
@@ -160,12 +204,38 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 provider.submitInput(LOCAL_PLAYER_ID, provider.currentTick() + 1, input);
             }
 
+            private void submitNetworkInput(BattleArenaTcpSimulationClient client,
+                                            ActionInput actions,
+                                            PointerState movementPointer) {
+                controls.capturePlayerInput(actions, movementPointer);
+                BattleArenaPlayerInput input = new BattleArenaPlayerInput();
+                input.moveZ = controls.forwardInput;
+                input.turn = controls.turnInput;
+                input.run = controls.runDown;
+                input.jumpPressed = controls.jumpPressed;
+                input.punchPressed = controls.punchPressed;
+                input.kickPressed = controls.kickPressed;
+                input.castPressed = controls.castFireballPressed || controls.castMudWallPressed;
+                input.stepLeftPressed = controls.stepLeftPressed;
+                input.stepRightPressed = controls.stepRightPressed;
+                BattleArenaSimulationSnapshot snapshot = client.latestSnapshot();
+                int inputTick = snapshot != null ? snapshot.tick + 1 : 0;
+                client.sendInput(inputTick, input);
+            }
+
+            private String cameraPlayerId() {
+                if (simulationClient == null || simulationClient.assignedPlayer() == null) {
+                    return LOCAL_PLAYER_ID;
+                }
+                return simulationClient.assignedPlayer();
+            }
         });
 
-        updateCamera(scene.renderer.camera, simulationServer.stateForPlayer(LOCAL_PLAYER_ID));
+        updateCamera(scene.renderer.camera, findPlayer(initialStates, LOCAL_PLAYER_ID));
         BattleArenaDemoLoader.log("GPU skinning demo loaded characters=" + poseSources.size()
                 + " bonesPerCharacter=" + gpuBoneSsboManager.boneCount()
-                + " gpuInstances=" + gpuBoneSsboManager.instanceCount());
+                + " gpuInstances=" + gpuBoneSsboManager.instanceCount()
+                + " networkSimulation=" + networkSimulation);
     }
 
     private BattleArenaSimulationServer createSimulationServer(float[][] spawnPositions,
@@ -175,6 +245,40 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 gpuBoneSsboManager.createAnimationTimings(BattleArenaLocalPlayerStateServer.TICK_SECONDS));
         simulationServer.setNpcController(NPC_PLAYER_ID, new BattleArenaChaseNpcController(LOCAL_PLAYER_ID));
         return simulationServer;
+    }
+
+    private BattleArenaTcpSimulationClient createSimulationClient() {
+        return new BattleArenaTcpSimulationClient(
+                System.getProperty(SIMULATION_HOST_PROPERTY, BattleArenaTcpSimulationClient.DEFAULT_HOST),
+                readIntProperty(SIMULATION_PORT_PROPERTY, BattleArenaTcpSimulationClient.DEFAULT_PORT));
+    }
+
+    private List<BattleArenaPlayerState> createInitialStates(float[][] spawnPositions) {
+        return new BattleArenaLocalPlayerStateServer(spawnPositions).initialStates();
+    }
+
+    private BattleArenaPlayerState findPlayer(List<BattleArenaPlayerState> states, String playerId) {
+        if (states == null || playerId == null) {
+            return null;
+        }
+        for (BattleArenaPlayerState state : states) {
+            if (state != null && playerId.equals(state.playerId)) {
+                return state;
+            }
+        }
+        return null;
+    }
+
+    private static int readIntProperty(String property, int fallback) {
+        String value = System.getProperty(property);
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 
     private DemoPoseSource createCharacter(Scene scene,
