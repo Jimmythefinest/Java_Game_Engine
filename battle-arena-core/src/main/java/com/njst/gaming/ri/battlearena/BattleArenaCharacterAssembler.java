@@ -205,8 +205,7 @@ final class BattleArenaCharacterAssembler {
                     assembly.skeleton,
                     spec.path,
                     spec.framesPerSecond,
-                    assembly.animationSet(animationKey),
-                    activeAnimations);
+                    assembly.animationSet(animationKey));
         }
         for (String animationKey : OPTIONAL_ANIMATION_KEYS) {
             AnimationAssetSpec spec = animationSpecs.get(animationKey);
@@ -219,8 +218,7 @@ final class BattleArenaCharacterAssembler {
                     assembly.skeleton,
                     spec.path,
                     spec.framesPerSecond,
-                    assembly.animationSet(animationKey),
-                    activeAnimations);
+                    assembly.animationSet(animationKey));
         }
     }
 
@@ -249,7 +247,6 @@ final class BattleArenaCharacterAssembler {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, KeyframeAnimation> deserializeAnimations(byte[] bytes) {
         try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
             Object value = inputStream.readObject();
@@ -276,8 +273,7 @@ final class BattleArenaCharacterAssembler {
                                   Skeleton skeleton,
                                   String animationFile,
                                   float framesPerSecond,
-                                  ArrayList<KeyframeAnimation> targetList,
-                                  ArrayList<KeyframeAnimation> activeAnimations) {
+                                  ArrayList<KeyframeAnimation> targetList) {
         log("loading animations asset=" + animationFile);
         byte[] animBytes = graphicsDevice.loadBinaryResource(animationFile);
         if (animBytes == null || animBytes.length == 0) {
@@ -311,8 +307,7 @@ final class BattleArenaCharacterAssembler {
                                           Skeleton skeleton,
                                           String animationFile,
                                           float framesPerSecond,
-                                          ArrayList<KeyframeAnimation> targetList,
-                                          ArrayList<KeyframeAnimation> activeAnimations) {
+                                          ArrayList<KeyframeAnimation> targetList) {
         if (animationFile == null || animationFile.trim().isEmpty()) {
             log("optional animation asset missing path");
             return;
@@ -322,10 +317,9 @@ final class BattleArenaCharacterAssembler {
             log("optional animation asset missing=" + animationFile);
             return;
         }
-        loadAnimationSet(graphicsDevice, scene, skeleton, animationFile, framesPerSecond, targetList, activeAnimations);
+        loadAnimationSet(graphicsDevice, scene, skeleton, animationFile, framesPerSecond, targetList);
     }
 
-    @SuppressWarnings("unchecked")
     private ArrayList<Bone> deserializeBoneList(byte[] boneBytes, String boneFile) {
         try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(boneBytes))) {
             Object value = inputStream.readObject();

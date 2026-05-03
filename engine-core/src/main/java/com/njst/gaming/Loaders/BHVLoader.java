@@ -9,15 +9,13 @@ import com.njst.gaming.Bone;
 
 public class BHVLoader {
     public static Bone load(String path) throws IOException {
-
-        BufferedReader reader = new BufferedReader(new FileReader(path));
-        String line;
         Bone root = new Bone();
         ArrayList<String> data = new ArrayList<>();
-        // boolean bb=true;
-        while ((line = reader.readLine()) != null) {
-
-            data.add(line);
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                data.add(line);
+            }
         }
         int last = data.size() - 1;
         for (int i = last; i > -1; i--) {
@@ -27,8 +25,6 @@ public class BHVLoader {
             }
         }
         System.out.println("last:" + last + " other" + data.size());
-        // root.Children.add(loadChild(data, 2));
-        reader.close();
         return root;
     }
 
@@ -43,9 +39,8 @@ public class BHVLoader {
     public static void print_bone(Bone b, int tabs) {
         String tab = "    ";
         System.out.println(tab.repeat(tabs) + b.name);
-        for (@SuppressWarnings("unused")
-        Bone __ : b.Children) {
-            print_bone(b, tabs++);
+        for (Bone child : b.Children) {
+            print_bone(child, tabs + 1);
         }
     }
 

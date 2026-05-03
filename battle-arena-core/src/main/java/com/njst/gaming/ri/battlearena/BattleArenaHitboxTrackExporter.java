@@ -226,7 +226,6 @@ public final class BattleArenaHitboxTrackExporter {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static ArrayList<Bone> loadBones(File resourceRoot, String path) throws IOException, ClassNotFoundException {
         Object value = readObject(new File(resourceRoot, path));
         if (!(value instanceof ArrayList<?>)) {
@@ -242,7 +241,6 @@ public final class BattleArenaHitboxTrackExporter {
         return bones;
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<String, KeyframeAnimation> loadAnimationMap(File resourceRoot,
                                                                    String path) throws IOException, ClassNotFoundException {
         Object value = readObject(new File(resourceRoot, path));
