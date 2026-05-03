@@ -15,11 +15,19 @@ public final class BattleArenaAnimatedAtlasGameObject extends GameObject {
     private int currentFrame = -1;
 
     public BattleArenaAnimatedAtlasGameObject(int texture, int columns, int rows) {
-        this(texture, columns, rows, DEFAULT_FRAME_RATE);
+        this(texture, columns, rows, DEFAULT_FRAME_RATE, 4);
     }
 
     public BattleArenaAnimatedAtlasGameObject(int texture, int columns, int rows, float frameRate) {
-        super(new BattleArenaLayeredAtlasGeometry(columns, rows, 0), texture);
+        this(texture, columns, rows, frameRate, 4);
+    }
+
+    public BattleArenaAnimatedAtlasGameObject(int texture,
+                                             int columns,
+                                             int rows,
+                                             float frameRate,
+                                             int layerCount) {
+        super(new BattleArenaLayeredAtlasGeometry(columns, rows, 0, layerCount), texture);
         this.atlasGeometry = (BattleArenaLayeredAtlasGeometry) geometry;
         this.columns = Math.max(1, columns);
         this.rows = Math.max(1, rows);
@@ -30,7 +38,6 @@ public final class BattleArenaAnimatedAtlasGameObject extends GameObject {
     }
 
     public void updateVisual(float deltaSeconds, Camera camera) {
-        deltaSeconds *=7;
         elapsedSeconds += Math.max(0f, deltaSeconds);
         int frameCount = columns * rows;
         int nextFrame = ((int) (elapsedSeconds * frameRate)) % frameCount;
@@ -39,7 +46,6 @@ public final class BattleArenaAnimatedAtlasGameObject extends GameObject {
             atlasGeometry.setFrame(columns, rows, currentFrame);
             cleanup();
         }
-        rotate(1f, 1f, 1f);
         faceCamera(camera);
     }
 

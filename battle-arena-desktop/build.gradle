@@ -83,6 +83,9 @@ tasks.register('runBattleArenaGpuSkinningDemo', JavaExec) {
     if (project.hasProperty('simulationPort')) {
         systemProperty 'battleArena.simulationPort', project.property('simulationPort')
     }
+    if (project.hasProperty('fireAtlasLayers')) {
+        systemProperty 'battleArena.fireAtlasLayers', project.property('fireAtlasLayers')
+    }
 }
 
 tasks.register('runBattleArenaGpuSkinningNetworkDemo', JavaExec) {
@@ -98,6 +101,9 @@ tasks.register('runBattleArenaGpuSkinningNetworkDemo', JavaExec) {
     systemProperty 'battleArena.simulationPort', project.hasProperty('simulationPort')
             ? project.property('simulationPort')
             : '7788'
+    if (project.hasProperty('fireAtlasLayers')) {
+        systemProperty 'battleArena.fireAtlasLayers', project.property('fireAtlasLayers')
+    }
 }
 
 tasks.register('runBattleArenaGpuExperiment', JavaExec) {

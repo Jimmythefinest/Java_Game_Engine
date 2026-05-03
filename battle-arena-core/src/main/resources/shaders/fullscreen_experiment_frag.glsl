@@ -60,6 +60,9 @@ void main() {
     float time = uTimeMouse.x;
 
     vec2 uv = (vUv - 0.5) * 2.0;
+    vec2 temp=uv;
+    uv.x=temp.y;
+    uv.y=-temp.x;
     uv.x *= uResolution.x / max(uResolution.y, 1.0);
 
     vec3 color = vec3(0.0);

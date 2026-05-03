@@ -28,7 +28,8 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
     private static final String FIRE_ATLAS_TEXTURE_FILE = "fire-atlas.png";
     private static final int FIRE_ATLAS_COLUMNS = 4;
-    private static final int FIRE_ATLAS_ROWS = 4;
+    private static final int FIRE_ATLAS_ROWS = 8;
+    private static final String FIRE_ATLAS_LAYERS_PROPERTY = "battleArena.fireAtlasLayers";
     private static final float PLAYER_SCALE = 1f;
     private static final boolean RENDER_CHARACTERS = true;
     private static final boolean ANIMATE_CHARACTERS = true;
@@ -325,7 +326,9 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
             object = new BattleArenaAnimatedAtlasGameObject(
                     fireAtlasTexture,
                     FIRE_ATLAS_COLUMNS,
-                    FIRE_ATLAS_ROWS);
+                    FIRE_ATLAS_ROWS,
+                    18f,
+                    fireAtlasLayerCount());
         } else {
             object = new GameObject(new CubeGeometry(), 0);
         }
@@ -347,6 +350,10 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
         return guObject != null
                 && (BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
                 || BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material));
+    }
+
+    private int fireAtlasLayerCount() {
+        return Math.max(1, Integer.getInteger(FIRE_ATLAS_LAYERS_PROPERTY, 1));
     }
 
     private float materialBrightness(BattleArenaGuObjectState guObject) {
