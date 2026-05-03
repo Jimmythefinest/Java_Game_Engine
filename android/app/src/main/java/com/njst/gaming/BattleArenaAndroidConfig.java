@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class BattleArenaAndroidConfig implements AndroidGameConfig {
-    private static final String DEFAULT_SIMULATION_HOST = "10.42.0.1";
+    private static final String DEFAULT_SIMULATION_HOST = "172.168.64.106";
 
     @Override
     public void configureScene(Scene scene) {

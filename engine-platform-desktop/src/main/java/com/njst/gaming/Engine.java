@@ -162,6 +162,7 @@ public abstract class Engine {
             if (!renderer.hasError) {
                 onUpdate();
                 renderer.onDrawFrame();
+                afterDrawFrame();
             }
 
             glfwSwapBuffers(window);
@@ -171,6 +172,9 @@ public abstract class Engine {
     }
 
     protected void onUpdate() {
+    }
+
+    protected void afterDrawFrame() {
     }
 
     private void startConsoleThread() {

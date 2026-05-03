@@ -17,6 +17,7 @@ public final class BattleArenaNetworkInputMessage {
     public boolean stepRightPressed;
     public boolean takeHitPressed;
     public String animationOverride;
+    public String guLoadoutKey;
 
     public static BattleArenaNetworkInputMessage fromInput(String player,
                                                            int tick,
@@ -39,6 +40,7 @@ public final class BattleArenaNetworkInputMessage {
         message.stepRightPressed = input.stepRightPressed;
         message.takeHitPressed = input.takeHitPressed;
         message.animationOverride = input.animationOverride;
+        message.guLoadoutKey = input.guLoadoutKey;
         return message;
     }
 
@@ -56,6 +58,7 @@ public final class BattleArenaNetworkInputMessage {
         input.stepRightPressed = stepRightPressed;
         input.takeHitPressed = takeHitPressed;
         input.animationOverride = animationOverride;
+        input.guLoadoutKey = guLoadoutKey;
         return input;
     }
 }

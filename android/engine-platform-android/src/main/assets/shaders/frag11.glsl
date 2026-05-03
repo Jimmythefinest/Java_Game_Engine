@@ -54,6 +54,9 @@ float calculateShadow(vec4 lightSpacePos, vec3 normal, vec3 lightDir) {
 void main()
 {
     vec4 texture_color = texture(uTexture, tt_coord.xy); // Sample the texture using fragColor as UV coordinates
+    if (texture_color.a < 0.1) {
+        discard;
+    }
 
     // Normalize the normal vector
     vec3 norm = normalize(frag_Normal);

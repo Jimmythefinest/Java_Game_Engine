@@ -15,6 +15,7 @@ public final class BattleArenaPlayerInput {
     public float knockbackX;
     public float knockbackZ;
     public String animationOverride;
+    public String guLoadoutKey;
 
     public BattleArenaPlayerInput copy() {
         BattleArenaPlayerInput copy = new BattleArenaPlayerInput();
@@ -32,6 +33,7 @@ public final class BattleArenaPlayerInput {
         copy.knockbackX = knockbackX;
         copy.knockbackZ = knockbackZ;
         copy.animationOverride = animationOverride;
+        copy.guLoadoutKey = guLoadoutKey;
         return copy;
     }
 

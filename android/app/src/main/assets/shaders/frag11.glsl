@@ -22,6 +22,9 @@ out vec4 finalColor;
 
 void main() {
     vec4 baseColor = texture(uTexture, fragTexCoord);
+    if (baseColor.a < 0.1) {
+        discard;
+    }
     vec3 normal = normalize(fragNormal);
     vec3 lightDirection = normalize(lightpos - fragPosition);
     vec3 viewDirection = normalize(eyepos - fragPosition);
@@ -35,5 +38,5 @@ void main() {
     vec3 specular = vec3(0.2) * specularStrength;
 
     vec3 litColor = baseColor.rgb * (ambient + diffuse) + specular;
-    finalColor = vec4(litColor, max(baseColor.a, 1.0));
+    finalColor = vec4(litColor, baseColor.a);
 }

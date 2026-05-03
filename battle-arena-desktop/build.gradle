@@ -33,6 +33,7 @@ dependencies {
     implementation project(':engine-platform-desktop')
     implementation platform("org.lwjgl:lwjgl-bom:${lwjglVersion}")
     implementation 'org.lwjgl:lwjgl-glfw'
+    implementation 'org.lwjgl:lwjgl-opengl'
     implementation 'com.google.code.gson:gson:2.10.1'
 }
 
@@ -97,6 +98,47 @@ tasks.register('runBattleArenaGpuSkinningNetworkDemo', JavaExec) {
     systemProperty 'battleArena.simulationPort', project.hasProperty('simulationPort')
             ? project.property('simulationPort')
             : '7788'
+}
+
+tasks.register('runBattleArenaGpuExperiment', JavaExec) {
+    group = 'application'
+    description = 'Run a fullscreen quad GPU experiment playground for ray marching and shader tests'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuExperimentApp'
+}
+
+tasks.register('runBattleArenaGpuSpriteCreator', JavaExec) {
+    group = 'application'
+    description = 'Capture fullscreen GPU experiment frames into a PNG texture atlas'
+    dependsOn('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.njst.gaming.ri.battlearena.BattleArenaGpuExperimentApp'
+    systemProperty 'battleArena.gpuExperiment.capture', 'true'
+    systemProperty 'battleArena.gpuExperiment.frames', project.hasProperty('frames')
+            ? project.property('frames')
+            : '16'
+    systemProperty 'battleArena.gpuExperiment.durationSeconds', project.hasProperty('duration')
+            ? project.property('duration')
+            : '1.0'
+    systemProperty 'battleArena.gpuExperiment.width', project.hasProperty('frameWidth')
+            ? project.property('frameWidth')
+            : '256'
+    systemProperty 'battleArena.gpuExperiment.height', project.hasProperty('frameHeight')
+            ? project.property('frameHeight')
+            : '256'
+    if (project.hasProperty('spriteWidth')) {
+        systemProperty 'battleArena.gpuExperiment.spriteWidth', project.property('spriteWidth')
+    }
+    if (project.hasProperty('spriteHeight')) {
+        systemProperty 'battleArena.gpuExperiment.spriteHeight', project.property('spriteHeight')
+    }
+    systemProperty 'battleArena.gpuExperiment.columns', project.hasProperty('columns')
+            ? project.property('columns')
+            : '4'
+    systemProperty 'battleArena.gpuExperiment.output', project.hasProperty('output')
+            ? project.property('output')
+            : "${buildDir}/generated/gpu-experiment-atlas.png"
 }
 
 tasks.register('runBattleArenaTcpControlServer', JavaExec) {

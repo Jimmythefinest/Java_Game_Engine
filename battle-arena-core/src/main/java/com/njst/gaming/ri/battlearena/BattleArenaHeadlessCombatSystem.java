@@ -9,13 +9,17 @@ import java.util.Map;
 final class BattleArenaHeadlessCombatSystem {
     private static final float MAX_HEALTH = 100f;
     private static final float HIT_DAMAGE = 10f;
+    private static final float HOT_GAS_DAMAGE = 8f;
+    private static final float MOLTEN_EARTH_DAMAGE = 16f;
     private static final float HIT_KNOCKBACK_DISTANCE = 0.45f;
     private static final int HIT_COOLDOWN_TICKS = 30;
+    private static final int GU_HIT_COOLDOWN_TICKS = 18;
     private static final String DEFAULT_HITBOX_TRACKS = "battle_arena/defeated.hitbox_tracks.json";
 
     private final BattleArenaHitboxTracks hitboxTracks;
     private final Map<String, Float> healthByPlayer = new LinkedHashMap<String, Float>();
     private final Map<String, Integer> nextAllowedHitTickByPair = new LinkedHashMap<String, Integer>();
+    private final Map<String, Integer> nextAllowedGuHitTickByPair = new LinkedHashMap<String, Integer>();
 
     BattleArenaHeadlessCombatSystem() {
         this(BattleArenaHitboxTracks.loadFromResource(DEFAULT_HITBOX_TRACKS));
@@ -69,6 +73,30 @@ final class BattleArenaHeadlessCombatSystem {
                             break;
                         }
                     }
+                }
+            }
+        }
+    }
+
+    void updateGuObjectDamage(int tick,
+                              List<BattleArenaPlayerState> players,
+                              List<BattleArenaGuObjectState> guObjects,
+                              BattleArenaPlayerStateProvider inputTarget) {
+        ensurePlayers(players);
+        if (players == null || guObjects == null || guObjects.isEmpty() || inputTarget == null) {
+            return;
+        }
+        for (BattleArenaGuObjectState guObject : guObjects) {
+            if (!isDamagingGuObject(guObject)) {
+                continue;
+            }
+            Aabb guBounds = resolveGuBounds(guObject);
+            for (BattleArenaPlayerState defender : players) {
+                if (defender == null || defender.playerId.equals(guObject.ownerPlayerId)) {
+                    continue;
+                }
+                if (guBoundsOverlapsPlayerHurtbox(guBounds, defender)) {
+                    applyGuHit(tick, guObject, defender, inputTarget);
                 }
             }
         }
@@ -175,6 +203,98 @@ final class BattleArenaHeadlessCombatSystem {
             input.animationOverride = hurtbox.onHitAnimation;
         }
         inputTarget.submitInput(defender.playerId, tick + 1, input);
+    }
+
+    private void applyGuHit(int tick,
+                            BattleArenaGuObjectState guObject,
+                            BattleArenaPlayerState defender,
+                            BattleArenaPlayerStateProvider inputTarget) {
+        String hitKey = guObject.id + "->" + defender.playerId;
+        Integer nextAllowedTick = nextAllowedGuHitTickByPair.get(hitKey);
+        if (nextAllowedTick != null && tick < nextAllowedTick.intValue()) {
+            return;
+        }
+        nextAllowedGuHitTickByPair.put(hitKey, tick + GU_HIT_COOLDOWN_TICKS);
+        Float currentHealth = healthByPlayer.get(defender.playerId);
+        if (currentHealth != null && currentHealth.floatValue() > 0f) {
+            healthByPlayer.put(defender.playerId,
+                    Math.max(0f, currentHealth.floatValue() - guDamage(guObject)));
+        }
+        BattleArenaPlayerInput input = new BattleArenaPlayerInput();
+        input.takeHitPressed = true;
+        input.animationOverride = BattleArenaCharacterController.ANIM_TAKE_HIT;
+        applyGuKnockback(guObject, defender, input);
+        inputTarget.submitInput(defender.playerId, tick + 1, input);
+    }
+
+    private boolean isDamagingGuObject(BattleArenaGuObjectState guObject) {
+        return guObject != null
+                && guObject.lifetimeTicksRemaining > 0
+                && (BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
+                || BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material)
+                || guObject.temperature >= 220f);
+    }
+
+    private float guDamage(BattleArenaGuObjectState guObject) {
+        if (BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material)) {
+            return MOLTEN_EARTH_DAMAGE;
+        }
+        return HOT_GAS_DAMAGE;
+    }
+
+    private boolean guBoundsOverlapsPlayerHurtbox(Aabb guBounds, BattleArenaPlayerState defender) {
+        if (guBounds == null || defender == null || hitboxTracks == null || hitboxTracks.boxes == null) {
+            return false;
+        }
+        for (BattleArenaHitboxTracks.BoxDefinitionTrack hurtbox : hitboxTracks.boxes) {
+            if (!isHurtbox(defender, hurtbox)) {
+                continue;
+            }
+            Aabb hurtBounds = resolveBounds(defender, hurtbox);
+            if (hurtBounds != null && guBounds.overlaps(hurtBounds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Aabb resolveGuBounds(BattleArenaGuObjectState guObject) {
+        if (guObject == null) {
+            return null;
+        }
+        float headingRadians = (float) Math.toRadians(guObject.headingDegrees);
+        float cos = Math.abs((float) Math.cos(headingRadians));
+        float sin = Math.abs((float) Math.sin(headingRadians));
+        float worldHalfX = (guObject.halfX * cos) + (guObject.halfZ * sin);
+        float worldHalfZ = (guObject.halfX * sin) + (guObject.halfZ * cos);
+        return new Aabb(
+                guObject.x - worldHalfX,
+                guObject.y - guObject.halfY,
+                guObject.z - worldHalfZ,
+                guObject.x + worldHalfX,
+                guObject.y + guObject.halfY,
+                guObject.z + worldHalfZ);
+    }
+
+    private void applyGuKnockback(BattleArenaGuObjectState guObject,
+                                  BattleArenaPlayerState defender,
+                                  BattleArenaPlayerInput input) {
+        float dx = defender.x - guObject.x;
+        float dz = defender.z - guObject.z;
+        float length = (float) Math.sqrt(dx * dx + dz * dz);
+        if (length < 0.0001f) {
+            dx = guObject.velocityX;
+            dz = guObject.velocityZ;
+            length = (float) Math.sqrt(dx * dx + dz * dz);
+        }
+        if (length < 0.0001f) {
+            float headingRadians = (float) Math.toRadians(guObject.headingDegrees);
+            dx = (float) Math.sin(headingRadians);
+            dz = (float) Math.cos(headingRadians);
+            length = 1f;
+        }
+        input.knockbackX = (dx / length) * (HIT_KNOCKBACK_DISTANCE * 0.72f);
+        input.knockbackZ = (dz / length) * (HIT_KNOCKBACK_DISTANCE * 0.72f);
     }
 
     private void applyKnockback(BattleArenaPlayerState attacker,

@@ -13,6 +13,9 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
     private static final float TURN_SPEED_DEGREES_PER_SECOND = 145f;
     private static final float BODY_RADIUS = 0.42f;
     private static final float BODY_DIAMETER = BODY_RADIUS * 2f;
+    private static final float BODY_HALF_HEIGHT = 0.95f;
+    private static final float GU_BLOCKING_RIGIDITY = 0.55f;
+    private static final float GU_BLOCKING_COHESION = 0.45f;
     private static final int JUMP_TICKS = 44;
     private static final int PUNCH_TICKS = 32;
     private static final int KICK_TICKS = 36;
@@ -121,6 +124,18 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         return state != null ? state.snapshot() : null;
     }
 
+    public void resolveGuObjectCollisions(List<BattleArenaGuObjectState> guObjects) {
+        if (guObjects == null || guObjects.isEmpty()) {
+            return;
+        }
+        for (MutablePlayerState player : states.values()) {
+            for (BattleArenaGuObjectState guObject : guObjects) {
+                resolveGuObjectCollision(player, guObject);
+            }
+        }
+        resolveBodyOverlaps();
+    }
+
     private void mergeInput(Map<String, BattleArenaPlayerInput> tickInputs,
                             String playerId,
                             BattleArenaPlayerInput input) {
@@ -144,6 +159,9 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         existing.knockbackZ += input.knockbackZ;
         if (input.animationOverride != null && !input.animationOverride.trim().isEmpty()) {
             existing.animationOverride = input.animationOverride;
+        }
+        if (input.guLoadoutKey != null && !input.guLoadoutKey.trim().isEmpty()) {
+            existing.guLoadoutKey = input.guLoadoutKey;
         }
     }
 
@@ -302,8 +320,96 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         second.z += normalZ * push;
     }
 
+    private void resolveGuObjectCollision(MutablePlayerState player, BattleArenaGuObjectState guObject) {
+        if (player == null || !isBlockingGuObject(guObject)) {
+            return;
+        }
+        if (!verticalBodyOverlap(player, guObject)) {
+            return;
+        }
+        float headingRadians = (float) Math.toRadians(guObject.headingDegrees);
+        float cos = (float) Math.cos(headingRadians);
+        float sin = (float) Math.sin(headingRadians);
+        float relativeX = player.x - guObject.x;
+        float relativeZ = player.z - guObject.z;
+        float localX = (relativeX * cos) - (relativeZ * sin);
+        float localZ = (relativeX * sin) + (relativeZ * cos);
+        float closestX = clamp(localX, -guObject.halfX, guObject.halfX);
+        float closestZ = clamp(localZ, -guObject.halfZ, guObject.halfZ);
+        float localDx = localX - closestX;
+        float localDz = localZ - closestZ;
+        float distanceSquared = localDx * localDx + localDz * localDz;
+        if (distanceSquared > BODY_RADIUS * BODY_RADIUS) {
+            return;
+        }
+        if (distanceSquared > 0.000001f) {
+            float distance = (float) Math.sqrt(distanceSquared);
+            float push = BODY_RADIUS - distance;
+            float pushLocalX = (localDx / distance) * push;
+            float pushLocalZ = (localDz / distance) * push;
+            player.x += (pushLocalX * cos) + (pushLocalZ * sin);
+            player.z += (-pushLocalX * sin) + (pushLocalZ * cos);
+            return;
+        }
+
+        float pushLeft = localX + guObject.halfX;
+        float pushRight = guObject.halfX - localX;
+        float pushBack = localZ + guObject.halfZ;
+        float pushForward = guObject.halfZ - localZ;
+        float smallest = pushLeft;
+        int axis = 0;
+        float direction = -1f;
+        if (pushRight < smallest) {
+            smallest = pushRight;
+            axis = 0;
+            direction = 1f;
+        }
+        if (pushBack < smallest) {
+            smallest = pushBack;
+            axis = 1;
+            direction = -1f;
+        }
+        if (pushForward < smallest) {
+            smallest = pushForward;
+            axis = 1;
+            direction = 1f;
+        }
+        float correction = smallest + BODY_RADIUS;
+        float correctionLocalX = 0f;
+        float correctionLocalZ = 0f;
+        if (axis == 0) {
+            correctionLocalX = direction * correction;
+        } else {
+            correctionLocalZ = direction * correction;
+        }
+        player.x += (correctionLocalX * cos) + (correctionLocalZ * sin);
+        player.z += (-correctionLocalX * sin) + (correctionLocalZ * cos);
+    }
+
+    private boolean isBlockingGuObject(BattleArenaGuObjectState guObject) {
+        return guObject != null
+                && guObject.halfX > 0f
+                && guObject.halfY > 0f
+                && guObject.halfZ > 0f
+                && guObject.rigidity >= GU_BLOCKING_RIGIDITY
+                && guObject.cohesion >= GU_BLOCKING_COHESION
+                && guObject.lifetimeTicksRemaining > 0;
+    }
+
+    private boolean verticalBodyOverlap(MutablePlayerState player, BattleArenaGuObjectState guObject) {
+        float bodyMinY = player.y;
+        float bodyMaxY = player.y + BODY_HALF_HEIGHT * 2f;
+        float objectMinY = guObject.y - guObject.halfY;
+        float objectMaxY = guObject.y + guObject.halfY;
+        return bodyMinY <= objectMaxY && bodyMaxY >= objectMinY;
+    }
+
     private static float clamp(float value) {
         return Math.max(-1f, Math.min(1f, value));
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static float wrapDegrees(float value) {

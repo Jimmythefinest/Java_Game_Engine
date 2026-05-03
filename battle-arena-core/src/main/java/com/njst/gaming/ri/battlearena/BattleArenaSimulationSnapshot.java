@@ -8,15 +8,26 @@ public final class BattleArenaSimulationSnapshot {
     public final int tick;
     public final float tickSeconds;
     public final List<BattleArenaPlayerState> players;
+    public final List<BattleArenaGuObjectState> guObjects;
 
     public BattleArenaSimulationSnapshot(int tick,
                                          float tickSeconds,
                                          List<BattleArenaPlayerState> players) {
+        this(tick, tickSeconds, players, null);
+    }
+
+    public BattleArenaSimulationSnapshot(int tick,
+                                         float tickSeconds,
+                                         List<BattleArenaPlayerState> players,
+                                         List<BattleArenaGuObjectState> guObjects) {
         this.tick = tick;
         this.tickSeconds = tickSeconds;
         this.players = players != null
                 ? Collections.unmodifiableList(new ArrayList<BattleArenaPlayerState>(players))
                 : Collections.<BattleArenaPlayerState>emptyList();
+        this.guObjects = guObjects != null
+                ? Collections.unmodifiableList(new ArrayList<BattleArenaGuObjectState>(guObjects))
+                : Collections.<BattleArenaGuObjectState>emptyList();
     }
 
     public BattleArenaPlayerState stateForPlayer(String playerId) {
