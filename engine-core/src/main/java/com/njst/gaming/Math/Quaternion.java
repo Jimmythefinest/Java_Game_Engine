@@ -2,6 +2,11 @@ package com.njst.gaming.Math;
 
 import java.io.Serializable;
 
+/**
+ * Represents a quaternion used for 3D rotations without gimbal lock.
+ * Provides functions for quaternion multiplication, spherical linear interpolation (slerp),
+ * and conversions to/from Euler angles.
+ */
 public class Quaternion implements Serializable {
     private static final long serialVersionUID = 1L;
     public float x, y, z, w;
@@ -156,6 +161,13 @@ public class Quaternion implements Serializable {
         return result.normalize();
     }
 
+    /**
+     * Performs Spherical Linear Interpolation (SLERP) between two quaternions.
+     * @param q1 the starting quaternion
+     * @param q2 the ending quaternion
+     * @param t the interpolation factor [0, 1]
+     * @return a new interpolated quaternion
+     */
     public static Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
         float dot = q1.x*q2.x + q1.y*q2.y + q1.z*q2.z + q1.w*q2.w;
 

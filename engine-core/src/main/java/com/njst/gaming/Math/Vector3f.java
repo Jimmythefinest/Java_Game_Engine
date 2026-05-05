@@ -1,5 +1,9 @@
 package com.njst.gaming.Math;
 
+/**
+ * A mutable 3-component float vector primarily used for specific internal math operations.
+ * For general scene graph transformations, prefer using {@link Vector3}.
+ */
 public class Vector3f {
     public float x,y,z;
     public Vector3f(float x, float y, float z) {

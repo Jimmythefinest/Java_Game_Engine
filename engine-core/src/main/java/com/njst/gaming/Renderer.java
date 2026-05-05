@@ -14,6 +14,11 @@ import com.njst.gaming.objects.GameObject;
 import com.njst.gaming.objects.TerrainObject;
 import com.njst.gaming.objects.Weighted_GameObject;
 
+/**
+ * Orchestrates the rendering pipeline for the engine.
+ * Handles the main draw loop, shadow mapping passes, shader binding,
+ * uploading camera/light data via SSBOs, and dispatching draw calls to the GraphicsDevice.
+ */
 public class Renderer {
     public static class ProfilerSnapshot {
         public final float frameMs;
@@ -113,6 +118,11 @@ public class Renderer {
         lightCamera = new Camera(new Vector3(0f, 5f, 0f), new Vector3(0f, 0f, 0f), new Vector3(-1f, 10f, 0f));
     }
 
+    /**
+     * Called when the rendering surface is initially created.
+     * Bootstraps the renderer by compiling core shaders (standard, terrain, shadow),
+     * initializing shadow maps, and telling the active SceneLoader to populate the scene.
+     */
     public void onSurfaceCreated() {
         try {
             lasttym = System.currentTimeMillis();
@@ -148,6 +158,14 @@ public class Renderer {
         }
     }
 
+    /**
+     * Called every frame to render the scene.
+     * This method executes the full rendering pipeline:
+     * 1. Syncs animations and updates the scene
+     * 2. Runs the depth pre-pass for shadow mapping
+     * 3. Renders the skybox
+     * 4. Renders all standard and terrain objects using the primary shaders
+     */
     public void onDrawFrame() {
         if (hasError)
             return;

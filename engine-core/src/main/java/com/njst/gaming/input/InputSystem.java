@@ -3,6 +3,10 @@ package com.njst.gaming.input;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The central registry for logical engine input state.
+ * Stores and manages frame-based ButtonState and PointerState objects.
+ */
 public class InputSystem {
     private final Map<String, ButtonState> buttons = new HashMap<>();
     private final Map<String, PointerState> pointers = new HashMap<>();

@@ -5,6 +5,10 @@ import java.io.Serializable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+/**
+ * Represents a mutable 3-component float vector.
+ * Commonly used for positions, scales, directions, and translation in 3D space.
+ */
 public class Vector3 implements Serializable {
     private static final long serialVersionUID = 1L;
     public float x,y,z;

@@ -3,6 +3,10 @@ package com.njst.gaming.input;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Maps hardware-specific integer codes (like GLFW key codes) to logical action string IDs.
+ * Allows decoupling platform input from engine game logic.
+ */
 public class InputBindings {
     private final Map<Integer, String> keyBindings = new HashMap<>();
     private final Map<Integer, String> mouseBindings = new HashMap<>();

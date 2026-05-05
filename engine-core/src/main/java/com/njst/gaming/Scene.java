@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * The primary container and orchestrator for the game world.
+ * Manages the collection of GameObjects, advances simulations and animations,
+ * processes input, and tracks the physics state.
+ */
 public class Scene {
     public CopyOnWriteArrayList<GameObject> objects;
     public CopyOnWriteArrayList<Animation> animations;
@@ -99,6 +104,11 @@ public class Scene {
         }
     }
 
+    /**
+     * Advances the scene state by one frame.
+     * Triggers animation updates, open world terrain streaming, camera movement,
+     * and advances the collision/physics world simulation step.
+     */
     public void onDrawFrame() {
         float animationDeltaSeconds = computeFrameDeltaSeconds() * speed;
         if (openWorldTerrainManager != null && renderer != null && renderer.camera != null) {
@@ -228,6 +238,11 @@ public class Scene {
         return openWorldTerrainManager;
     }
 
+    /**
+     * Adds a GameObject to the scene. The object is inserted based on its collision bounds
+     * to maintain spatial ordering for optimized rendering or culling.
+     * @param r the GameObject to add
+     */
     public void addGameObject(GameObject r) {
         if (objects.size() != 0) {
             int i = 0;

@@ -1,5 +1,8 @@
 package com.njst.gaming.input;
 
+/**
+ * A convenience wrapper for checking boolean action states from the InputSystem.
+ */
 public final class ActionInput {
     private final InputSystem inputSystem;
 

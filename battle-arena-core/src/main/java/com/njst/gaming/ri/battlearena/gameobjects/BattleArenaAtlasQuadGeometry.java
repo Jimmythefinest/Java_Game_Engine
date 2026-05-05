@@ -7,7 +7,7 @@ public final class BattleArenaAtlasQuadGeometry extends Geometry {
             -0.5f, -0.5f, 0f,
              0.5f, -0.5f, 0f,
              0.5f,  0.5f, 0f,
-            -0.5f,  0.5f, 0f
+            -0.5f,  0.5f, 0f 
     };
     private static final float[] NORMALS = {
             0f, 0f, 1f,

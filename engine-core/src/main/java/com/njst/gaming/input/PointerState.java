@@ -1,5 +1,9 @@
 package com.njst.gaming.input;
 
+/**
+ * Tracks the state of a continuous pointer (e.g. mouse cursor or touch point).
+ * Manages absolute coordinates as well as frame-to-frame delta movements.
+ */
 public class PointerState {
     private float x;
     private float y;

@@ -1,5 +1,9 @@
 package com.njst.gaming.input;
 
+/**
+ * Tracks the state of a single discrete button or key.
+ * Resolves frame-by-frame edge detection (pressed, released, down).
+ */
 public class ButtonState {
     private boolean down;
     private boolean pressedThisFrame;

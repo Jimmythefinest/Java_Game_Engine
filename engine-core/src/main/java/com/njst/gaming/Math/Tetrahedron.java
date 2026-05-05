@@ -3,6 +3,10 @@ package com.njst.gaming.Math;
 import com.njst.gaming.Geometries.Geometry;
 import com.njst.gaming.Utils.Matrice_Math;
 
+/**
+ * Represents a tetrahedral geometry volume.
+ * Used for custom physics shapes, bounds checking, and spatial partitioning.
+ */
 public class Tetrahedron extends Geometry {
     public Vector3 v1 = new Vector3(), v2 = new Vector3(), v3 = new Vector3(), v4 = new Vector3();
     public Vector3 ov1 = new Vector3(), ov2 = new Vector3(), ov3 = new Vector3(), ov4 = new Vector3();
@@ -131,6 +135,11 @@ public class Tetrahedron extends Geometry {
         return Volume;
     }
 
+    /**
+     * Checks if a given point is inside the tetrahedron using volumetric comparisons.
+     * @param point the point to check
+     * @return true if the point lies within the tetrahedron
+     */
     public boolean point_is_inside(Vector3 point) {
         float volume = this.Volume();
         float point_volume = Volume(point, v1, v2, v3);
