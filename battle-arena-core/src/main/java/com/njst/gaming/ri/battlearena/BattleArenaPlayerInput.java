@@ -14,8 +14,9 @@ public final class BattleArenaPlayerInput {
     public boolean takeHitPressed;
     public float knockbackX;
     public float knockbackZ;
+    public boolean guMoveForwardHeld;
     public String animationOverride;
-    public String guLoadoutKey;
+    public String guWormAction;
 
     public BattleArenaPlayerInput copy() {
         BattleArenaPlayerInput copy = new BattleArenaPlayerInput();
@@ -32,8 +33,9 @@ public final class BattleArenaPlayerInput {
         copy.takeHitPressed = takeHitPressed;
         copy.knockbackX = knockbackX;
         copy.knockbackZ = knockbackZ;
+        copy.guMoveForwardHeld = guMoveForwardHeld;
         copy.animationOverride = animationOverride;
-        copy.guLoadoutKey = guLoadoutKey;
+        copy.guWormAction = guWormAction;
         return copy;
     }
 
@@ -43,6 +45,7 @@ public final class BattleArenaPlayerInput {
         copy.moveZ = moveZ;
         copy.turn = turn;
         copy.run = run;
+        copy.guMoveForwardHeld = guMoveForwardHeld;
         return copy;
     }
 }

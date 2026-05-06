@@ -14,6 +14,22 @@ final class BattleArenaTcpControlSnapshot {
     boolean fireball;
     @SerializedName(value = "mudWall", alternate = { "mud_wall" })
     boolean mudWall;
+    @SerializedName(value = "createWater", alternate = { "create_water" })
+    boolean createWater;
+    @SerializedName(value = "createIce", alternate = { "create_ice" })
+    boolean createIce;
+    @SerializedName(value = "createEarth", alternate = { "create_earth" })
+    boolean createEarth;
+    @SerializedName(value = "shapeSpear", alternate = { "shape_spear" })
+    boolean shapeSpear;
+    @SerializedName(value = "shapeWall", alternate = { "shape_wall" })
+    boolean shapeWall;
+    boolean cool;
+    boolean heat;
+    @SerializedName(value = "moveForward", alternate = { "move_forward" })
+    boolean moveForward;
+    @SerializedName(value = "moveForwardDown", alternate = { "move_forward_down" })
+    boolean moveForwardDown;
     @SerializedName(value = "stepLeft", alternate = { "step_left" })
     boolean stepLeft;
     @SerializedName(value = "stepRight", alternate = { "step_right" })
@@ -34,6 +50,15 @@ final class BattleArenaTcpControlSnapshot {
         snapshot.kick = controls.kickPressed;
         snapshot.fireball = controls.castFireballPressed;
         snapshot.mudWall = controls.castMudWallPressed;
+        snapshot.createWater = controls.guCreateWaterPressed;
+        snapshot.createIce = controls.guCreateIcePressed;
+        snapshot.createEarth = controls.guCreateEarthPressed;
+        snapshot.shapeSpear = controls.guShapeSpearPressed;
+        snapshot.shapeWall = controls.guShapeWallPressed;
+        snapshot.cool = controls.guCoolPressed;
+        snapshot.heat = controls.guHeatPressed;
+        snapshot.moveForward = controls.guMoveForwardPressed;
+        snapshot.moveForwardDown = controls.guMoveForwardDown;
         snapshot.stepLeft = controls.stepLeftPressed;
         snapshot.stepRight = controls.stepRightPressed;
         snapshot.burst = controls.burstPressed;
@@ -52,6 +77,15 @@ final class BattleArenaTcpControlSnapshot {
         controls.kickPressed = kick;
         controls.castFireballPressed = fireball;
         controls.castMudWallPressed = mudWall;
+        controls.guCreateWaterPressed = createWater;
+        controls.guCreateIcePressed = createIce;
+        controls.guCreateEarthPressed = createEarth;
+        controls.guShapeSpearPressed = shapeSpear;
+        controls.guShapeWallPressed = shapeWall;
+        controls.guCoolPressed = cool;
+        controls.guHeatPressed = heat;
+        controls.guMoveForwardPressed = moveForward;
+        controls.guMoveForwardDown = moveForwardDown;
         controls.stepLeftPressed = stepLeft;
         controls.stepRightPressed = stepRight;
         controls.burstPressed = burst;
@@ -70,6 +104,15 @@ final class BattleArenaTcpControlSnapshot {
         kick = other.kick;
         fireball = other.fireball;
         mudWall = other.mudWall;
+        createWater = other.createWater;
+        createIce = other.createIce;
+        createEarth = other.createEarth;
+        shapeSpear = other.shapeSpear;
+        shapeWall = other.shapeWall;
+        cool = other.cool;
+        heat = other.heat;
+        moveForward = other.moveForward;
+        moveForwardDown = other.moveForwardDown;
         stepLeft = other.stepLeft;
         stepRight = other.stepRight;
         burst = other.burst;
@@ -94,6 +137,24 @@ final class BattleArenaTcpControlSnapshot {
             fireball = parseBoolean(value);
         } else if ("mud_wall".equals(key) || "mudWall".equals(key)) {
             mudWall = parseBoolean(value);
+        } else if ("create_water".equals(key) || "createWater".equals(key)) {
+            createWater = parseBoolean(value);
+        } else if ("create_ice".equals(key) || "createIce".equals(key)) {
+            createIce = parseBoolean(value);
+        } else if ("create_earth".equals(key) || "createEarth".equals(key)) {
+            createEarth = parseBoolean(value);
+        } else if ("shape_spear".equals(key) || "shapeSpear".equals(key)) {
+            shapeSpear = parseBoolean(value);
+        } else if ("shape_wall".equals(key) || "shapeWall".equals(key)) {
+            shapeWall = parseBoolean(value);
+        } else if ("cool".equals(key)) {
+            cool = parseBoolean(value);
+        } else if ("heat".equals(key)) {
+            heat = parseBoolean(value);
+        } else if ("move_forward".equals(key) || "moveForward".equals(key)) {
+            moveForward = parseBoolean(value);
+        } else if ("move_forward_down".equals(key) || "moveForwardDown".equals(key)) {
+            moveForwardDown = parseBoolean(value);
         } else if ("step_left".equals(key) || "stepLeft".equals(key)) {
             stepLeft = parseBoolean(value);
         } else if ("step_right".equals(key) || "stepRight".equals(key)) {

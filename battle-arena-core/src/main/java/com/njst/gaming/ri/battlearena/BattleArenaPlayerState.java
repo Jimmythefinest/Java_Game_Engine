@@ -8,6 +8,9 @@ public final class BattleArenaPlayerState {
     public final float headingDegrees;
     public final String animationKey;
     public final float animationFrame;
+    public final float velocityX;
+    public final float velocityZ;
+    public final float strength;
     public final float currentHealth;
     public final float maxHealth;
 
@@ -18,7 +21,7 @@ public final class BattleArenaPlayerState {
                                   float headingDegrees,
                                   String animationKey,
                                   float animationFrame) {
-        this(playerId, x, y, z, headingDegrees, animationKey, animationFrame, 100f, 100f);
+        this(playerId, x, y, z, headingDegrees, animationKey, animationFrame, 0f, 0f, 0f, 100f, 100f);
     }
 
     public BattleArenaPlayerState(String playerId,
@@ -28,6 +31,9 @@ public final class BattleArenaPlayerState {
                                   float headingDegrees,
                                   String animationKey,
                                   float animationFrame,
+                                  float velocityX,
+                                  float velocityZ,
+                                  float strength,
                                   float currentHealth,
                                   float maxHealth) {
         this.playerId = playerId;
@@ -37,6 +43,9 @@ public final class BattleArenaPlayerState {
         this.headingDegrees = headingDegrees;
         this.animationKey = animationKey;
         this.animationFrame = animationFrame;
+        this.velocityX = velocityX;
+        this.velocityZ = velocityZ;
+        this.strength = strength;
         this.currentHealth = currentHealth;
         this.maxHealth = maxHealth;
     }

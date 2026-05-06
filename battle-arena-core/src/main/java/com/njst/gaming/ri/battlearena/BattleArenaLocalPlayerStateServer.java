@@ -16,6 +16,8 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
     private static final float BODY_HALF_HEIGHT = 0.95f;
     private static final float GU_BLOCKING_RIGIDITY = 0.55f;
     private static final float GU_BLOCKING_COHESION = 0.45f;
+    private static final float GU_RESISTIVE_SOLIDITY = 0.12f;
+    private static final float GU_MAX_SLOWDOWN = 0.72f;
     private static final int JUMP_TICKS = 44;
     private static final int PUNCH_TICKS = 32;
     private static final int KICK_TICKS = 36;
@@ -160,13 +162,15 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         if (input.animationOverride != null && !input.animationOverride.trim().isEmpty()) {
             existing.animationOverride = input.animationOverride;
         }
-        if (input.guLoadoutKey != null && !input.guLoadoutKey.trim().isEmpty()) {
-            existing.guLoadoutKey = input.guLoadoutKey;
+        if (input.guWormAction != null && !input.guWormAction.trim().isEmpty()) {
+            existing.guWormAction = input.guWormAction;
         }
     }
 
     private void applyInput(MutablePlayerState state, BattleArenaPlayerInput input) {
         if (input == null) {
+            state.velocityX = 0f;
+            state.velocityZ = 0f;
             updateActionLock(state);
             if (!state.actionLocked()) {
                 state.setAnimationKey(BattleArenaCharacterController.ANIM_IDLE);
@@ -185,15 +189,21 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
             moveZ /= length;
         }
         float speed = input.run ? RUN_SPEED : WALK_SPEED;
+        float startX = state.x;
+        float startZ = state.z;
         float headingRadians = (float) Math.toRadians(state.headingDegrees);
         float forwardX = (float) Math.sin(headingRadians);
         float forwardZ = (float) Math.cos(headingRadians);
         float rightX = (float) Math.cos(headingRadians);
         float rightZ = -(float) Math.sin(headingRadians);
-        state.x += ((forwardX * moveZ) + (rightX * moveX)) * speed * TICK_SECONDS;
-        state.z += ((forwardZ * moveZ) + (rightZ * moveX)) * speed * TICK_SECONDS;
+        state.lastMoveDeltaX = ((forwardX * moveZ) + (rightX * moveX)) * speed * TICK_SECONDS;
+        state.lastMoveDeltaZ = ((forwardZ * moveZ) + (rightZ * moveX)) * speed * TICK_SECONDS;
+        state.x += state.lastMoveDeltaX;
+        state.z += state.lastMoveDeltaZ;
         state.x += input.knockbackX;
         state.z += input.knockbackZ;
+        state.velocityX = (state.x - startX) / TICK_SECONDS;
+        state.velocityZ = (state.z - startZ) / TICK_SECONDS;
         updateActionLock(state);
         if (state.actionLocked()) {
             return;
@@ -321,12 +331,23 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
     }
 
     private void resolveGuObjectCollision(MutablePlayerState player, BattleArenaGuObjectState guObject) {
-        if (player == null || !isBlockingGuObject(guObject)) {
+        if (player == null || guObject == null) {
             return;
         }
         if (!verticalBodyOverlap(player, guObject)) {
             return;
         }
+        if (!bodyTouchesGuObject(player, guObject)) {
+            return;
+        }
+        if (!isBlockingGuObject(guObject)) {
+            applyGuSlowdown(player, guObject);
+            return;
+        }
+        resolveBlockingGuObjectCollision(player, guObject);
+    }
+
+    private void resolveBlockingGuObjectCollision(MutablePlayerState player, BattleArenaGuObjectState guObject) {
         float headingRadians = (float) Math.toRadians(guObject.headingDegrees);
         float cos = (float) Math.cos(headingRadians);
         float sin = (float) Math.sin(headingRadians);
@@ -386,14 +407,48 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         player.z += (-correctionLocalX * sin) + (correctionLocalZ * cos);
     }
 
+    private boolean bodyTouchesGuObject(MutablePlayerState player, BattleArenaGuObjectState guObject) {
+        float headingRadians = (float) Math.toRadians(guObject.headingDegrees);
+        float cos = (float) Math.cos(headingRadians);
+        float sin = (float) Math.sin(headingRadians);
+        float relativeX = player.x - guObject.x;
+        float relativeZ = player.z - guObject.z;
+        float localX = (relativeX * cos) - (relativeZ * sin);
+        float localZ = (relativeX * sin) + (relativeZ * cos);
+        float closestX = clamp(localX, -guObject.halfX, guObject.halfX);
+        float closestZ = clamp(localZ, -guObject.halfZ, guObject.halfZ);
+        float localDx = localX - closestX;
+        float localDz = localZ - closestZ;
+        return (localDx * localDx) + (localDz * localDz) <= BODY_RADIUS * BODY_RADIUS;
+    }
+
+    private void applyGuSlowdown(MutablePlayerState player, BattleArenaGuObjectState guObject) {
+        float solidity = guSolidity(guObject);
+        if (solidity < GU_RESISTIVE_SOLIDITY) {
+            return;
+        }
+        float slowdown = normalizedRange(solidity, GU_RESISTIVE_SOLIDITY, GU_BLOCKING_RIGIDITY);
+        slowdown = Math.min(GU_MAX_SLOWDOWN, slowdown * GU_MAX_SLOWDOWN);
+        player.x -= player.lastMoveDeltaX * slowdown;
+        player.z -= player.lastMoveDeltaZ * slowdown;
+    }
+
     private boolean isBlockingGuObject(BattleArenaGuObjectState guObject) {
         return guObject != null
                 && guObject.halfX > 0f
                 && guObject.halfY > 0f
                 && guObject.halfZ > 0f
+                && !BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
                 && guObject.rigidity >= GU_BLOCKING_RIGIDITY
-                && guObject.cohesion >= GU_BLOCKING_COHESION
-                && guObject.lifetimeTicksRemaining > 0;
+                && guObject.cohesion >= GU_BLOCKING_COHESION;
+    }
+
+    private float guSolidity(BattleArenaGuObjectState guObject) {
+        if (guObject == null) {
+            return 0f;
+        }
+        return (Math.max(0f, guObject.rigidity) * 0.65f)
+                + (Math.max(0f, guObject.cohesion) * 0.35f);
     }
 
     private boolean verticalBodyOverlap(MutablePlayerState player, BattleArenaGuObjectState guObject) {
@@ -410,6 +465,13 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
 
     private static float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private static float normalizedRange(float value, float start, float end) {
+        if (end <= start) {
+            return 0f;
+        }
+        return clamp((value - start) / (end - start), 0f, 1f);
     }
 
     private static float wrapDegrees(float value) {
@@ -429,6 +491,11 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
         float y;
         float z;
         float headingDegrees;
+        float lastMoveDeltaX;
+        float lastMoveDeltaZ;
+        float velocityX;
+        float velocityZ;
+        float strength;
         String animationKey = BattleArenaCharacterController.ANIM_IDLE;
         float animationFrame;
         int lockTicksRemaining;
@@ -448,7 +515,12 @@ public final class BattleArenaLocalPlayerStateServer implements BattleArenaPlaye
                     z,
                     headingDegrees,
                     animationKey,
-                    animationFrame);
+                    animationFrame,
+                    velocityX,
+                    velocityZ,
+                    strength,
+                    100f,
+                    100f);
         }
 
         void setAnimationKey(String nextAnimationKey) {

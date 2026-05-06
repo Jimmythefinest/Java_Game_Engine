@@ -11,6 +11,14 @@ public final class BattleArenaActions {
     public static final String KICK = "kick";
     public static final String FIREBALL = "fireball";
     public static final String MUD_WALL = "mud_wall";
+    public static final String CREATE_WATER = "create_water";
+    public static final String CREATE_ICE = "create_ice";
+    public static final String CREATE_EARTH = "create_earth";
+    public static final String SHAPE_SPEAR = "shape_spear";
+    public static final String SHAPE_WALL = "shape_wall";
+    public static final String COOL = "cool";
+    public static final String HEAT = "heat";
+    public static final String MOVE_FORWARD = "move_forward";
     public static final String STEP_LEFT = "step_left";
     public static final String STEP_RIGHT = "step_right";
     public static final String BURST = "burst";

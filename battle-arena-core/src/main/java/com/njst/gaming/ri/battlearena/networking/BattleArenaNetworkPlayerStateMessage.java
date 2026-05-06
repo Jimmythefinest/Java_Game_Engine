@@ -10,6 +10,9 @@ public final class BattleArenaNetworkPlayerStateMessage {
     public float headingDegrees;
     public String animationKey;
     public float animationFrame;
+    public float velocityX;
+    public float velocityZ;
+    public float strength;
     public float currentHealth;
     public float maxHealth;
 
@@ -25,6 +28,9 @@ public final class BattleArenaNetworkPlayerStateMessage {
         message.headingDegrees = state.headingDegrees;
         message.animationKey = state.animationKey;
         message.animationFrame = state.animationFrame;
+        message.velocityX = state.velocityX;
+        message.velocityZ = state.velocityZ;
+        message.strength = state.strength;
         message.currentHealth = state.currentHealth;
         message.maxHealth = state.maxHealth;
         return message;
@@ -39,6 +45,9 @@ public final class BattleArenaNetworkPlayerStateMessage {
                 headingDegrees,
                 animationKey,
                 animationFrame,
+                velocityX,
+                velocityZ,
+                strength,
                 currentHealth,
                 maxHealth);
     }

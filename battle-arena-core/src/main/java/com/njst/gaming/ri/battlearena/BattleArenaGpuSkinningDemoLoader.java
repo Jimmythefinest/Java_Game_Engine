@@ -1,8 +1,10 @@
 package com.njst.gaming.ri.battlearena;
 
 import com.njst.gaming.Animations.Animation;
+import com.njst.gaming.Geometries.CustomGeometry;
 import com.njst.gaming.Camera;
 import com.njst.gaming.Geometries.CubeGeometry;
+import com.njst.gaming.Geometries.SphereGeometry;
 import com.njst.gaming.Geometries.WeightedGeometry;
 import com.njst.gaming.Math.Vector3;
 import com.njst.gaming.Scene;
@@ -27,6 +29,10 @@ import java.util.Set;
 public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader {
     private static final String CHARACTER_DEFINITION_FILE = "battle_arena/defeated.character.json";
     private static final String FIRE_ATLAS_TEXTURE_FILE = "fire-atlas.png";
+    private static final String WATER_TEXTURE_FILE = "gu-water.png";
+    private static final String ICE_TEXTURE_FILE = "ice.jpg";
+    private static final String EARTH_TEXTURE_FILE = "earth.jpeg";
+    private static final String LAVA_TEXTURE_FILE = "lava.jpeg";
     private static final int FIRE_ATLAS_COLUMNS = 4;
     private static final int FIRE_ATLAS_ROWS = 8;
     private static final String FIRE_ATLAS_LAYERS_PROPERTY = "battleArena.fireAtlasLayers";
@@ -94,6 +100,14 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
         }
         int fireAtlasTexture = graphicsDevice.loadTexture(
                 BattleArenaEnvironmentLoader.resolveResourcePath(FIRE_ATLAS_TEXTURE_FILE));
+        int waterTexture = graphicsDevice.loadTexture(
+                BattleArenaEnvironmentLoader.resolveResourcePath(WATER_TEXTURE_FILE));
+        int iceTexture = graphicsDevice.loadTexture(
+                BattleArenaEnvironmentLoader.resolveResourcePath(ICE_TEXTURE_FILE));
+        int earthTexture = graphicsDevice.loadTexture(
+                BattleArenaEnvironmentLoader.resolveResourcePath(EARTH_TEXTURE_FILE));
+        int lavaTexture = graphicsDevice.loadTexture(
+                BattleArenaEnvironmentLoader.resolveResourcePath(LAVA_TEXTURE_FILE));
 
         BattleArenaGpuBoneSsboManager gpuBoneSsboManager =
                 new BattleArenaGpuBoneSsboManager(graphicsDevice);
@@ -141,6 +155,7 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
             private final BattleArenaCharacterControlState controls =
                     new BattleArenaCharacterControlState();
             private final Map<Integer, GameObject> guRenderObjects = new HashMap<Integer, GameObject>();
+            private final Map<Integer, String> guRenderKeys = new HashMap<Integer, String>();
             private float tickAccumulator;
 
             @Override
@@ -211,8 +226,9 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 input.jumpPressed = controls.jumpPressed;
                 input.punchPressed = controls.punchPressed;
                 input.kickPressed = controls.kickPressed;
-                input.castPressed = controls.castFireballPressed || controls.castMudWallPressed;
-                input.guLoadoutKey = resolveGuLoadoutKey(controls);
+                input.castPressed = isGuCastPressed(controls);
+                input.guWormAction = resolveGuWormAction(controls);
+                input.guMoveForwardHeld = controls.guMoveForwardDown;
                 input.stepLeftPressed = controls.stepLeftPressed;
                 input.stepRightPressed = controls.stepRightPressed;
                 provider.submitInput(LOCAL_PLAYER_ID, provider.currentTick() + 1, input);
@@ -229,8 +245,9 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 input.jumpPressed = controls.jumpPressed;
                 input.punchPressed = controls.punchPressed;
                 input.kickPressed = controls.kickPressed;
-                input.castPressed = controls.castFireballPressed || controls.castMudWallPressed;
-                input.guLoadoutKey = resolveGuLoadoutKey(controls);
+                input.castPressed = isGuCastPressed(controls);
+                input.guWormAction = resolveGuWormAction(controls);
+                input.guMoveForwardHeld = controls.guMoveForwardDown;
                 input.stepLeftPressed = controls.stepLeftPressed;
                 input.stepRightPressed = controls.stepRightPressed;
                 BattleArenaSimulationSnapshot snapshot = client.latestSnapshot();
@@ -252,10 +269,26 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                         continue;
                     }
                     liveIds.add(guObject.id);
+                    String renderKey = renderKeyForGuObject(guObject);
                     GameObject renderObject = guRenderObjects.get(guObject.id);
+                    String currentRenderKey = guRenderKeys.get(guObject.id);
+                    if (renderObject != null && currentRenderKey != null && !currentRenderKey.equals(renderKey)) {
+                        scene.removeGameObject(renderObject);
+                        renderObject.cleanup();
+                        guRenderObjects.remove(guObject.id);
+                        renderObject = null;
+                    }
                     if (renderObject == null) {
-                        renderObject = createGuRenderObject(scene, guObject, fireAtlasTexture);
+                        renderObject = createGuRenderObject(
+                                scene,
+                                guObject,
+                                fireAtlasTexture,
+                                waterTexture,
+                                iceTexture,
+                                earthTexture,
+                                lavaTexture);
                         guRenderObjects.put(guObject.id, renderObject);
+                        guRenderKeys.put(guObject.id, renderKey);
                     }
                     renderObject.setPosition(guObject.x, guObject.y, guObject.z);
                     renderObject.setScale(
@@ -280,6 +313,7 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 }
                 for (Integer removedId : removedIds) {
                     GameObject object = guRenderObjects.remove(removedId);
+                    guRenderKeys.remove(removedId);
                     if (object != null) {
                         scene.removeGameObject(object);
                         object.cleanup();
@@ -310,17 +344,53 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                 readIntProperty(SIMULATION_PORT_PROPERTY, BattleArenaTcpSimulationClient.DEFAULT_PORT));
     }
 
-    private String resolveGuLoadoutKey(BattleArenaCharacterControlState controls) {
-        if (controls.castMudWallPressed) {
-            return BattleArenaGuObjectSystem.LOADOUT_EARTH_WALL;
+    private String resolveGuWormAction(BattleArenaCharacterControlState controls) {
+        if (controls.guCreateWaterPressed) {
+            return BattleArenaGuWormAction.CREATE_WATER;
         }
-        if (controls.castFireballPressed) {
-            return BattleArenaGuObjectSystem.LOADOUT_FIRE_WIND;
+        if (controls.guCreateIcePressed) {
+            return BattleArenaGuWormAction.CREATE_ICE;
+        }
+        if (controls.guCreateEarthPressed) {
+            return BattleArenaGuWormAction.CREATE_EARTH;
+        }
+        if (controls.guShapeSpearPressed) {
+            return BattleArenaGuWormAction.SHAPE_SPEAR;
+        }
+        if (controls.guShapeWallPressed) {
+            return BattleArenaGuWormAction.SHAPE_WALL;
+        }
+        if (controls.guCoolPressed) {
+            return BattleArenaGuWormAction.COOL;
+        }
+        if (controls.guHeatPressed) {
+            return BattleArenaGuWormAction.CREATE_FLAME;
+        }
+        if (controls.guMoveForwardPressed) {
+            return BattleArenaGuWormAction.MOVE_FORWARD;
         }
         return null;
     }
 
-    private GameObject createGuRenderObject(Scene scene, BattleArenaGuObjectState guObject, int fireAtlasTexture) {
+    private boolean isGuCastPressed(BattleArenaCharacterControlState controls) {
+        return controls != null
+                && (controls.guCreateWaterPressed
+                || controls.guCreateIcePressed
+                || controls.guCreateEarthPressed
+                || controls.guShapeSpearPressed
+                || controls.guShapeWallPressed
+                || controls.guCoolPressed
+                || controls.guHeatPressed
+                || controls.guMoveForwardPressed);
+    }
+
+    private GameObject createGuRenderObject(Scene scene,
+                                           BattleArenaGuObjectState guObject,
+                                           int fireAtlasTexture,
+                                           int waterTexture,
+                                           int iceTexture,
+                                           int earthTexture,
+                                           int lavaTexture) {
         GameObject object;
         if (isFireAtlasMaterial(guObject)) {
             object = new BattleArenaAnimatedAtlasGameObject(
@@ -330,7 +400,9 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
                     18f,
                     fireAtlasLayerCount());
         } else {
-            object = new GameObject(new CubeGeometry(), 0);
+            object = new GameObject(
+                    defaultGeometryForMaterial(guObject),
+                    defaultTextureForMaterial(guObject, waterTexture, iceTexture, earthTexture, lavaTexture));
         }
         object.name = "BattleArena_GuObject_" + guObject.id + "_" + guObject.material;
         object.castsShadows = false;
@@ -346,10 +418,142 @@ public final class BattleArenaGpuSkinningDemoLoader implements Scene.SceneLoader
         return object;
     }
 
+    private int defaultTextureForMaterial(BattleArenaGuObjectState guObject,
+                                          int waterTexture,
+                                          int iceTexture,
+                                          int earthTexture,
+                                          int lavaTexture) {
+        if (guObject == null) {
+            return 0;
+        }
+        if (BattleArenaGuMaterial.WATER.key.equals(guObject.material)) {
+            return waterTexture;
+        }
+        if (BattleArenaGuMaterial.ICE.key.equals(guObject.material)) {
+            return iceTexture;
+        }
+        if (BattleArenaGuMaterial.EARTH.key.equals(guObject.material)) {
+            return earthTexture;
+        }
+        if (BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material)) {
+            return lavaTexture;
+        }
+        return 0;
+    }
+
+    private com.njst.gaming.Geometries.Geometry defaultGeometryForMaterial(BattleArenaGuObjectState guObject) {
+        String geometryKey = geometryKeyForGuObject(guObject);
+        if ("sphere".equals(geometryKey)) {
+            return new SphereGeometry(0.5f, 12, 12);
+        }
+        if ("tetra".equals(geometryKey)) {
+            return createTetrahedronGeometry();
+        }
+        if ("cube".equals(geometryKey)) {
+            return new CubeGeometry();
+        }
+        if (guObject != null
+                && (BattleArenaGuMaterial.WATER.key.equals(guObject.material)
+                || BattleArenaGuMaterial.ICE.key.equals(guObject.material))) {
+            return new SphereGeometry(0.5f, 12, 12);
+        }
+        return new CubeGeometry();
+    }
+
+    private String geometryKeyForGuObject(BattleArenaGuObjectState guObject) {
+        if (guObject == null) {
+            return "cube";
+        }
+        if (isFireAtlasMaterial(guObject)) {
+            return "atlas";
+        }
+        float maxHalf = Math.max(guObject.halfX, Math.max(guObject.halfY, guObject.halfZ));
+        float minHalf = Math.max(0.02f, Math.min(guObject.halfX, Math.min(guObject.halfY, guObject.halfZ)));
+        float longRatio = maxHalf / minHalf;
+        if (guObject.halfZ == maxHalf && longRatio >= 3f && guObject.halfX <= guObject.halfZ * 0.35f) {
+            return "tetra";
+        }
+        if (BattleArenaGuMaterial.WATER.key.equals(guObject.material)
+                || BattleArenaGuMaterial.ICE.key.equals(guObject.material)) {
+            float xyRatio = Math.max(guObject.halfX, guObject.halfY) / Math.max(0.02f, Math.min(guObject.halfX, guObject.halfY));
+            if (longRatio <= 1.45f && xyRatio <= 1.35f) {
+                return "sphere";
+            }
+        }
+        return "cube";
+    }
+
+    private String renderKeyForGuObject(BattleArenaGuObjectState guObject) {
+        if (guObject == null) {
+            return "none";
+        }
+        return guObject.material + ":" + geometryKeyForGuObject(guObject);
+    }
+
+    private CustomGeometry createTetrahedronGeometry() {
+        float[] vertices = new float[] {
+                0f, 0f, 1f,
+                -0.65f, -0.5f, -1f,
+                0.65f, -0.5f, -1f,
+
+                0f, 0f, 1f,
+                0.65f, -0.5f, -1f,
+                0f, 0.62f, -1f,
+
+                0f, 0f, 1f,
+                0f, 0.62f, -1f,
+                -0.65f, -0.5f, -1f,
+
+                -0.65f, -0.5f, -1f,
+                0f, 0.62f, -1f,
+                0.65f, -0.5f, -1f
+        };
+        float[] normals = new float[] {
+                0f, -0.82f, 0.57f,
+                0f, -0.82f, 0.57f,
+                0f, -0.82f, 0.57f,
+
+                0.78f, 0.22f, 0.58f,
+                0.78f, 0.22f, 0.58f,
+                0.78f, 0.22f, 0.58f,
+
+                -0.78f, 0.22f, 0.58f,
+                -0.78f, 0.22f, 0.58f,
+                -0.78f, 0.22f, 0.58f,
+
+                0f, 0f, -1f,
+                0f, 0f, -1f,
+                0f, 0f, -1f
+        };
+        float[] uvs = new float[] {
+                0.5f, 0f,
+                0f, 1f,
+                1f, 1f,
+
+                0.5f, 0f,
+                0f, 1f,
+                1f, 1f,
+
+                0.5f, 0f,
+                0f, 1f,
+                1f, 1f,
+
+                0f, 1f,
+                0.5f, 0f,
+                1f, 1f
+        };
+        int[] indices = new int[] {
+                0, 1, 2,
+                3, 4, 5,
+                6, 7, 8,
+                9, 10, 11
+        };
+        return new CustomGeometry(vertices, indices, normals, uvs);
+    }
+
     private boolean isFireAtlasMaterial(BattleArenaGuObjectState guObject) {
         return guObject != null
-                && (BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
-                || BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material));
+                && BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material);
     }
 
     private int fireAtlasLayerCount() {

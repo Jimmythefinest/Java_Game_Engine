@@ -122,6 +122,9 @@ final class BattleArenaHeadlessCombatSystem {
                     player.headingDegrees,
                     player.animationKey,
                     player.animationFrame,
+                    player.velocityX,
+                    player.velocityZ,
+                    player.strength,
                     health != null ? health.floatValue() : MAX_HEALTH,
                     MAX_HEALTH));
         }
@@ -218,7 +221,7 @@ final class BattleArenaHeadlessCombatSystem {
         Float currentHealth = healthByPlayer.get(defender.playerId);
         if (currentHealth != null && currentHealth.floatValue() > 0f) {
             healthByPlayer.put(defender.playerId,
-                    Math.max(0f, currentHealth.floatValue() - guDamage(guObject)));
+                    Math.max(0f, currentHealth.floatValue() - guDamage(guObject, defender)));
         }
         BattleArenaPlayerInput input = new BattleArenaPlayerInput();
         input.takeHitPressed = true;
@@ -229,17 +232,36 @@ final class BattleArenaHeadlessCombatSystem {
 
     private boolean isDamagingGuObject(BattleArenaGuObjectState guObject) {
         return guObject != null
-                && guObject.lifetimeTicksRemaining > 0
-                && (BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
+                && ((BattleArenaGuMaterial.HOT_GAS.key.equals(guObject.material)
                 || BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material)
-                || guObject.temperature >= 220f);
+                || guObject.temperature >= 220f)
+                || guObjectHorizontalSpeed(guObject) >= 0.2f);
     }
 
-    private float guDamage(BattleArenaGuObjectState guObject) {
-        if (BattleArenaGuMaterial.MOLTEN_EARTH.key.equals(guObject.material)) {
-            return MOLTEN_EARTH_DAMAGE;
+    private float guDamage(BattleArenaGuObjectState guObject, BattleArenaPlayerState defender) {
+        if (guObject == null || defender == null) {
+            return 0f;
         }
-        return HOT_GAS_DAMAGE;
+        float guSpeed = guObjectHorizontalSpeed(guObject);
+        float playerSpeed = playerHorizontalSpeed(defender);
+        float relativeImpact = Math.max(0f, guSpeed - playerSpeed);
+        return relativeImpact / Math.max(1f, defender.strength + 1f);
+    }
+
+    private float guObjectHorizontalSpeed(BattleArenaGuObjectState guObject) {
+        if (guObject == null) {
+            return 0f;
+        }
+        return (float) Math.sqrt((guObject.velocityX * guObject.velocityX)
+                + (guObject.velocityZ * guObject.velocityZ));
+    }
+
+    private float playerHorizontalSpeed(BattleArenaPlayerState player) {
+        if (player == null) {
+            return 0f;
+        }
+        return (float) Math.sqrt((player.velocityX * player.velocityX)
+                + (player.velocityZ * player.velocityZ));
     }
 
     private boolean guBoundsOverlapsPlayerHurtbox(Aabb guBounds, BattleArenaPlayerState defender) {

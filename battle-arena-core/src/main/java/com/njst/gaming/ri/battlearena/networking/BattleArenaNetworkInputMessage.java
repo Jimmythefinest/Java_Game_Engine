@@ -16,8 +16,9 @@ public final class BattleArenaNetworkInputMessage {
     public boolean stepLeftPressed;
     public boolean stepRightPressed;
     public boolean takeHitPressed;
+    public boolean guMoveForwardHeld;
     public String animationOverride;
-    public String guLoadoutKey;
+    public String guWormAction;
 
     public static BattleArenaNetworkInputMessage fromInput(String player,
                                                            int tick,
@@ -39,8 +40,9 @@ public final class BattleArenaNetworkInputMessage {
         message.stepLeftPressed = input.stepLeftPressed;
         message.stepRightPressed = input.stepRightPressed;
         message.takeHitPressed = input.takeHitPressed;
+        message.guMoveForwardHeld = input.guMoveForwardHeld;
         message.animationOverride = input.animationOverride;
-        message.guLoadoutKey = input.guLoadoutKey;
+        message.guWormAction = input.guWormAction;
         return message;
     }
 
@@ -57,8 +59,9 @@ public final class BattleArenaNetworkInputMessage {
         input.stepLeftPressed = stepLeftPressed;
         input.stepRightPressed = stepRightPressed;
         input.takeHitPressed = takeHitPressed;
+        input.guMoveForwardHeld = guMoveForwardHeld;
         input.animationOverride = animationOverride;
-        input.guLoadoutKey = guLoadoutKey;
+        input.guWormAction = guWormAction;
         return input;
     }
 }

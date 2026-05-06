@@ -151,7 +151,7 @@ public final class BattleArenaCharacterController {
                     this::finishKick);
         }
 
-        if (controls.castFireballPressed && !combatActionActive && !animationSet(ANIM_CAST).isEmpty()) {
+        if (isGuCastPressed(controls) && !combatActionActive && !animationSet(ANIM_CAST).isEmpty()) {
             triggerConfiguredEvent(
                     EVENT_CAST_STARTED,
                     () -> casting = true,
@@ -555,6 +555,20 @@ public final class BattleArenaCharacterController {
 
     private boolean isChargeActive() {
         return forwardLungeRemainingSeconds > 0f && Math.abs(forwardLungeVelocity) > 0f;
+    }
+
+    private boolean isGuCastPressed(BattleArenaCharacterControlState controls) {
+        return controls != null
+                && (controls.guCreateWaterPressed
+                || controls.guCreateIcePressed
+                || controls.guCreateEarthPressed
+                || controls.guShapeSpearPressed
+                || controls.guShapeWallPressed
+                || controls.guCoolPressed
+                || controls.guHeatPressed
+                || controls.guMoveForwardPressed
+                || controls.castFireballPressed
+                || controls.castMudWallPressed);
     }
 
     private void onAnimationFinished(KeyframeAnimation finishedAnimation,
